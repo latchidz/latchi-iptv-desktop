@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8">
+<title>LATCHI IPTV</title>
+<link rel="stylesheet" href="tv.css">
+</head>
+<body>
+
+<!-- ═══ 🎬 السبلاش ═══ -->
+<div id="splash" class="screen active">
+  <img class="splash-bg" src="../assets/splash.webp" alt="">
+  <div class="splash-title">IPTV LATCHI DZ</div>
+  <div class="splash-loading"><div class="spinner"></div></div>
+</div>
+
+<!-- ═══ 🔑 شاشة التحقق ═══ -->
+<div id="verify" class="screen">
+  <img class="verify-bg" src="../assets/update_art.webp" alt="">
+  <div class="verify-panel">
+    <div class="verify-logo">IPTV <span>LATCHI DZ</span></div>
+    <div class="verify-tabs">
+      <button class="vtab active" data-tab="code">🔑 كود التفعيل</button>
+      <button class="vtab" data-tab="m3u">🔗 رابط M3U</button>
+    </div>
+    <div id="vtab-code" class="vbody">
+      <input id="codeInput" class="tv-input" type="text" placeholder="أدخل كود التفعيل هنا" autocomplete="off" spellcheck="false">
+      <button id="codeBtn" class="gold-btn">✓ تحقق الآن</button>
+    </div>
+    <div id="vtab-m3u" class="vbody hidden">
+      <input id="m3uInput" class="tv-input" type="text" placeholder="http://...playlist.m3u" autocomplete="off" spellcheck="false">
+      <button id="m3uBtn" class="gold-btn">⬇ حمّل القائمة</button>
+    </div>
+    <div id="verifyMsg" class="verify-msg"></div>
+  </div>
+</div>
+
+<!-- ═══ 🏠 الرئيسية ═══ -->
+<div id="home" class="screen">
+  <header class="tv-header">
+    <div class="logo">LATCHI <span>IPTV</span> <em>VIP</em></div>
+    <div class="clock" id="clock"></div>
+    <div class="user-chip" id="userChip">👤</div>
+  </header>
+  <div class="cards" id="cards"></div>
+</div>
+
+<!-- ═══ 📺 القوائم (بث/أفلام/مسلسلات) ═══ -->
+<div id="list" class="screen">
+  <header class="tv-header">
+    <div class="back-btn nav-back">← رجوع</div>
+    <div class="logo">LATCHI <span>IPTV</span></div>
+    <input id="searchInput" class="search-input" type="text" placeholder="🔍 بحث...">
+  </header>
+  <div class="cats-bar" id="catsBar"></div>
+  <div class="list-body" id="listBody"></div>
+</div>
+
+<!-- ═══ 🎬 التفاصيل ═══ -->
+<div id="details" class="screen">
+  <header class="tv-header">
+    <div class="back-btn nav-back">← رجوع</div>
+    <div class="logo">LATCHI <span>IPTV</span></div>
+  </header>
+  <div class="details-body" id="detailsBody"></div>
+</div>
+
+<!-- ═══ ⚙️ الإعدادات ═══ -->
+<div id="settings" class="screen">
+  <header class="tv-header">
+    <div class="back-btn nav-back">← رجوع</div>
+    <div class="logo">LATCHI <span>IPTV</span></div>
+  </header>
+  <div class="settings-body" id="settingsBody"></div>
+</div>
+
+<!-- ═══ ▶️ المشغل ═══ -->
+<div id="player" class="screen">
+  <video id="video" autoplay></video>
+  <div class="player-ui" id="playerUi">
+    <div class="p-top">
+      <div class="p-name" id="pName"></div>
+      <div class="p-live-badge hidden" id="pLive">● مباشر</div>
+      <div class="p-time" id="pTime"></div>
+    </div>
+    <div class="p-seek" id="pSeekWrap">
+      <div class="p-seek-track"><div class="p-seek-fill" id="pSeekFill"></div></div>
+    </div>
+    <div class="p-controls">
+      <button class="p-btn" id="pPlay">⏸</button>
+      <button class="p-btn" id="pRew">⏪ -10ث</button>
+      <button class="p-btn" id="pFwd">⏩ +10ث</button>
+      <button class="p-btn" id="pVol">🔊</button>
+      <button class="p-btn" id="pFull">⛶ ملء الشاشة</button>
+      <button class="p-btn" id="pFav">☆ مفضلة</button>
+      <button class="p-btn p-exit" id="pExit">✕ خروج</button>
+    </div>
+    <div class="p-hint">مسافة: تشغيل/إيقاف • أسهم: تنقل/صوت • F: ملء الشاشة • Esc: رجوع</div>
+  </div>
+  <div class="p-center-msg hidden" id="pCenter"></div>
+</div>
+
+<script src="../node_modules/hls.js/dist/hls.min.js"></script>
+<script src="api.js"></script>
+<script src="player.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

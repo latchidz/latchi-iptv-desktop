@@ -1,0 +1,37 @@
+{
+  "name": "latchi-iptv-desktop",
+  "productName": "LATCHI IPTV",
+  "version": "1.0.0",
+  "description": "LATCHI IPTV — نسخة الحاسوب الرسمية (نفس واجهة التلفاز)",
+  "main": "main.js",
+  "author": "LATCHI DZ",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "hls.js": "^1.5.13"
+  },
+  "build": {
+    "appId": "dz.latchi.iptv.desktop",
+    "productName": "LATCHI IPTV",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "renderer/**/*", "assets/**/*", "node_modules/**/*", "package.json"],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "LATCHI IPTV"
+    }
+  }
+}

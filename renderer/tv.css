@@ -1,0 +1,177 @@
+/* ═══ 🎨 LATCHI IPTV Desktop — ثيم التلفاز (كحلي داكن + ذهبي) ═══ */
+@font-face { font-family: 'LatchiArabic'; src: url('../assets/fonts/latchi_arabic_regular.ttf'); }
+@font-face { font-family: 'LatchiArabic'; src: url('../assets/fonts/latchi_arabic_bold.ttf'); font-weight: bold; }
+
+:root {
+  --bg: #060913; --bg2: #0A0F24; --panel: #0E1430; --panel2: #141B3D;
+  --gold: #FFD700; --gold2: #D9A94E; --goldsoft: #E4B95B;
+  --text: #FFFFFF; --muted: #8A90B8; --line: #22284F;
+  --focus-glow: 0 0 0 3px #fff, 0 0 22px rgba(255, 215, 0, .75);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+  font-family: 'LatchiArabic', 'Segoe UI', Tahoma, sans-serif; user-select: none; }
+
+.screen { position: absolute; inset: 0; display: none; }
+.screen.active { display: block; }
+.hidden { display: none !important; }
+
+/* ═══ السبلاش ═══ */
+#splash { background: var(--bg); }
+.splash-bg { width: 100%; height: 100%; object-fit: cover; }
+.splash-title { position: absolute; bottom: 8%; width: 100%; text-align: center;
+  font-size: 34px; font-weight: bold; color: var(--goldsoft); letter-spacing: 4px;
+  text-shadow: 0 2px 14px rgba(0,0,0,.9); }
+.splash-loading { position: absolute; bottom: 4%; width: 100%; display: flex; justify-content: center; }
+.spinner { width: 38px; height: 38px; border: 3px solid rgba(217,169,78,.25);
+  border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══ التحقق ═══ */
+#verify { background: var(--bg); }
+.verify-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
+.verify-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(520px, 92%); background: rgba(14, 20, 48, .92); border: 2px solid var(--gold2);
+  border-radius: 22px; padding: 34px 38px; box-shadow: 0 0 0 6px rgba(217,169,78,.15), 0 24px 60px rgba(0,0,0,.6); }
+.verify-logo { text-align: center; font-size: 26px; font-weight: bold; color: var(--text); margin-bottom: 22px; }
+.verify-logo span { color: var(--gold); }
+.verify-logo::after { content: ''; display: block; width: 70px; height: 3px; margin: 10px auto 0;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.verify-tabs { display: flex; gap: 10px; margin-bottom: 18px; }
+.vtab { flex: 1; padding: 12px; font-size: 15px; font-weight: bold; font-family: inherit;
+  background: var(--panel2); color: var(--muted); border: 1px solid var(--line);
+  border-radius: 12px; cursor: pointer; }
+.vtab.active { background: linear-gradient(135deg, #FFE9A8, var(--gold2)); color: #241A05; border-color: var(--gold); }
+.vbody { display: flex; flex-direction: column; gap: 14px; }
+.tv-input { width: 100%; padding: 15px 18px; font-size: 17px; font-family: inherit; text-align: center;
+  background: #080D1F; color: var(--text); border: 2px solid var(--line); border-radius: 14px; }
+.tv-input::placeholder { color: #555C85; }
+.gold-btn { padding: 15px; font-size: 17px; font-weight: bold; font-family: inherit; cursor: pointer;
+  background: linear-gradient(135deg, #FFE9A8, var(--gold2)); color: #241A05;
+  border: 1px solid rgba(255,255,255,.35); border-radius: 28px; }
+.verify-msg { min-height: 22px; margin-top: 14px; text-align: center; font-size: 14px; color: var(--muted); }
+.verify-msg.ok { color: #7CE38B; } .verify-msg.err { color: #FF7B7B; }
+
+/* ═══ الترويسة التلفازية ═══ */
+.tv-header { display: flex; align-items: center; gap: 26px; padding: 18px 34px;
+  background: linear-gradient(180deg, rgba(10,15,36,.97), rgba(10,15,36,.82)); }
+.logo { font-size: 21px; font-weight: bold; letter-spacing: 1px; }
+.logo span { color: var(--gold); }
+.logo em { font-style: normal; font-size: 12px; color: var(--goldsoft);
+  border: 1px solid var(--gold2); border-radius: 6px; padding: 1px 7px; margin-right: 8px; }
+.clock { margin-right: auto; font-size: 17px; color: var(--muted); font-weight: bold; }
+.user-chip { background: var(--panel2); border: 1px solid var(--gold2); color: var(--gold);
+  border-radius: 20px; padding: 6px 16px; font-size: 13px; }
+.back-btn { font-size: 15px; font-weight: bold; color: var(--text); background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 12px; padding: 10px 18px; cursor: pointer; }
+.search-input { width: 320px; padding: 10px 16px; font-family: inherit; font-size: 14px; text-align: right;
+  background: #080D1F; color: var(--text); border: 2px solid var(--line); border-radius: 12px; }
+
+/* ═══ الرئيسية ═══ */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, 190px); gap: 26px;
+  padding: 60px 60px; justify-content: center; align-content: center; height: calc(100% - 76px); }
+.tcard { background: linear-gradient(160deg, var(--panel), var(--bg2)); border: 2px solid var(--line);
+  border-radius: 20px; padding: 30px 16px 24px; text-align: center; cursor: pointer;
+  transition: transform .15s, border-color .15s; }
+.tcard .ic { font-size: 52px; margin-bottom: 14px; display: block;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.5)); }
+.tcard .t { font-size: 19px; font-weight: bold; }
+.tcard .c { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* ═══ التركيز الموحّد (نظام التلفاز) ═══ */
+.focused { border-color: var(--gold) !important; transform: scale(1.06);
+  box-shadow: var(--focus-glow); background: linear-gradient(160deg, #1A2350, var(--panel)) !important; z-index: 2; }
+
+/* ═══ شريط الفئات ═══ */
+.cats-bar { display: flex; gap: 10px; padding: 12px 34px; overflow-x: auto; background: rgba(8,13,31,.85); }
+.cat-chip { white-space: nowrap; padding: 9px 20px; font-size: 14px; font-weight: bold;
+  background: var(--panel); color: var(--muted); border: 1px solid var(--line); border-radius: 18px; cursor: pointer; }
+.list-body { height: calc(100% - 76px - 57px); overflow-y: auto; padding: 22px 34px 40px; }
+
+/* شبكة البوسترات (نفس أندرويد: عمودية 2:3 — 6 بالصف) */
+.poster-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+.pcard { background: var(--panel); border: 2px solid var(--line); border-radius: 14px;
+  padding: 7px; cursor: pointer; transition: transform .15s, border-color .15s; }
+.pcard img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 9px;
+  background: #0A0E22; display: block; }
+.pcard .pt { margin-top: 8px; font-size: 12.5px; font-weight: bold; text-align: center;
+  height: 34px; overflow: hidden; }
+.pcard .pc { margin: 5px 0 2px; text-align: center; }
+.pcard .pc span { font-size: 10px; color: var(--goldsoft); background: #3d3d5c;
+  border-radius: 8px; padding: 2px 9px; }
+.fav-star { position: absolute; margin: 8px; font-size: 15px; filter: drop-shadow(0 1px 3px #000); }
+.pwrap { position: relative; }
+
+/* قائمة القنوات الأفقية (بث مباشر) */
+.chan-list { display: flex; flex-direction: column; gap: 9px; max-width: 760px; }
+.chan { display: flex; align-items: center; gap: 16px; background: var(--panel);
+  border: 2px solid var(--line); border-radius: 13px; padding: 10px 18px; cursor: pointer;
+  transition: transform .12s, border-color .12s; }
+.chan img { width: 52px; height: 40px; object-fit: contain; background: #0A0E22; border-radius: 7px; }
+.chan .n { font-size: 15.5px; font-weight: bold; }
+.chan .g { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.chan .now { margin-right: auto; font-size: 12px; color: var(--goldsoft); }
+.rec-dot { color: #FF5A5A; animation: blink 1.4s infinite; margin-left: 5px; }
+@keyframes blink { 50% { opacity: .25; } }
+
+/* ═══ التفاصيل ═══ */
+.details-body { display: flex; gap: 44px; padding: 44px 60px; height: calc(100% - 76px); overflow-y: auto; }
+.d-poster { flex: 0 0 300px; }
+.d-poster img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 18px;
+  border: 2px solid var(--gold2); box-shadow: 0 18px 50px rgba(0,0,0,.55); }
+.d-info { flex: 1; }
+.d-title { font-size: 34px; font-weight: bold; margin-bottom: 10px; }
+.d-meta { color: var(--goldsoft); font-size: 15px; margin-bottom: 18px; }
+.d-desc { color: #C9CEE8; font-size: 15.5px; line-height: 1.95; max-width: 760px; margin-bottom: 28px; }
+.d-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+.play-btn { font-size: 18px; padding: 16px 46px; }
+.seasons { margin-top: 30px; }
+.season-title { font-size: 19px; font-weight: bold; color: var(--gold); margin: 22px 0 12px; }
+.ep { display: flex; align-items: center; gap: 14px; background: var(--panel); border: 2px solid var(--line);
+  border-radius: 12px; padding: 11px 18px; margin-bottom: 9px; cursor: pointer; max-width: 700px; }
+.ep .en { flex: 0 0 46px; text-align: center; font-weight: bold; color: var(--goldsoft);
+  background: var(--panel2); border-radius: 9px; padding: 5px 0; }
+.ep .et { font-size: 14.5px; font-weight: bold; }
+.ep .ed { font-size: 11.5px; color: var(--muted); }
+.ep .prog { margin-right: auto; font-size: 11.5px; color: #7CE38B; }
+
+/* ═══ الإعدادات ═══ */
+.settings-body { padding: 44px 60px; max-width: 780px; }
+.set-card { background: var(--panel); border: 2px solid var(--line); border-radius: 16px;
+  padding: 22px 26px; margin-bottom: 18px; }
+.set-card h3 { color: var(--gold); font-size: 17px; margin-bottom: 12px; }
+.set-card .row { display: flex; justify-content: space-between; padding: 7px 0;
+  font-size: 14.5px; border-bottom: 1px dashed #1C2450; }
+.set-card .row b { color: var(--goldsoft); }
+.danger-btn { background: linear-gradient(135deg, #FF9A8B, #C0392B) !important; margin-top: 14px; }
+
+/* ═══ المشغل ═══ */
+#player { background: #000; }
+#video { width: 100%; height: 100%; background: #000; }
+.player-ui { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
+  background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 22%, transparent 60%, rgba(0,0,0,.88) 100%);
+  transition: opacity .3s; padding: 0 40px 26px; }
+.player-ui.hidden-ui { opacity: 0; pointer-events: none; }
+.p-top { display: flex; align-items: center; gap: 18px; margin-bottom: 10px; }
+.p-name { font-size: 20px; font-weight: bold; text-shadow: 0 2px 8px #000; }
+.p-live-badge { color: #FF6B6B; font-size: 13px; font-weight: bold; animation: blink 1.5s infinite; }
+.p-time { margin-right: auto; color: var(--muted); font-size: 14px; }
+.p-seek { margin-bottom: 14px; }
+.p-seek-track { height: 7px; background: rgba(255,255,255,.18); border-radius: 5px; overflow: hidden; cursor: pointer; }
+.p-seek-fill { height: 100%; width: 0%;
+  background: linear-gradient(90deg, #FFE9A8, var(--gold)); border-radius: 5px; }
+.p-controls { display: flex; gap: 12px; flex-wrap: wrap; }
+.p-btn { font-family: inherit; font-size: 14.5px; font-weight: bold; padding: 11px 22px; cursor: pointer;
+  background: rgba(20, 27, 61, .92); color: var(--text); border: 1px solid var(--line); border-radius: 12px; }
+.p-btn.p-exit { border-color: #8B3A3A; color: #FF9A9A; }
+.p-hint { margin-top: 12px; font-size: 11.5px; color: #6A7099; }
+.p-center-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  font-size: 30px; font-weight: bold; color: #fff; text-shadow: 0 3px 18px #000;
+  background: rgba(0,0,0,.45); border-radius: 20px; padding: 20px 44px; }
+
+/* شبكات أصغر */
+@media (max-width: 1200px) { .poster-grid { grid-template-columns: repeat(5, 1fr); } }
+@media (max-width: 1000px) { .poster-grid { grid-template-columns: repeat(4, 1fr); } }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: #080D1F; }
+::-webkit-scrollbar-thumb { background: #262E5E; border-radius: 5px; }

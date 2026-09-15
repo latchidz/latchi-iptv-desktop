@@ -1,0 +1,54 @@
+name: Build LATCHI IPTV Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'رقم الإصدار (مثل 1.0.0)'
+        required: false
+        default: ''
+  push:
+    tags: ['v*']
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: 📥 تحميل الكود
+        uses: actions/checkout@v4
+
+      - name: 🟢 Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 📦 تثبيت الاعتماديات
+        run: npm install
+
+      - name: 🔖 ضبط الإصدار (اختياري)
+        if: ${{ github.event.inputs.version != '' }}
+        shell: pwsh
+        run: |
+          (Get-Content package.json) -replace '"version": ".*"', ('"version": "' + '${{ github.event.inputs.version }}' + '"') | Set-Content package.json
+
+      - name: 🏗️ بناء المثبّت + النسخة المحمولة
+        run: npx electron-builder --win nsis portable --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📤 رفع المخرجات (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LATCHI-IPTV-Windows
+          path: |
+            dist/*.exe
+          retention-days: 90
+
+      - name: 🚀 إصدار GitHub Release (عند الوسم)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
