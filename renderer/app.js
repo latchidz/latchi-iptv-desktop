@@ -1,18 +1,18 @@
-// ═══ 🧠 LATCHI IPTV Desktop — العقل التطبيقي (شاشات + تنقل تلفازي) ═══
+// ═══ 🧠 LATCHI IPTV Desktop v1.1 — العقل التطبيقي (تحميل كسوي + كاش دائم) ═══
 const App = {
-  src: null,          // { type, live[], movies[], series[], account? }
+  src: null,          // xtream: { type, categories, lazy } | m3u: { type, live[], movies[], series[] }
   user: null,         // { name, expires, code }
   screen: 'splash',
   navStack: [],       // مكدس الرجوع (نفس فلسفة التلفاز)
   favs: JSON.parse(localStorage.getItem('favs') || '[]'),
-  listCtx: null,      // سياق الشاشة الحالية { kind, items, cat }
+  listCtx: null,      // { kind, cat, catId, items, title, loading }
 
   // ═══ الإقلاع ═══
   async boot() {
     Player.init();
     Player.hideCb = () => App.back();
     this.clockTick(); setInterval(() => this.clockTick(), 1000);
-    await new Promise(r => setTimeout(r, 2600)); // السبلاش (نفس إحساس التلفاز)
+    await new Promise(r => setTimeout(r, 1400)); // سبلاش قصير (سرعة الإقلاع أهم)
     const saved = localStorage.getItem('source_url');
     if (saved) {
       this.show('verify', true);
@@ -36,9 +36,6 @@ const App = {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(name).classList.add('active');
     this.screen = name;
-    if (!resetStack && !['splash'].includes(name)) {
-      // إدارة المكدس
-    }
     this.onShown(name);
   },
 
@@ -77,7 +74,8 @@ const App = {
       const res = await LatchiAPI.verifyCode(code, deviceId);
       if (!res.ok) { msg.textContent = '✗ ' + res.message; msg.classList.add('err'); return; }
       if (!res.url) { msg.textContent = '✗ لا توجد قائمة مرتبطة بهذا الكود'; msg.classList.add('err'); return; }
-      msg.textContent = '✓ ' + res.name + ' — تحميل المحتوى...'; msg.classList.add('ok');
+      msg.textContent = '✓ ' + res.name + ' — فتح القائمة...';
+      msg.classList.add('ok');
       this.user = { name: res.name, expires: res.expires, code };
       await this.loadSource(res.url, false, res.url);
     } catch (e) {
@@ -90,7 +88,7 @@ const App = {
     const msg = document.getElementById('verifyMsg');
     msg.className = 'verify-msg';
     if (!/^https?:\/\//.test(url)) { msg.textContent = 'أدخل رابط M3U صحيحاً يبدأ بـ http'; msg.classList.add('err'); return; }
-    msg.textContent = '⏳ تحميل القائمة...';
+    msg.textContent = '⏳ تحميل القائمة (المرة الأولى فقط — ثم تبقى محفوظة)...';
     this.user = { name: 'M3U مباشر', expires: '', code: '' };
     try { await this.loadSource(url, false, url); }
     catch (e) { msg.textContent = '✗ ' + e.message; msg.classList.add('err'); }
@@ -99,27 +97,29 @@ const App = {
   async loadSource(url, silent, saveUrl) {
     try {
       const src = await LatchiAPI.loadSource(url);
-      if (!src.live.length && !src.movies.length && !src.series.length) throw new Error('القائمة فارغة أو غير صالحة');
+      const empty = src.type === 'xtream'
+        ? !(src.categories.live.length || src.categories.movie.length || src.categories.series.length)
+        : !(src.live.length || src.movies.length || src.series.length);
+      if (empty) throw new Error('القائمة فارغة أو غير صالحة');
       this.src = src;
       if (saveUrl) localStorage.setItem('source_url', saveUrl);
       this.show('home', true);
     } catch (e) {
+      if (!silent) throw e;
       localStorage.removeItem('source_url');
-      if (silent) throw e;
-      const msg = document.getElementById('verifyMsg');
-      msg.textContent = '✗ ' + e.message; msg.classList.add('err');
+      this.show('verify', true);
     }
   },
 
   // ═══ الرئيسية ═══
   buildHome() {
-    const s = LatchiAPI.stats(this.src);
-    document.getElementById('userChip').textContent = '👤 ' + (this.user?.name || '');
+    const s = this.src ? LatchiAPI.stats(this.src) : { live: 0, movies: 0, series: 0, unit: 'فئة' };
+    const u = s.unit || '';
     const cards = [
-      { ic: '📡', t: 'البث المباشر', c: s.live + ' قناة', go: () => this.openList('live') },
+      { ic: '📡', t: 'البث المباشر', c: s.live + ' ' + (u || 'قناة'), go: () => this.openList('live') },
       { ic: '⚽', t: 'beIN سبورت', c: 'القنوات الرياضية', go: () => this.openList('live', 'bein') },
-      { ic: '🎬', t: 'الأفلام', c: s.movies + ' فيلم', go: () => this.openList('movies') },
-      { ic: '📺', t: 'المسلسلات', c: s.series + ' مسلسل', go: () => this.openList('series') },
+      { ic: '🎬', t: 'الأفلام', c: s.movies + ' ' + (u || 'فيلم'), go: () => this.openList('movies') },
+      { ic: '📺', t: 'المسلسلات', c: s.series + ' ' + (u || 'مسلسل'), go: () => this.openList('series') },
       { ic: '⭐', t: 'المفضلة', c: this.favs.length + ' عنصر', go: () => this.openList('fav') },
       { ic: '⏯', t: 'متابعة المشاهدة', c: this.continueList().length + ' عنصر', go: () => this.openList('cw') },
       { ic: '⚙️', t: 'الإعدادات', c: 'الحساب والبيانات', go: () => this.push('settings') }
@@ -149,63 +149,135 @@ const App = {
     return out.sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 30);
   },
 
-  // ═══ القوائم ═══
-  openList(kind, filter = null) {
-    let items, title;
-    if (kind === 'live') { items = this.src.live; title = 'البث المباشر'; }
-    else if (kind === 'movies') { items = this.src.movies; title = 'الأفلام'; }
-    else if (kind === 'series') { items = this.src.series; title = 'المسلسلات'; }
-    else if (kind === 'fav') {
-      items = this.favs;
-      title = 'المفضلة';
-    } else if (kind === 'cw') {
-      items = this.continueList().map(v => Object.assign({}, v.item, { _resume: v.at, _dur: v.dur }));
-      title = 'متابعة المشاهدة';
+  // ═══ القوائم (كسوية: الفئة تُحمَّل عند فتحها فقط — ومن الكاش فوراً) ═══
+  async openList(kind, filter = null, catObj = null) {
+    // المفضلة / المتابعة — كما هي (محلية)
+    if (kind === 'fav' || kind === 'cw') {
+      let items, title;
+      if (kind === 'fav') { items = this.favs; title = 'المفضلة'; }
+      else { items = this.continueList().map(v => Object.assign({}, v.item, { _resume: v.at, _dur: v.dur })); title = 'متابعة المشاهدة'; }
+      this.listCtx = { kind, items, filter: null, title, cat: 'الكل' };
+      this.buildList();
+      this.push('list');
+      return;
     }
-    if (filter === 'bein') {
-      items = items.filter(c => /bein|be ?n ?sports|سبورت/i.test(c.name + ' ' + (c.group || '')));
-      title = 'beIN سبورت';
+    // M3U: كل العناصر محمّلة أصلاً — سلوك الفلترة القديم مع فئات مرتبة
+    if (this.src.type === 'm3u') {
+      let items, title;
+      if (kind === 'live') { items = this.src.live; title = 'البث المباشر'; }
+      else if (kind === 'movies') { items = this.src.movies; title = 'الأفلام'; }
+      else { items = this.src.series; title = 'المسلسلات'; }
+      if (filter === 'bein') {
+        items = items.filter(c => /bein|be ?n ?sports|سبورت/i.test(c.name + ' ' + (c.group || '')));
+        title = 'beIN سبورت';
+      }
+      this.listCtx = { kind, items, filter, title, cat: 'الكل' };
+      this.buildList();
+      this.push('list');
+      return;
     }
-    this.listCtx = { kind, items, filter, title };
+    // ═══ Xtream كسوي ═══
+    this.listCtx = { kind, filter, title: filter === 'bein' ? 'beIN سبورت' : (kind === 'live' ? 'البث المباشر' : kind === 'movies' ? 'الأفلام' : 'المسلسلات'), items: [], cat: null, loading: true };
     this.buildList();
     this.push('list');
+    // beIN: نجلب فئات beIN فقط ونحمّلها (قليلة وخفيفة)
+    if (filter === 'bein') {
+      const beinCats = LatchiAPI.beinCategories('live');
+      const merged = [];
+      for (const c of beinCats) {
+        const items = await LatchiAPI.getCategoryItems('live', c.id, c.name);
+        merged.push(...items);
+      }
+      if (this.listCtx.kind === 'live' && this.listCtx.filter === 'bein') {
+        this.listCtx.items = merged; this.listCtx.loading = false;
+        this.listCtx.cat = beinCats.length ? beinCats[0].name : null;
+        this.buildList();
+      }
+      return;
+    }
+    // فئة محددة؟
+    if (catObj) { await this.loadCategory(catObj); return; }
+    // نفتح أول فئة تلقائياً (نفس إحساس التلفاز: محتوى أمامك مباشرة)
+    const cats = LatchiAPI.orderCategories(LatchiAPI._src.categories[kind === 'movies' ? 'movie' : kind] || []);
+    if (cats.length) await this.loadCategory(cats[0]);
+    else { this.listCtx.loading = false; this.buildList(); }
+  },
+
+  async loadCategory(catObj) {
+    const kind = this.listCtx.kind;
+    this.listCtx.cat = catObj.name;
+    this.listCtx.catId = catObj.id;
+    this.listCtx.loading = true;
+    this.listCtx.items = [];
+    this.buildList();
+    const items = await LatchiAPI.getCategoryItems(kind === 'movies' ? 'movie' : kind, catObj.id, catObj.name);
+    // هل ما زلنا في نفس الشاشة ونفس الفئة؟ (قد يكون المستخدم انتقل)
+    if (this.screen === 'list' && this.listCtx.kind === kind && this.listCtx.catId === catObj.id) {
+      this.listCtx.items = items;
+      this.listCtx.loading = false;
+      this.buildList();
+    }
   },
 
   buildList() {
-    const { kind, items, title } = this.listCtx;
-    // الفئات
-    const groups = [...new Set(items.map(i => i.group || 'عام'))].sort((a, b) => a.localeCompare(b, 'ar'));
+    const ctx = this.listCtx || {};
+    const { kind, items, title } = ctx;
+    const body = document.getElementById('listBody');
+    // ═══ شريط الفئات ═══
     const catsBar = document.getElementById('catsBar');
-    const cur = this.listCtx.cat || 'الكل';
     catsBar.innerHTML = '';
-    const mk = (label, val) => {
+    const mk = (label, val, cb) => {
       const c = document.createElement('div');
-      c.className = 'cat-chip' + (cur === val ? ' active focused' : '');
+      c.className = 'cat-chip' + ((ctx.cat === val || (cb && cb.isActive)) ? ' active' : '');
       c.textContent = label;
-      c.onclick = () => { this.listCtx.cat = val; this.buildList(); };
+      c.onclick = () => cb ? cb.go() : null;
       catsBar.appendChild(c);
     };
-    mk('🏷 الكل', 'الكل');
-    groups.forEach(g => mk(g, g));
-    // العناصر
-    const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-    let shown = items.filter(i => (cur === 'الكل' || (i.group || 'عام') === cur) && (!q || (i.name || '').toLowerCase().includes(q)));
-    const body = document.getElementById('listBody');
-    body.innerHTML = '';
-    const isPoster = ['movies', 'series', 'fav', 'cw'].includes(kind) && shown[0] && shown[0].type !== 'live';
-    if (isPoster) {
-      const grid = document.createElement('div');
-      grid.className = 'poster-grid';
-      shown.forEach(it => grid.appendChild(this.posterCard(it)));
-      body.appendChild(grid);
-    } else {
-      const list = document.createElement('div');
-      list.className = 'chan-list';
-      shown.forEach(it => list.appendChild(this.chanRow(it)));
-      body.appendChild(list);
+    if (this.src && this.src.type === 'xtream' && ['live', 'movies', 'series'].includes(kind) && ctx.filter !== 'bein') {
+      // فئات الخادم — مخفاة الممنوعة + ترتيب التلفاز
+      const rawCats = this.src.categories[kind === 'movies' ? 'movie' : kind] || [];
+      const cats = LatchiAPI.orderCategories(rawCats);
+      cats.forEach(cat => mk(cat.name, cat.name, { go: () => this.loadCategory(cat), isActive: ctx.cat === cat.name }));
+    } else if (this.src && this.src.type === 'm3u' && Array.isArray(items)) {
+      // M3U: مجموعات القائمة نفسها مرتبة بترتيب التلفاز
+      const groups = [...new Set(items.map(i => i.group || 'عام'))];
+      const ranked = LatchiAPI.orderCategories(groups.map(g => ({ id: g, name: g }))).map(c => c.name);
+      const cur = ctx.cat || 'الكل';
+      mk('🏷 الكل', 'الكل', { go: () => { this.listCtx.cat = 'الكل'; this.buildList(); }, isActive: cur === 'الكل' });
+      ranked.forEach(g => mk(g, g, { go: () => { this.listCtx.cat = g; this.buildList(); }, isActive: cur === g }));
     }
-    if (!shown.length) body.innerHTML = '<div style="text-align:center;color:#8A90B8;font-size:18px;padding:60px">لا توجد نتائج</div>';
-    this.focusFirst('list');
+    // ═══ العناصر ═══
+    const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+    let shown = Array.isArray(items) ? items.filter(i =>
+      (ctx.cat === 'الكل' || !ctx.cat || (i.group || 'عام') === ctx.cat) &&
+      (!q || (i.name || '').toLowerCase().includes(q))) : [];
+    // Xtream: العناصر كلها من نفس الفئة أصلاً (لا فلترة إضافية بالفئة)
+    body.innerHTML = '';
+    if (ctx.loading) {
+      body.innerHTML = '<div class="load-hint">⏳ جارٍ فتح الفئة... <span class="hint-sub">(المرة الأولى فقط — بعدها تبقى محفوظة)</span></div>';
+      this.focusFirst('list');
+      return;
+    }
+    const isPoster = ['movies', 'series', 'fav', 'cw'].includes(kind) && shown[0] && shown[0].type !== 'live';
+    if (!shown.length) {
+      body.innerHTML = `<div class="load-hint">${q ? 'لا توجد نتائج للبحث' : 'لا توجد عناصر في هذه الفئة'}</div>`;
+      this.focusFirst('list');
+      return;
+    }
+    const container = document.createElement('div');
+    container.className = isPoster ? 'poster-grid' : 'chan-list';
+    body.appendChild(container);
+    // 🎯 رسم على دفعات (حماية الحاسوب الضعيف: لا تجميد واجهة مهما طالت القائمة)
+    const BATCH = 60;
+    const self = this;
+    (function renderChunk(i) {
+      const end = Math.min(i + BATCH, shown.length);
+      const frag = document.createDocumentFragment();
+      for (let j = i; j < end; j++) frag.appendChild(isPoster ? self.posterCard(shown[j]) : self.chanRow(shown[j]));
+      container.appendChild(frag);
+      if (end < shown.length) requestAnimationFrame(() => renderChunk(end));
+      else self.focusFirst('list');
+    })(0);
   },
 
   posterCard(it) {
@@ -213,7 +285,7 @@ const App = {
     const d = document.createElement('div'); d.className = 'pcard';
     const fav = this.isFav(it) ? '<span class="fav-star">★</span>' : '';
     const prog = it._resume ? `<div style="text-align:center;color:#7CE38B;font-size:10.5px;margin-top:2px">▶ ${fmt(it._resume)} / ${fmt(it._dur)}</div>` : '';
-    d.innerHTML = `${fav}<img loading="lazy" src="${it.logo || ''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22180%22%3E%3Crect fill=%22%230A0E22%22 width=%22120%22 height=%22180%22/%3E%3Ctext x=%2260%22 y=%2295%22 fill=%22%23D9A94E%22 font-size=%2240%22 text-anchor=%22middle%22%3E🎬%3C/text%3E%3C/svg%3E'">
+    d.innerHTML = `${fav}<img loading="lazy" decoding="async" src="${it.logo || ''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22180%22%3E%3Crect fill=%22%230A0E22%22 width=%22120%22 height=%22180%22%3E%3Ctext x=%2260%22 y=%2295%22 fill=%22%23D9A94E%22 font-size=%2240%22 text-anchor=%22middle%22%3E🎬%3C/text%3E%3C/svg%3E'">
       <div class="pt">${esc(it.name)}</div>${prog}<div class="pc"><span>${esc(it.group || '')}</span></div>`;
     d.onclick = () => this.openDetails(it);
     w.appendChild(d);
@@ -224,7 +296,7 @@ const App = {
     const d = document.createElement('div');
     d.className = 'chan';
     const live = it.type === 'live';
-    d.innerHTML = `<img loading="lazy" src="${it.logo || ''}" onerror="this.style.visibility='hidden'">
+    d.innerHTML = `<img loading="lazy" decoding="async" src="${it.logo || ''}" onerror="this.style.visibility='hidden'">
       <div><div class="n">${esc(it.name)}</div><div class="g">${esc(it.group || '')}</div></div>
       <div class="now">${live ? '<span class="rec-dot">●</span> مباشر' : '🎬'}</div>`;
     d.onclick = () => {
@@ -237,7 +309,7 @@ const App = {
   // ═══ التفاصيل ═══
   async openDetails(it) {
     const body = document.getElementById('detailsBody');
-    body.innerHTML = '<div style="color:#8A90B8;font-size:18px;padding:40px">⏳ تحميل التفاصيل...</div>';
+    body.innerHTML = '<div class="load-hint">⏳ تحميل التفاصيل...</div>';
     this.push('details');
     let seasons = [];
     if (it.type === 'series' && it.seriesId) {
@@ -305,10 +377,11 @@ const App = {
 
   // ═══ الإعدادات ═══
   buildSettings() {
-    const s = this.src ? LatchiAPI.stats(this.src) : { live: 0, movies: 0, series: 0 };
+    const s = this.src ? LatchiAPI.stats(this.src) : { live: 0, movies: 0, series: 0, unit: '' };
     const acc = (this.src && this.src.account && this.src.account.user_info) || {};
     const exp = acc.exp_date ? new Date(+acc.exp_date * 1000).toLocaleDateString('ar-DZ') : (this.user?.expires || '—');
     const conns = acc.active_connections != null ? `${acc.active_connections} / ${acc.max_connections}` : '—';
+    const unitTxt = s.unit || '';
     document.getElementById('settingsBody').innerHTML = `
       <div class="set-card"><h3>👤 الحساب</h3>
         <div class="row"><span>الاسم</span><b>${esc(this.user?.name || '—')}</b></div>
@@ -317,10 +390,15 @@ const App = {
         <div class="row"><span>الاتصالات</span><b>${esc(conns)}</b></div>
       </div>
       <div class="set-card"><h3>📊 المحتوى</h3>
-        <div class="row"><span>القنوات</span><b>${s.live}</b></div>
-        <div class="row"><span>الأفلام</span><b>${s.movies}</b></div>
-        <div class="row"><span>المسلسلات</span><b>${s.series}</b></div>
+        <div class="row"><span>فئات القنوات</span><b>${s.live} ${unitTxt}</b></div>
+        <div class="row"><span>فئات الأفلام</span><b>${s.movies} ${unitTxt}</b></div>
+        <div class="row"><span>فئات المسلسلات</span><b>${s.series} ${unitTxt}</b></div>
         <div class="row"><span>المصدر</span><b>${this.src?.type === 'xtream' ? 'Xtream Codes' : 'M3U'}</b></div>
+        <div class="row"><span>التحميل</span><b style="color:#7CE38B">كسوي + تخزين محلي دائم</b></div>
+      </div>
+      <div class="set-card"><h3>🔄 التحديث</h3>
+        <div class="row" style="display:block"><span style="display:block;margin-bottom:8px;color:#8A90B8;font-size:13px">يجلب أحدث الفئات والقنوات من الخادم (يمسح النسخ المحفوظة)</span>
+        <button class="p-btn" id="refreshList">🔄 تحديث القائمة الآن</button></div>
       </div>
       <div class="set-card"><h3>🧹 البيانات</h3>
         <div class="row"><span>تفريغ متابعة المشاهدة</span><button class="p-btn" id="clearCw">تفريغ</button></div>
@@ -329,6 +407,15 @@ const App = {
       <div class="set-card"><h3>🚪 الخروج</h3>
         <button class="gold-btn danger-btn" id="logout" style="width:100%">تسجيل الخروج والعودة للتحقق</button>
       </div>`;
+    document.getElementById('refreshList').onclick = async () => {
+      document.getElementById('refreshList').textContent = '⏳ جارٍ التحديث...';
+      try { await window.latchi.cacheClear(); } catch (e) {}
+      const saved = localStorage.getItem('source_url');
+      if (saved) {
+        try { await this.loadSource(saved, true); this.show('home', true); return; } catch (e) {}
+      }
+      document.getElementById('refreshList').textContent = '✗ تعذر التحديث — تحقق من الاتصال';
+    };
     document.getElementById('clearCw').onclick = () => {
       Object.keys(localStorage).filter(k => k.startsWith('cw_')).forEach(k => localStorage.removeItem(k));
       this.buildSettings(); this.focusFirst('settings');

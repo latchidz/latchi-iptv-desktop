@@ -175,3 +175,30 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track { background: #080D1F; }
 ::-webkit-scrollbar-thumb { background: #262E5E; border-radius: 5px; }
+
+/* ═══ v1.1 — أداء الحاسوب الضعيف + حالات التحميل ═══ */
+/* العناصر خارج الشاشة لا تُرسم — تمرير سلس حتى مع آلاف الصفوف */
+.chan-list .chan,
+.poster-grid .pwrap {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 76px;
+}
+.poster-grid .pwrap { contain-intrinsic-size: auto 285px; }
+
+/* رسالة تحميل الفئة */
+.load-hint {
+  text-align: center;
+  color: #B8BFD9;
+  font-size: 19px;
+  padding: 70px 20px;
+  animation: pulse-hint 1.6s ease-in-out infinite;
+}
+.load-hint .hint-sub { display: block; color: #8A90B8; font-size: 13.5px; margin-top: 8px; }
+@keyframes pulse-hint { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+
+/* رسائل وسط المشغل (تجميع/أخطاء/استعادة) */
+.p-center-msg {
+  white-space: pre-line;
+  text-align: center;
+  line-height: 1.6;
+}

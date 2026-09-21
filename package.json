@@ -1,7 +1,7 @@
 {
   "name": "latchi-iptv-desktop",
   "productName": "LATCHI IPTV",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "LATCHI IPTV — نسخة الحاسوب الرسمية (نفس واجهة التلفاز)",
   "main": "main.js",
   "author": "LATCHI DZ",
@@ -21,11 +21,33 @@
   "build": {
     "appId": "dz.latchi.iptv.desktop",
     "productName": "LATCHI IPTV",
-    "directories": { "output": "dist" },
-    "files": ["main.js", "preload.js", "renderer/**/*", "assets/**/*", "node_modules/**/*", "package.json"],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
     "win": {
       "icon": "build/icon.ico",
-      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }]
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
