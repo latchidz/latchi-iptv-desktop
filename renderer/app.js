@@ -44,7 +44,14 @@ const App = {
     this.show(name);
   },
   back() {
-    if (this.screen === 'player') { Player.close(); return; }
+    // 🛠 v1.1.1: كان close() يستدعي back() الذي يستدعي close() → انفجار المكدس والشاشة تعلق
+    if (this.screen === 'player') {
+      Player.hideCb = null;              // أوقف الاستدعاء العكسي قبل التنظيف
+      Player.close();
+      const prev = this.navStack.pop();
+      if (prev) this.show(prev); else this.show('home', true);
+      return;
+    }
     const prev = this.navStack.pop();
     if (prev) this.show(prev); else this.show('home', true);
   },
@@ -364,6 +371,7 @@ const App = {
   startPlay(it) {
     const resume = it._resume || (parseInt((localStorage.getItem('cw_' + it.id) || '{"at":0}').match(/"at":(\d+)/) || [0, 0])[1]);
     this.push('player');
+    Player.hideCb = () => App.back();    // 🛠 v1.1.1: يُعاد تسليحه في كل تشغيل (لنهاية الحلقة/الخروج)
     Player.play(it, { resumeAt: (resume && resume > 15) ? resume : 0 });
   },
 

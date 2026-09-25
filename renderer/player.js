@@ -211,7 +211,10 @@ const Player = {
     this._gen++;
     if (this.hls) { this.hls.destroy(); this.hls = null; }
     this.video.pause(); this.video.removeAttribute('src'); this.video.load();
-    if (this.hideCb) this.hideCb('exit');
+    // 🛠 v1.1.1: اخرج من ملء الشاشة + الاستدعاء مرة واحدة فقط (منع التداخل اللانهائي)
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen(); } catch (e) {}
+    const cb = this.hideCb; this.hideCb = null;
+    if (cb) cb('exit');
   },
   onKey(e) {
     this.flashUi();
