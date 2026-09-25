@@ -129,23 +129,27 @@ const Player = {
         if (!data.fatal) return;        // الأخطاء غير الفادحة تُتجاوز (استمرارية البث)
         const det = data.details || '';
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          // 🛠 v1.1.2: البث الحي يتقطع لحظياً بشكل طبيعي — إذا كان البث شغالاً، نصبر طويلاً على نفس الصيغة
-          // (قديماً: محاولتان فقط ثم قفز للصيغة الأخرى ← «تعذر التشغيل» على بث كان سليماً)
-          const maxR = this._played ? 10 : 4;
+          // 🛠 v1.1.2 (بطلب العميل): من أول محاولة تشتغل = تمام؛ ما تشتغلش بعد المحاولات = رسالة واضحة فوراً.
+          // البث الحي يتقطع لحظياً بشكل طبيعي — إذا كان البث شغالاً نصبر بذكاء (6 محاولات تصاعدية ≈ 21ث
+          // والعدّال ظاهر للمشاهد في كل محاولة) ثم إعادة فتح واحدة، ثم رسالة نهائية واضحة.
+          const maxR = this._played ? 6 : 3;
           if (this._netRetries < maxR && this.hls) {
             this._netRetries++;
-            const delay = this._played ? Math.min(1000 * this._netRetries, 10000) : 900; // مهلة تصاعدية
+            const delay = this._played ? Math.min(1000 * this._netRetries, 6000) : 900; // مهلة تصاعدية
             this.center(this._played
-              ? '⏳ استعادة البث (' + this._netRetries + ')...'
+              ? '⏳ استعادة البث — محاولة ' + this._netRetries + '/' + maxR + '...'
               : '⏳ إعادة المحاولة (' + this._netRetries + '/' + maxR + ')...', 1500);
             setTimeout(() => { if (gen === this._gen && this.hls) this.hls.startLoad(); }, delay);
           } else if (this._played && this._sameReload < 1) {
-            // المحاولات نفدت لكن البث كان حياً: أعد فتح نفس الرابط من الصفر مرة واحدة قبل تغيير الصيغة
+            // البث كان حياً: إعادة فتح نفس الرابط من الصفر مرة واحدة أخيرة
             this._sameReload++;
             this.center('⏳ إعادة فتح البث...', 1600);
             setTimeout(() => {
               if (gen === this._gen) { this._netRetries = 0; this._mediaRecovered = false; this._mediaSwapped = false; this._tryCandidate(); }
             }, 800);
+          } else if (this._played) {
+            // 🛠 v1.1.2: بث كان شغالاً وانتهى فعلاً — رسالة فورية واضحة (التنقل ↑/↓ جاهز لتجربة قناة أخرى)
+            this.center('⚠ تعذر استعادة هذه القناة — جرّب قناة أخرى (↑/↓) أو حدّث القائمة من الإعدادات', 0);
           } else {
             this._nextCandidate('انقطاع شبكة');
           }

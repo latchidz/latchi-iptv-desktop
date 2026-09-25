@@ -97,9 +97,11 @@ T('تقطع جديد بعد استعادة = يبدأ العد من جديد (ل
 console.log('═══ 3) قبل أن يشتغل البث: أسرع لكن ليس متسرعاً (4 محاولات ثم بديل) ═══');
 App.startPlay({ id: 'L2', name: 'ch2', type: 'live', url: 'http://s/live/2.m3u8', urlTs: 'http://s/live/2.ts' });
 hlsLog.length = 0;                          // ملاحظة: _played=false (لم يبدأ)
-for (let i = 0; i < 5; i++) netErr();
-T('بعد 4 محاولات بلا تشغيل → يجرّب المرشح التالي (.ts)', Player._candIdx === 1);
-T('رسالة «تعذر» لم تظهر بعد (لا يزال هناك مرشحون)', !els['pCenter'].textContent.includes('تعذر'));
+for (let i = 0; i < 4; i++) netErr();
+T('بعد 3 محاولات بلا تشغيل → يجرّب المرشح التالي (.ts)', Player._candIdx === 1);
+T('«تعذر» لم تظهر بعد (لا يزال هناك مرشحون)', !els['pCenter'].textContent.includes('تعذر'));
+netErr();   // المرشح الثاني فشل أيضاً
+T('فشل كل المرشحين → رسالة «تعذر» واضحة فوراً (طلب العميل)', els['pCenter'].textContent.includes('تعذر'));
 
 console.log('═══ 4) خطأ الميديا: خطوتان رسميتان قبل الاستسلام ═══');
 App.startPlay({ id: 'L4', name: 'ch4', type: 'live', url: 'http://s/live/4.m3u8', urlTs: 'http://s/live/4.ts' });
@@ -144,6 +146,14 @@ App._zapList = [
 App.startPlay(App._zapList[0]);
 Player.onKey({ key: 'ArrowUp', preventDefault() {} });
 T('↑ داخل المسلسل = الحلقة التالية', Player.current.id === 'S5_1' && Player.current.name === 'ح2');
+
+console.log('═══ 8) بث كان حياً ومات نهائياً ← رسالة واضحة بلا ماراثون (طلب العميل) ═══');
+App.startPlay({ id: 'L9', name: 'beIN X', type: 'live', url: 'http://s/live/9.m3u8', urlTs: 'http://s/live/9.ts' });
+started(); hlsLog.length = 0;
+for (let i = 0; i < 14; i++) netErr();     // 6 محاولات + إعادة فتح + 6 محاولات + محاولة الرسالة = مات فعلاً
+T('رسالة «تعذر استعادة» ظهرت', els['pCenter'].textContent.includes('تعذر استعادة'));
+T('بلا قفز بين الصيغ (البث كان حياً — الرسالة مباشرة)', Player._candIdx === 0);
+T('مؤشر (↑/↓) موجود في الرسالة لتجربة قناة أخرى', els['pCenter'].textContent.includes('↑/↓'));
 
 console.log('\n═══ النتيجة: ' + pass + ' نجح ✓ | ' + fail + ' فشل ✗ ═══');
 process.exit(fail ? 1 : 0);
