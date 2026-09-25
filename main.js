@@ -19,6 +19,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1280,
     height: 720,
+    maximize: true,   // 🛠 v1.1.3: النافذة تأخذ مقاس الشاشة كاملاً (طلب العميل)
     minWidth: 960,
     minHeight: 600,
     backgroundColor: '#060913',

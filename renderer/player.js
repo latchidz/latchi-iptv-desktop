@@ -63,6 +63,11 @@ const Player = {
     this._resumeAt = (!this.isLive && opts.resumeAt) ? opts.resumeAt : 0;
     this.show('⏳ جارٍ فتح البث...', 0);
     this.flashUi();
+    // 🛠 v1.1.3: أي تشغيل (قناة/فيلم/حلقة) = شاشة كاملة فوراً مثل التلفاز — Esc/رجوع يغلق ويعود للقائمة
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen)
+        document.documentElement.requestFullscreen().catch(() => {});
+    } catch (e) {}
     this._startWatchdog();             // 🛠 v1.1.2: حارس التقطّع الصامت
     this._tryCandidate();
   },

@@ -362,11 +362,14 @@ const App = {
         ${seasons.map(s => `
           <div class="seasons">
             <div class="season-title">🎬 الموسم ${esc(String(s.num))} <span style="color:#8A90B8;font-size:13px">(${s.episodes.length} حلقة)</span></div>
-            ${s.episodes.map(e => `<div class="ep" data-url="${esc(e.url)}" data-name="${esc(e.name)}">
-              <div class="en">${esc(String(e.episodeNum || ''))}</div>
-              <div><div class="et">${esc(e.name)}</div><div class="ed">${esc((e.dur || ''))}</div></div>
-              <div class="prog">${e.resumeTxt || ''}</div>
-            </div>`).join('')}
+            <div class="eps-lane">
+              ${s.episodes.map(e => `<div class="ep" data-url="${esc(e.url)}" data-name="${esc(e.name)}">
+                <div class="en">▶ ${esc(String(e.episodeNum || ''))}</div>
+                <div class="et">${esc(e.name)}</div>
+                <div class="ed">${esc((e.dur || ''))}</div>
+                <div class="prog">${e.resumeTxt || ''}</div>
+              </div>`).join('')}
+            </div>
           </div>`).join('')}
       </div>`;
     const play = document.getElementById('dPlay');

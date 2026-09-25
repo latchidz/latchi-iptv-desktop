@@ -28,9 +28,9 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ═══ التحقق ═══ */
-#verify { background: var(--bg); }
-.verify-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
-.verify-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+#verify { background: var(--bg); overflow-y: auto; }   /* 🛠 v1.1.3: تمرير بالفأرة/الأسهم */
+.verify-bg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
+.verify-panel { position: relative; margin: 7vh auto 56px;
   width: min(520px, 92%); background: rgba(14, 20, 48, .92); border: 2px solid var(--gold2);
   border-radius: 22px; padding: 34px 38px; box-shadow: 0 0 0 6px rgba(217,169,78,.15), 0 24px 60px rgba(0,0,0,.6); }
 .verify-logo { text-align: center; font-size: 26px; font-weight: bold; color: var(--text); margin-bottom: 22px; }
@@ -68,7 +68,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   background: #080D1F; color: var(--text); border: 2px solid var(--line); border-radius: 12px; }
 
 /* ═══ الرئيسية ═══ */
-.cards { display: grid; grid-template-columns: repeat(auto-fit, 190px); gap: 26px;
+.cards { display: grid; grid-template-columns: repeat(auto-fit, 190px); gap: 26px; align-content: start;
+  height: calc(100% - 76px); overflow-y: auto;   /* 🛠 v1.1.3: تمرير بالفأرة */
   padding: 60px 60px; justify-content: center; align-content: center; height: calc(100% - 76px); }
 .tcard { background: linear-gradient(160deg, var(--panel), var(--bg2)); border: 2px solid var(--line);
   border-radius: 20px; padding: 30px 16px 24px; text-align: center; cursor: pointer;
@@ -125,18 +126,22 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .d-desc { color: #C9CEE8; font-size: 15.5px; line-height: 1.95; max-width: 760px; margin-bottom: 28px; }
 .d-actions { display: flex; gap: 16px; flex-wrap: wrap; }
 .play-btn { font-size: 18px; padding: 16px 46px; }
-.seasons { margin-top: 30px; }
+/* 🛠 v1.1.3: المواسم ممرات أفقية كيما التلفاز — بطاقات حلقات صغيرة جانبية */
+.seasons { margin-top: 26px; }
 .season-title { font-size: 19px; font-weight: bold; color: var(--gold); margin: 22px 0 12px; }
-.ep { display: flex; align-items: center; gap: 14px; background: var(--panel); border: 2px solid var(--line);
-  border-radius: 12px; padding: 11px 18px; margin-bottom: 9px; cursor: pointer; max-width: 700px; }
-.ep .en { flex: 0 0 46px; text-align: center; font-weight: bold; color: var(--goldsoft);
-  background: var(--panel2); border-radius: 9px; padding: 5px 0; }
-.ep .et { font-size: 14.5px; font-weight: bold; }
-.ep .ed { font-size: 11.5px; color: var(--muted); }
-.ep .prog { margin-right: auto; font-size: 11.5px; color: #7CE38B; }
+.eps-lane { display: grid; grid-auto-flow: column; grid-auto-columns: 208px; gap: 12px;
+  overflow-x: auto; overflow-y: hidden; padding: 4px 2px 12px; }  /* تمرير أفقي بالفأرة */
+.ep { display: flex; flex-direction: column; gap: 7px; background: var(--panel); border: 2px solid var(--line);
+  border-radius: 12px; padding: 10px 13px; cursor: pointer; min-height: 118px; }
+.ep .en { align-self: flex-start; min-width: 46px; text-align: center; font-weight: bold; color: var(--goldsoft);
+  background: var(--panel2); border-radius: 8px; padding: 4px 10px; font-size: 13px; }
+.ep .et { font-size: 13.5px; font-weight: bold; line-height: 1.35; height: 37px; overflow: hidden; }
+.ep .ed { font-size: 11px; color: var(--muted); }
+.ep .prog { font-size: 11px; color: #7CE38B; margin-top: auto; }
 
 /* ═══ الإعدادات ═══ */
-.settings-body { padding: 44px 60px; max-width: 780px; }
+.settings-body { padding: 44px 60px; max-width: 780px;
+  height: calc(100% - 76px); overflow-y: auto; }   /* 🛠 v1.1.3: تمرير بالفأرة */
 .set-card { background: var(--panel); border: 2px solid var(--line); border-radius: 16px;
   padding: 22px 26px; margin-bottom: 18px; }
 .set-card h3 { color: var(--gold); font-size: 17px; margin-bottom: 12px; }
