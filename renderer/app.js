@@ -59,6 +59,7 @@ const App = {
   onShown(name) {
     if (name === 'home') this.buildHome();
     if (name === 'settings') this.buildSettings();
+    if (name === 'accounts') this.buildAccounts();
     this.focusFirst(name);
   },
 
@@ -69,37 +70,45 @@ const App = {
     if (f) f.classList.add('focused');
   },
 
-  // ═══ التحقق ═══
-  async doVerify() {
-    const code = document.getElementById('codeInput').value.trim();
-    const msg = document.getElementById('verifyMsg');
-    msg.className = 'verify-msg';
-    if (!code) { msg.textContent = 'أدخل الكود أولاً'; msg.classList.add('err'); return; }
-    msg.textContent = '⏳ جارٍ التحقق...';
+  // ═══ التحقق (مشترك بين شاشة الدخول ومركز الحسابات) ═══
+  async applyCode(code, msgEl) {
+    msgEl.className = 'verify-msg';
+    if (!code) { msgEl.textContent = 'أدخل الكود أولاً'; msgEl.classList.add('err'); return false; }
+    msgEl.textContent = '⏳ جارٍ التحقق...';
     try {
       const deviceId = await window.latchi.deviceId();
       const res = await LatchiAPI.verifyCode(code, deviceId);
-      if (!res.ok) { msg.textContent = '✗ ' + res.message; msg.classList.add('err'); return; }
-      if (!res.url) { msg.textContent = '✗ لا توجد قائمة مرتبطة بهذا الكود'; msg.classList.add('err'); return; }
-      msg.textContent = '✓ ' + res.name + ' — فتح القائمة...';
-      msg.classList.add('ok');
+      if (!res.ok) { msgEl.textContent = '✗ ' + res.message; msgEl.classList.add('err'); return false; }
+      if (!res.url) { msgEl.textContent = '✗ لا توجد قائمة مرتبطة بهذا الكود'; msgEl.classList.add('err'); return false; }
+      msgEl.textContent = '✓ ' + res.name + ' — فتح القائمة...';
+      msgEl.classList.add('ok');
       this.user = { name: res.name, expires: res.expires, code };
+      this.rememberAccount('code', res.name + ' (' + code + ')', res.url);
       await this.loadSource(res.url, false, res.url);
+      return true;
     } catch (e) {
-      msg.textContent = '✗ خطأ في الاتصال: ' + e.message; msg.classList.add('err');
+      msgEl.textContent = '✗ خطأ في الاتصال: ' + e.message; msgEl.classList.add('err'); return false;
     }
   },
 
-  async doM3u() {
-    const url = document.getElementById('m3uInput').value.trim();
-    const msg = document.getElementById('verifyMsg');
-    msg.className = 'verify-msg';
-    if (!/^https?:\/\//.test(url)) { msg.textContent = 'أدخل رابط M3U صحيحاً يبدأ بـ http'; msg.classList.add('err'); return; }
-    msg.textContent = '⏳ تحميل القائمة (المرة الأولى فقط — ثم تبقى محفوظة)...';
+  async applyM3u(url, msgEl) {
+    msgEl.className = 'verify-msg';
+    if (!/^https?:\/\//.test(url)) { msgEl.textContent = 'أدخل رابط M3U صحيحاً يبدأ بـ http'; msgEl.classList.add('err'); return false; }
+    msgEl.textContent = '⏳ تحميل القائمة (المرة الأولى فقط — ثم تبقى محفوظة)...';
     this.user = { name: 'M3U مباشر', expires: '', code: '' };
-    try { await this.loadSource(url, false, url); }
-    catch (e) { msg.textContent = '✗ ' + e.message; msg.classList.add('err'); }
+    try {
+      await this.loadSource(url, false, url);
+      let host = url; try { host = new URL(url).hostname; } catch (e) {}
+      this.rememberAccount('m3u', 'M3U — ' + host, url);
+      return true;
+    } catch (e) {
+      msgEl.textContent = '✗ ' + e.message; msgEl.classList.add('err'); return false;
+    }
   },
+
+  async doVerify() { return this.applyCode(document.getElementById('codeInput').value.trim(), document.getElementById('verifyMsg')); },
+
+  async doM3u() { return this.applyM3u(document.getElementById('m3uInput').value.trim(), document.getElementById('verifyMsg')); },
 
   async loadSource(url, silent, saveUrl) {
     try {
@@ -129,6 +138,7 @@ const App = {
       { ic: '📺', t: 'المسلسلات', c: s.series + ' ' + (u || 'مسلسل'), go: () => this.openList('series') },
       { ic: '⭐', t: 'المفضلة', c: this.favs.length + ' عنصر', go: () => this.openList('fav') },
       { ic: '⏯', t: 'متابعة المشاهدة', c: this.continueList().length + ' عنصر', go: () => this.openList('cw') },
+      { ic: '👤', t: 'مركز الحسابات', c: this.getAccounts().length + ' حساب محفوظ', go: () => this.push('accounts') },
       { ic: '⚙️', t: 'الإعدادات', c: 'الحساب والبيانات', go: () => this.push('settings') }
     ];
     const el = document.getElementById('cards');
@@ -396,6 +406,7 @@ const App = {
         <div class="row"><span>الكود</span><b>${esc(this.user?.code || 'M3U مباشر')}</b></div>
         <div class="row"><span>ينتهي في</span><b>${esc(String(exp))}</b></div>
         <div class="row"><span>الاتصالات</span><b>${esc(conns)}</b></div>
+        <div class="row"><span>الحسابات المحفوظة</span><button class="p-btn" id="openAccounts">👤 مركز الحسابات</button></div>
       </div>
       <div class="set-card"><h3>📊 المحتوى</h3>
         <div class="row"><span>فئات القنوات</span><b>${s.live} ${unitTxt}</b></div>
@@ -433,6 +444,68 @@ const App = {
       localStorage.removeItem('source_url');
       location.reload();
     };
+    document.getElementById('openAccounts').onclick = () => this.push('accounts');
+  },
+
+  // ═══ 👤 مركز الحسابات (مثل الهاتف: كود أو M3U مباشر + تبديل بين المحفوظات) ═══
+  getAccounts() {
+    try { return JSON.parse(localStorage.getItem('saved_accounts') || '[]'); } catch (e) { return []; }
+  },
+  saveAccounts(l) { localStorage.setItem('saved_accounts', JSON.stringify(l)); },
+  rememberAccount(kind, label, value) {
+    if (!value) return;
+    const list = this.getAccounts().filter(a => a.value !== value);
+    list.unshift({ id: 'a' + Date.now() + Math.floor(Math.random() * 999), kind, label: label || 'حساب', value, addedAt: new Date().toLocaleDateString('ar-DZ') });
+    this.saveAccounts(list.slice(0, 20));   // حد أقصى 20 مثل الهاتف
+  },
+
+  buildAccounts() {
+    const acc = (this.src && this.src.account && this.src.account.user_info) || {};
+    const exp = acc.exp_date ? new Date(+acc.exp_date * 1000).toLocaleDateString('ar-DZ') : (this.user?.expires || '—');
+    const conns = acc.active_connections != null ? `${acc.active_connections} / ${acc.max_connections}` : '—';
+    const curUrl = localStorage.getItem('source_url') || '';
+    const list = this.getAccounts();
+    const rows = list.length ? list.map(a => `
+      <div class="acc-row${a.value === curUrl ? ' acc-active' : ''}">
+        <div class="acc-info"><b>${esc(a.label)}</b><span>${a.kind === 'code' ? '🎫 كود تفعيل' : '🔗 M3U مباشر'} · أضيف ${esc(a.addedAt || '')}</span></div>
+        <div class="acc-actions">
+          ${a.value === curUrl ? '<span class="acc-now">✓ نشط</span>' : `<button class="p-btn" data-acc-go="${a.id}">🚪 دخول</button>`}
+          <button class="p-btn" data-acc-del="${a.id}">🗑 حذف</button>
+        </div>
+      </div>`).join('') : '<div class="acc-empty">لا توجد حسابات محفوظة بعد — أضف واحداً بالأسفل 👇</div>';
+    document.getElementById('accountsBody').innerHTML = `
+      <div class="set-card"><h3>👤 الحساب الحالي</h3>
+        <div class="row"><span>الاسم</span><b>${esc(this.user?.name || '—')}</b></div>
+        <div class="row"><span>النوع</span><b>${this.src?.type === 'xtream' ? 'Xtream Codes' : (this.src ? 'M3U مباشر' : '—')}</b></div>
+        <div class="row"><span>ينتهي في</span><b>${esc(String(exp))}</b></div>
+        <div class="row"><span>الاتصالات</span><b>${esc(conns)}</b></div>
+      </div>
+      <div class="set-card"><h3>📋 الحسابات المحفوظة (${list.length}/20)</h3>${rows}</div>
+      <div class="set-card"><h3>➕ إضافة بكود التفعيل</h3>
+        <input id="accCodeInput" class="tv-input" placeholder="أدخل كود التفعيل هنا..." style="width:100%;margin-bottom:10px">
+        <button class="gold-btn" id="accCodeBtn" style="width:100%">🎫 تفعيل ودخول</button>
+      </div>
+      <div class="set-card"><h3>🔗 إضافة رابط M3U مباشر</h3>
+        <input id="accM3uInput" class="tv-input" placeholder="http://... (رابط get.php أو .m3u)" style="width:100%;margin-bottom:10px">
+        <button class="gold-btn" id="accM3uBtn" style="width:100%">🔗 إضافة ودخول</button>
+      </div>
+      <div class="set-card"><div id="accMsg" class="verify-msg"></div></div>`;
+    document.getElementById('accCodeBtn').onclick = () => this.applyCode(document.getElementById('accCodeInput').value.trim(), document.getElementById('accMsg'));
+    document.getElementById('accM3uBtn').onclick = () => this.applyM3u(document.getElementById('accM3uInput').value.trim(), document.getElementById('accMsg'));
+    document.getElementById('accCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('accCodeBtn').click(); });
+    document.getElementById('accM3uInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('accM3uBtn').click(); });
+    document.querySelectorAll('[data-acc-go]').forEach(b => b.onclick = async () => {
+      const a = list.find(x => x.id === b.dataset.accGo);
+      if (!a) return;
+      const msg = document.getElementById('accMsg');
+      msg.className = 'verify-msg'; msg.textContent = '⏳ جارٍ الدخول إلى ' + a.label + '...';
+      try { await this.loadSource(a.value, false, a.value); }
+      catch (e) { msg.textContent = '✗ تعذر الدخول — قد يكون الحساب منتهياً: ' + e.message; msg.classList.add('err'); }
+    });
+    document.querySelectorAll('[data-acc-del]').forEach(b => b.onclick = () => {
+      this.saveAccounts(this.getAccounts().filter(x => x.id !== b.dataset.accDel));
+      this.buildAccounts(); this.focusFirst('accounts');
+    });
   }
 };
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
