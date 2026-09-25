@@ -269,6 +269,7 @@ const App = {
       (ctx.cat === 'الكل' || !ctx.cat || (i.group || 'عام') === ctx.cat) &&
       (!q || (i.name || '').toLowerCase().includes(q))) : [];
     // Xtream: العناصر كلها من نفس الفئة أصلاً (لا فلترة إضافية بالفئة)
+    this._zapList = shown;   // 📺 v1.1.2: قائمة التنقل بالريموت (فوق/تحت داخل المشغل)
     body.innerHTML = '';
     if (ctx.loading) {
       body.innerHTML = '<div class="load-hint">⏳ جارٍ فتح الفئة... <span class="hint-sub">(المرة الأولى فقط — بعدها تبقى محفوظة)</span></div>';
@@ -345,6 +346,9 @@ const App = {
       } catch (e) {}
     }
     const btnFav = this.isFav(it) ? '★ في المفضلة' : '☆ إضافة للمفضلة';
+    // 📺 v1.1.2: قائمة التنقل بين الحلقات بالريموت — نفس معرفات النقر حرفياً (حفظ متابعة المشاهدة)
+    if (it.type === 'series') this._zapList = seasons.flatMap(s => s.episodes)
+      .map((e, i) => ({ id: 'S' + it.seriesId + '_' + i, name: e.name, url: e.url, type: 'movie', logo: it.logo, group: it.name }));
     body.innerHTML = `
       <div class="d-poster"><img src="${it.logo || ''}" onerror="this.style.display='none'"></div>
       <div class="d-info">
@@ -372,7 +376,7 @@ const App = {
       document.getElementById('dFav').textContent = this.isFav(it) ? '★ في المفضلة' : '☆ إضافة للمفضلة';
     };
     body.querySelectorAll('.ep').forEach((el, i) => {
-      el.onclick = () => this.startPlay({ id: 'S' + it.seriesId + '_' + i, name: el.dataset.name, url: el.dataset.url, type: 'movie', logo: it.logo, group: it.name });
+      el.onclick = () => this.startPlay(this._zapList ? this._zapList[i] : { id: 'S' + it.seriesId + '_' + i, name: el.dataset.name, url: el.dataset.url, type: 'movie', logo: it.logo, group: it.name });
     });
     this.focusFirst('details');
   },
@@ -380,9 +384,21 @@ const App = {
   // ═══ التشغيل ═══
   startPlay(it) {
     const resume = it._resume || (parseInt((localStorage.getItem('cw_' + it.id) || '{"at":0}').match(/"at":(\d+)/) || [0, 0])[1]);
-    this.push('player');
+    if (this.screen !== 'player') this.push('player');   // 🛠 v1.1.2: لا دفع مزدوج عند التنقل بين القنوات
     Player.hideCb = () => App.back();    // 🛠 v1.1.1: يُعاد تسليحه في كل تشغيل (لنهاية الحلقة/الخروج)
     Player.play(it, { resumeAt: (resume && resume > 15) ? resume : 0 });
+  },
+
+  // 📺 v1.1.2: تنقل بالريموت — قناة تالية/سابقة من نفس القائمة المعروضة (فوري، من الذاكرة، بلا أي إعادة تحميل)
+  zap(dir) {
+    const list = this._zapList;
+    if (!Array.isArray(list) || !list.length || !Player.current) return false;
+    const idx = list.findIndex(x => x.id === Player.current.id);
+    if (idx < 0) return false;
+    const next = list[idx + dir];
+    if (!next) return false;              // آخر/أول قناة في القائمة
+    this.startPlay(next);
+    return true;
   },
 
   // ═══ المفضلة ═══

@@ -2,7 +2,8 @@
 const Player = {
   video: null, hls: null, ui: null, hideTimer: null,
   current: null, isLive: true, hideCb: null, uiVisible: true,
-  _candidates: [], _candIdx: 0, _netRetries: 0, _mediaRecovered: false, _gen: 0,
+  _candidates: [], _candIdx: 0, _netRetries: 0, _mediaRecovered: false, _mediaSwapped: false, _gen: 0,
+  _played: false, _sameReload: 0, _stallMs: 0, _wd: 0,
 
   init() {
     this.video = document.getElementById('video');
@@ -23,7 +24,12 @@ const Player = {
     });
     // مؤشر التخزين المؤقت
     this.video.addEventListener('waiting', () => { if (!this.video.paused) this.center('⏳', 0); });
-    this.video.addEventListener('playing', () => this.hideCenter());
+    this.video.addEventListener('playing', () => {
+      this.hideCenter();
+      // 🛠 v1.1.2: البث اشتغل = صفّر عدادات الاستعادة (التقطعات اللحظية لا تتراكم)
+      this._played = true; this._netRetries = 0; this._stallMs = 0;
+      this._mediaRecovered = false; this._mediaSwapped = false;
+    });
     this.video.addEventListener('canplay', () => { if (!this.video.paused) this.hideCenter(); });
     this.video.volume = parseFloat(localStorage.getItem('vol') || '1');
   },
@@ -46,7 +52,8 @@ const Player = {
     this.isLive = item.type === 'live';
     this._gen++;                       // إلغاء أي محاولات قديمة عالقة
     this._candidates = this.buildCandidates(item);
-    this._candIdx = 0; this._netRetries = 0; this._mediaRecovered = false;
+    this._candIdx = 0; this._netRetries = 0; this._mediaRecovered = false; this._mediaSwapped = false;
+    this._played = false; this._sameReload = 0; this._stallMs = 0;   // 🛠 v1.1.2
     document.getElementById('pName').textContent = item.name;
     document.getElementById('pLive').classList.toggle('hidden', !this.isLive);
     document.getElementById('pSeekWrap').style.display = this.isLive ? 'none' : 'block';
@@ -56,8 +63,34 @@ const Player = {
     this._resumeAt = (!this.isLive && opts.resumeAt) ? opts.resumeAt : 0;
     this.show('⏳ جارٍ فتح البث...', 0);
     this.flashUi();
+    this._startWatchdog();             // 🛠 v1.1.2: حارس التقطّع الصامت
     this._tryCandidate();
   },
+
+  // 🛠 v1.1.2: حارس التقطّع — البث يتجمد بصمت بلا أحداث خطأ → تنبيه لطيف كل 12 ثانية
+  _startWatchdog() {
+    clearInterval(this._wd);
+    this._stallMs = 0;
+    this._wd = setInterval(() => {
+      if (!this._usingHls || !this.hls) return;
+      const v = this.video;
+      if (this._played && !v.paused && v.readyState <= 2) {
+        this._stallMs += 3000;
+        if (this._stallMs >= 12000) {
+          this._stallMs = 0;
+          this.center('⏳ استعادة البث...', 1500);
+          try { this.hls.startLoad(); } catch (e) {}
+        }
+      } else this._stallMs = 0;
+    }, 3000);
+  },
+
+  // 📺 v1.1.2: مثل الريموت — فوق/تحت = قناة تالية/سابقة (تنقل فوري بلا إعادة تحميل قائمة)
+  zap(dir) {
+    const ok = App.zap(dir);
+    if (!ok) this.show('لا توجد قناة ' + (dir > 0 ? 'بعد' : 'قبل') + ' هذه', 900);
+  },
+
 
   _tryCandidate() {
     const gen = this._gen;
@@ -96,16 +129,34 @@ const Player = {
         if (!data.fatal) return;        // الأخطاء غير الفادحة تُتجاوز (استمرارية البث)
         const det = data.details || '';
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          if (this._netRetries < 2 && this.hls) {
+          // 🛠 v1.1.2: البث الحي يتقطع لحظياً بشكل طبيعي — إذا كان البث شغالاً، نصبر طويلاً على نفس الصيغة
+          // (قديماً: محاولتان فقط ثم قفز للصيغة الأخرى ← «تعذر التشغيل» على بث كان سليماً)
+          const maxR = this._played ? 10 : 4;
+          if (this._netRetries < maxR && this.hls) {
             this._netRetries++;
-            this.center('⏳ إعادة المحاولة (' + this._netRetries + '/2)...', 1500);
-            setTimeout(() => { if (gen === this._gen && this.hls) this.hls.startLoad(); }, 900);
+            const delay = this._played ? Math.min(1000 * this._netRetries, 10000) : 900; // مهلة تصاعدية
+            this.center(this._played
+              ? '⏳ استعادة البث (' + this._netRetries + ')...'
+              : '⏳ إعادة المحاولة (' + this._netRetries + '/' + maxR + ')...', 1500);
+            setTimeout(() => { if (gen === this._gen && this.hls) this.hls.startLoad(); }, delay);
+          } else if (this._played && this._sameReload < 1) {
+            // المحاولات نفدت لكن البث كان حياً: أعد فتح نفس الرابط من الصفر مرة واحدة قبل تغيير الصيغة
+            this._sameReload++;
+            this.center('⏳ إعادة فتح البث...', 1600);
+            setTimeout(() => {
+              if (gen === this._gen) { this._netRetries = 0; this._mediaRecovered = false; this._mediaSwapped = false; this._tryCandidate(); }
+            }, 800);
           } else {
             this._nextCandidate('انقطاع شبكة');
           }
         } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
           if (!this._mediaRecovered && this.hls) {
             this._mediaRecovered = true;
+            this.hls.recoverMediaError();
+          } else if (!this._mediaSwapped && this.hls) {
+            // 🛠 v1.1.2: الخطوة الثانية الرسمية لـhls.js قبل الاستسلام
+            this._mediaSwapped = true;
+            this.hls.swapAudioCodec();
             this.hls.recoverMediaError();
           } else {
             this._nextCandidate('خطأ فك الترميز');
@@ -130,7 +181,7 @@ const Player = {
   _nextCandidate(reason) {
     const gen = this._gen;
     this._candIdx++;
-    this._netRetries = 0; this._mediaRecovered = false;
+    this._netRetries = 0; this._mediaRecovered = false; this._mediaSwapped = false; this._played = false;
     if (this._candIdx < this._candidates.length) {
       this.center('⏳ تجربة صيغة بث بديلة...', 1600);
       setTimeout(() => { if (gen === this._gen) this._tryCandidate(); }, 500);
@@ -209,6 +260,7 @@ const Player = {
   },
   close() {
     this._gen++;
+    clearInterval(this._wd);           // 🛠 v1.1.2: أوقف حارس التقطّع
     if (this.hls) { this.hls.destroy(); this.hls = null; }
     this.video.pause(); this.video.removeAttribute('src'); this.video.load();
     // 🛠 v1.1.1: اخرج من ملء الشاشة + الاستدعاء مرة واحدة فقط (منع التداخل اللانهائي)
@@ -220,10 +272,11 @@ const Player = {
     this.flashUi();
     switch (e.key) {
       case ' ': case 'Enter': this.toggle(); e.preventDefault(); break;
-      case 'ArrowLeft': this.isLive ? this.volume(.1) : this.seek(-10); e.preventDefault(); break;
-      case 'ArrowRight': this.isLive ? this.volume(-.1) : this.seek(10); e.preventDefault(); break;
-      case 'ArrowUp': this.volume(.1); e.preventDefault(); break;
-      case 'ArrowDown': this.volume(-.1); e.preventDefault(); break;
+      // 📺 v1.1.2 مثل الريموت: يمين/يسار = صوت (وفي الأفلام: تقديم/ترجيع)، فوق/تحت = قناة تالية/سابقة
+      case 'ArrowLeft': this.isLive ? this.volume(-.05) : this.seek(-10); e.preventDefault(); break;
+      case 'ArrowRight': this.isLive ? this.volume(.05) : this.seek(10); e.preventDefault(); break;
+      case 'ArrowUp': this.zap(1); e.preventDefault(); break;
+      case 'ArrowDown': this.zap(-1); e.preventDefault(); break;
       case 'f': case 'F': this.fullscreen(); break;
       case 'm': case 'M': this.toggleMute(); break;
     }
