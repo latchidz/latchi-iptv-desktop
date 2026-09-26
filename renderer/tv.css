@@ -90,15 +90,18 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .list-body { height: calc(100% - 76px - 57px); overflow-y: auto; padding: 22px 34px 40px; }
 
 /* شبكة البوسترات (نفس أندرويد: عمودية 2:3 — 6 بالصف) */
-.poster-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
-.pcard { background: var(--panel); border: 2px solid var(--line); border-radius: 14px;
-  padding: 7px; cursor: pointer; transition: transform .15s, border-color .15s; }
-.pcard img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 9px;
+/* 🎬 v1.0.4: شبكة البوسترات الملكية — أفقية 3×2 كيما صفحة تلفاز
+   (3 بالصف أفقيّاً، صفّان ظاهران عموديّاً، ↑↓ ينقل بثلاثة دائماً بلا أخطاء) */
+.poster-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px 30px;
+  max-width: 1230px; margin: 0 auto; }
+.pcard { background: var(--panel); border: 2px solid var(--line); border-radius: 16px;
+  padding: 8px; cursor: pointer; transition: transform .15s, outline-color .15s, box-shadow .15s; }
+.pcard img { width: 100%; aspect-ratio: 16 / 9.5; object-fit: cover; border-radius: 11px;
   background: #0A0E22; display: block; }
-.pcard .pt { margin-top: 8px; font-size: 12.5px; font-weight: bold; text-align: center;
-  height: 34px; overflow: hidden; }
+.pcard .pt { margin-top: 9px; font-size: 14.5px; font-weight: bold; text-align: center;
+  height: 40px; overflow: hidden; }
 .pcard .pc { margin: 5px 0 2px; text-align: center; }
-.pcard .pc span { font-size: 10px; color: var(--goldsoft); background: #3d3d5c;
+.pcard .pc span { font-size: 10.5px; color: var(--goldsoft); background: #3d3d5c;
   border-radius: 8px; padding: 2px 9px; }
 .fav-star { position: absolute; margin: 8px; font-size: 15px; filter: drop-shadow(0 1px 3px #000); }
 .pwrap { position: relative; }
@@ -175,8 +178,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   background: rgba(0,0,0,.45); border-radius: 20px; padding: 20px 44px; }
 
 /* شبكات أصغر */
-@media (max-width: 1200px) { .poster-grid { grid-template-columns: repeat(5, 1fr); } }
-@media (max-width: 1000px) { .poster-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 1100px) { .poster-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .poster-grid { grid-template-columns: 1fr; } }
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track { background: #080D1F; }
 ::-webkit-scrollbar-thumb { background: #262E5E; border-radius: 5px; }
@@ -188,7 +191,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   content-visibility: auto;
   contain-intrinsic-size: auto 76px;
 }
-.poster-grid .pwrap { contain-intrinsic-size: auto 285px; }
+.poster-grid .pwrap { contain-intrinsic-size: auto 345px; }
 
 /* رسالة تحميل الفئة */
 .load-hint {
@@ -337,6 +340,12 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .pcard:hover { transform: translateY(-5px); border-color: var(--gold2) !important;
   box-shadow: 0 14px 34px rgba(0,0,0,.5), 0 0 20px rgba(217,169,78,.16); }
 .pwrap:hover .pcard { border-color: var(--gold2); }
+/* 🎯 v1.0.4: حلقة التركيز خارج البوستر — البوستر نفسه لا يتغير */
+.pcard.focused { border-color: var(--line) !important;
+  outline: 4px solid var(--gold); outline-offset: 7px; border-radius: 16px;
+  transform: scale(1.04);
+  box-shadow: 0 0 0 13px rgba(217, 169, 78, .13), 0 0 42px rgba(217, 169, 78, .45);
+  z-index: 3; }
 .chan:hover { border-color: var(--gold2) !important; transform: translateX(-4px);
   background: var(--panel2) !important; }
 .ep:hover { border-color: var(--gold2) !important; transform: translateY(-3px); }

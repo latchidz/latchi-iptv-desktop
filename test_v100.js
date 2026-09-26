@@ -309,6 +309,33 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   App.back = oldBack;
   T('BrowserBack بالريموت = رجوع من المشغل', bb === 1);
 
+  console.log('═══ 10) v1.0.4: حفظ موضع الفوكيز عند الرجوع من التفاصيل ═══');
+  // محاكاة بحث .focused داخل شاشة القائمة (المحاكاة العامة ترجع null)
+  if (!els['list'].children.includes(els['listBody'])) els['list'].children.push(els['listBody']);   // المحاكاة مسطّحة — اربط الجسم بالشاشة
+  els['list'].querySelector = function (sel) {
+    if (sel !== '.focused') return null;
+    const walk = (n) => { for (const ch of (n.children || [])) { if (ch.classList && ch.classList.contains('focused')) return ch; const r = walk(ch); if (r) return r; } return null; };
+    return walk(this);
+  };
+  App.src = { type: 'm3u', live: [L1], movies: [M, M2], series: [] };
+  await App.openList('movies'); await sleep(60);
+  const grid = els['listBody'].children[0];
+  T('شبكة البوسترات (حاوية)', grid && grid.className === 'poster-grid');
+  T('بطاقتان (أفلام)', grid.children.length === 2);
+  const pcard2 = grid.children[1].children[0];
+  pcard2.classList.add('focused');
+  App.push('details');
+  T('موضع الفوكيز حُفظ عند مغادرة القائمة', App._focusMem && App._focusMem['list'] === pcard2);
+  pcard2.classList.remove('focused');          // المحاكاة لا تمسح تلقائياً — نمسح كيما الواقع
+  App.back();
+  T('الرجوع من التفاصيل = نفس البوستر مركز', pcard2.classList.contains('focused'));
+  // ذاكرة قديمة لعنصر ميت = تتجاهل بأمان
+  const dead = makeEl('dead'); dead.isConnected = false;
+  App._focusMem = { list: dead };
+  let noCrash = true;
+  try { App.focusFirst('list'); } catch (e) { noCrash = false; }
+  T('ذاكرة لعنصر محذوف تتجاهل بلا أخطاء', noCrash && !dead.classList.contains('focused'));
+
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('خطأ:', e); process.exit(2); });

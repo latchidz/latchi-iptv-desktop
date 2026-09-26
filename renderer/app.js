@@ -67,6 +67,14 @@ const App = {
 
   // ═══ الشاشات ═══
   show(name, resetStack = false) {
+    // 🎯 v1.0.4: احفظ موضع الفوكيز عند مغادرة الشاشة — الرجوع من التفاصيل يرجعك لنفس البوستر بالضبط
+    if (this.screen && this.screen !== name) {
+      try {
+        const le = document.getElementById(this.screen);
+        const fe = le && le.querySelector ? le.querySelector('.focused') : null;
+        if (fe) { this._focusMem = this._focusMem || {}; this._focusMem[this.screen] = fe; }
+      } catch (e) {}
+    }
     if (resetStack) this.navStack = [];
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(name).classList.add('active');
@@ -134,8 +142,20 @@ const App = {
 
   focusFirst(name) {
     const root = document.getElementById(name);
-    const f = root.querySelector('.focused') || root.querySelector('.tcard, .vtab, .gold-btn, .cat-chip, .chan, .pcard, .ep, .back-btn, .tv-input, .p-btn');
     document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
+    // 🎯 v1.0.4: الرجوع لشاشة سابقة؟ الفوكيز يرجع لنفس العنصر المحفوظ (إن كان ما يزال في الصفحة)
+    const mem = (this._focusMem || {})[name];
+    if (mem) {
+      let alive = false;
+      try { alive = mem.isConnected !== false && (!root || !root.contains || root.contains(mem)); } catch (e) { alive = false; }
+      if (alive) {
+        mem.classList.add('focused');
+        if (mem.scrollIntoView) try { mem.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+        return;
+      }
+      delete this._focusMem[name];   // العنصر لم يعد موجوداً (أعيد بناء الصفحة) — سلوك عادي
+    }
+    const f = root.querySelector('.focused') || root.querySelector('.tcard, .vtab, .gold-btn, .cat-chip, .chan, .pcard, .ep, .back-btn, .tv-input, .p-btn');
     if (f) f.classList.add('focused');
   },
 
@@ -429,7 +449,7 @@ const App = {
     const d = document.createElement('div'); d.className = 'pcard';
     const fav = this.isFav(it) ? '<span class="fav-star">★</span>' : '';
     const prog = it._resume ? `<div style="text-align:center;color:#7CE38B;font-size:10.5px;margin-top:2px">▶ ${fmt(it._resume)} / ${fmt(it._dur)}</div>` : '';
-    d.innerHTML = `${fav}<img loading="lazy" decoding="async" src="${it.logo || ''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22180%22%3E%3Crect fill=%22%230A0E22%22 width=%22120%22 height=%22180%22%3E%3Ctext x=%2260%22 y=%2295%22 fill=%22%23D9A94E%22 font-size=%2240%22 text-anchor=%22middle%22%3E🎬%3C/text%3E%3C/svg%3E'">
+    d.innerHTML = `${fav}<img loading="lazy" decoding="async" src="${it.logo || ''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22190%22%3E%3Crect fill=%22%230A0E22%22 width=%22320%22 height=%22190%22%3E%3Ctext x=%22160%22 y=%22110%22 fill=%22%23D9A94E%22 font-size=%2252%22 text-anchor=%22middle%22%3E🎬%3C/text%3E%3C/svg%3E'">
       <div class="pt">${esc(it.name)}</div>${prog}<div class="pc"><span>${esc(it.group || '')}</span></div>`;
     d.onclick = () => this.openDetails(it);
     w.appendChild(d);
