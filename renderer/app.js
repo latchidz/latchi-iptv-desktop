@@ -22,10 +22,12 @@ const App = {
     if (saved) {
       this.show('verify', true);
       document.getElementById('verifyMsg').textContent = '⏳ استئناف الحساب المحفوظ...';
+      this.showChecking();                    // ⏳ v1.0.1: فن «جاري التحقق» أثناء الاستئناف
       try {
-        await this.loadSource(saved, true);
+        await this.loadSource(saved, true, null, { welcome: true });
+        this.hideChecking();
         return;
-      } catch (e) { /* نكمل لشاشة التحقق */ }
+      } catch (e) { this.hideChecking(); /* نكمل لشاشة التحقق */ }
     }
     this.show('verify', true);
   },
@@ -61,6 +63,17 @@ const App = {
     if (prev) this.show(prev); else this.show('home', true);
   },
 
+  // ═══ ⏳ v1.0.1: غطاء «جاري التحقق من الاشتراك» ═══
+  showChecking() { const o = document.getElementById('checkingOv'); if (o) o.classList.remove('hidden'); },
+  hideChecking() { const o = document.getElementById('checkingOv'); if (o) o.classList.add('hidden'); },
+
+  // ═══ 👋 v1.0.1: شاشة الترحيب «مرحبا بك في عائلة لاتشي» بعد كل دخول ناجح ═══
+  showWelcome() {
+    clearTimeout(this._welcomeTimer);
+    this.show('welcome', true);
+    this._welcomeTimer = setTimeout(() => { if (this.screen === 'welcome') this.show('home', true); }, 2600);
+  },
+
   onShown(name) {
     if (name === 'home') { this.buildHome(); this.startHomeBgs(); }
     if (name === 'settings') this.buildSettings();
@@ -80,6 +93,7 @@ const App = {
     msgEl.className = 'verify-msg';
     if (!code) { msgEl.textContent = 'أدخل الكود أولاً'; msgEl.classList.add('err'); return false; }
     msgEl.textContent = '⏳ جارٍ التحقق...';
+    this.showChecking();                      // ⏳ v1.0.1
     try {
       const deviceId = await window.latchi.deviceId();
       const res = await LatchiAPI.verifyCode(code, deviceId);
@@ -89,11 +103,11 @@ const App = {
       msgEl.classList.add('ok');
       this.user = { name: res.name, expires: res.expires, code };
       this.rememberAccount('code', res.name + ' (' + code + ')', res.url);
-      await this.loadSource(res.url, false, res.url);
+      await this.loadSource(res.url, false, res.url, { welcome: true });
       return true;
     } catch (e) {
       msgEl.textContent = '✗ خطأ في الاتصال: ' + e.message; msgEl.classList.add('err'); return false;
-    }
+    } finally { this.hideChecking(); }
   },
 
   async applyM3u(url, msgEl) {
@@ -101,21 +115,22 @@ const App = {
     if (!/^https?:\/\//.test(url)) { msgEl.textContent = 'أدخل رابط M3U صحيحاً يبدأ بـ http'; msgEl.classList.add('err'); return false; }
     msgEl.textContent = '⏳ تحميل القائمة (المرة الأولى فقط — ثم تبقى محفوظة)...';
     this.user = { name: 'M3U مباشر', expires: '', code: '' };
+    this.showChecking();                      // ⏳ v1.0.1
     try {
-      await this.loadSource(url, false, url);
+      await this.loadSource(url, false, url, { welcome: true });
       let host = url; try { host = new URL(url).hostname; } catch (e) {}
       this.rememberAccount('m3u', 'M3U — ' + host, url);
       return true;
     } catch (e) {
       msgEl.textContent = '✗ ' + e.message; msgEl.classList.add('err'); return false;
-    }
+    } finally { this.hideChecking(); }
   },
 
   async doVerify() { return this.applyCode(document.getElementById('codeInput').value.trim(), document.getElementById('verifyMsg')); },
 
   async doM3u() { return this.applyM3u(document.getElementById('m3uInput').value.trim(), document.getElementById('verifyMsg')); },
 
-  async loadSource(url, silent, saveUrl) {
+  async loadSource(url, silent, saveUrl, opts = {}) {
     try {
       const src = await LatchiAPI.loadSource(url);
       const empty = src.type === 'xtream'
@@ -124,7 +139,8 @@ const App = {
       if (empty) throw new Error('القائمة فارغة أو غير صالحة');
       this.src = src;
       if (saveUrl) localStorage.setItem('source_url', saveUrl);
-      this.show('home', true);
+      // 👋 v1.0.1: «مرحبا بك في عائلة لاتشي» بعد الدخول — ثم الرئيسية
+      if (opts.welcome) this.showWelcome(); else this.show('home', true);
     } catch (e) {
       if (!silent) throw e;
       localStorage.removeItem('source_url');
@@ -592,8 +608,10 @@ const App = {
       if (!a) return;
       const msg = document.getElementById('accMsg');
       msg.className = 'verify-msg'; msg.textContent = '⏳ جارٍ الدخول إلى ' + a.label + '...';
-      try { await this.loadSource(a.value, false, a.value); }
+      this.showChecking();                    // ⏳ v1.0.1
+      try { await this.loadSource(a.value, false, a.value, { welcome: true }); }
       catch (e) { msg.textContent = '✗ تعذر الدخول — قد يكون الحساب منتهياً: ' + e.message; msg.classList.add('err'); }
+      finally { this.hideChecking(); }
     });
     document.querySelectorAll('[data-acc-del]').forEach(b => b.onclick = () => {
       this.saveAccounts(this.getAccounts().filter(x => x.id !== b.dataset.accDel));

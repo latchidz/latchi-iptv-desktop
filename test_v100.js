@@ -40,7 +40,7 @@ function makeEl(id) {
  'home', 'homeBgs', 'clock', 'userChip', 'cards', 'list', 'searchInput', 'catsBar', 'listBody',
  'details', 'detailsBody', 'settings', 'settingsBody', 'accounts', 'accountsBody', 'player', 'video', 'playerUi',
  'pName', 'pLive', 'pTime', 'pSeekWrap', 'pSeekFill', 'pPlay', 'pRew', 'pFwd', 'pVol', 'pFull', 'pFav', 'pExit', 'pCenter',
- 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg'].forEach(id => els[id] = makeEl(id));
+ 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg', 'checkingOv', 'welcome'].forEach(id => els[id] = makeEl(id));
 
 const store = {};
 const localStorage = {
@@ -181,6 +181,28 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   T('zap ↑ ينتقل للقناة التالية', Player.current.id === 'L2');
   App.back();
   T('الرجوع يعود للقائمة', App.screen === 'list' && els['player'].classList.contains !== undefined);
+
+  console.log('═══ 7) v1.0.1: غطاء «جاري التحقق» + شاشة الترحيب ═══');
+  sandbox.LatchiAPI.loadSource = async () => ({ type: 'm3u', live: [L1, L2], movies: [M], series: [] });
+  sandbox.latchi.deviceId = async () => 'test-device';
+  sandbox.LatchiAPI.verifyCode = async () => ({ ok: true, name: 'حساب VIP', url: 'http://t/x.m3u', expires: '2027-01-01' });
+  App.showChecking();
+  T('غطاء التحقق يظهر', !els['checkingOv'].classList.contains('hidden'));
+  App.hideChecking();
+  T('غطاء التحقق يختفي', els['checkingOv'].classList.contains('hidden'));
+  await App.loadSource('http://t/x.m3u', false, 'http://t/x.m3u', { welcome: true });
+  T('الدخول الناجح → شاشة الترحيب', App.screen === 'welcome' && els['checkingOv'].classList.contains('hidden'));
+  T('الرابط محفوظ', localStorage.getItem('source_url') === 'http://t/x.m3u');
+  await sleep(2700);
+  T('بعد الترحيب → الرئيسية تلقائياً', App.screen === 'home');
+  await App.loadSource('http://t/x.m3u', true);
+  T('تحديث بلا ترحيب → الرئيسية مباشرة', App.screen === 'home');
+  // applyCode كاملاً: كود → تحقق → ترحيب
+  App.show('verify', true);
+  const okCode = await App.applyCode('TEST-2026', els['verifyMsg']);
+  T('applyCode من البداية للنهاية (كود→ترحيب)', okCode === true && App.screen === 'welcome' && els['checkingOv'].classList.contains('hidden'));
+  await sleep(2700);
+  T('انتهى بالرئيسية', App.screen === 'home');
 
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);
