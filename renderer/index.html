@@ -40,6 +40,7 @@
         <input id="m3uInput" class="tv-input" type="text" placeholder="http://...playlist.m3u" autocomplete="off" spellcheck="false">
         <button class="paste-btn" data-paste="m3uInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
       </div>
+      <input id="m3uExpInput" class="tv-input" type="date" title="تاريخ انتهاء صلاحية الرابط (اختياري)" style="margin-top:8px">
       <button id="m3uBtn" class="gold-btn">⬇ حمّل القائمة</button>
     </div>
     <div id="verifyMsg" class="verify-msg"></div>
@@ -52,7 +53,10 @@
   <header class="tv-header glass">
     <div class="logo">LATCHI <span>IPTV</span> <em>VIP</em></div>
     <span class="ver-chip">V1.0</span>
-    <div class="clock" id="clock"></div>
+    <div class="hdr-clock">
+      <div class="clock" id="clock"></div>
+      <div class="exp-line" id="expLine"></div>
+    </div>
     <div class="user-chip" id="userChip">👤</div>
     <div class="exit-chip" id="exitBtn" title="خروج من التطبيق">⏻</div>
   </header>
@@ -123,7 +127,8 @@
       <button class="p-btn" id="pFav">☆ مفضلة</button>
       <button class="p-btn p-exit" id="pExit">✕ خروج</button>
     </div>
-    <div class="p-hint">↑↓ قناة • ←→ أزرار المشغل عند ظهورها (صوت/تقديم عند اختفائها) • Enter تأكيد • مسافة تشغيل • Esc رجوع</div>
+    <div class="p-hint">↑↓ قناة • ←→ أزرار المشغل عند ظهورها (صوت/تقديم عند اختفائها) • أرقام 1-9: قناة بالرقم كيما التلفاز • Enter تأكيد • Esc رجوع</div>
+    <div id="pNum" class="p-num"></div>
   </div>
   <div class="p-center-msg hidden" id="pCenter"></div>
 </div>

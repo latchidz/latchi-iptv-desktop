@@ -40,7 +40,7 @@ function makeEl(id) {
  'home', 'homeBgs', 'clock', 'userChip', 'cards', 'list', 'searchInput', 'catsBar', 'listBody',
  'details', 'detailsBody', 'settings', 'settingsBody', 'accounts', 'accountsBody', 'player', 'video', 'playerUi',
  'pName', 'pLive', 'pTime', 'pSeekWrap', 'pSeekFill', 'pPlay', 'pRew', 'pFwd', 'pVol', 'pFull', 'pFav', 'pExit', 'pCenter',
- 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg', 'checkingOv', 'welcome', 'exitDlg', 'exitOk', 'exitCancel', 'exitBtn'].forEach(id => els[id] = makeEl(id));
+ 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg', 'checkingOv', 'welcome', 'exitDlg', 'exitOk', 'exitCancel', 'exitBtn', 'pNum', 'expLine', 'm3uExpInput', 'accExpInput'].forEach(id => els[id] = makeEl(id));
 
 const store = {};
 const localStorage = {
@@ -91,6 +91,7 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
 
   const L1 = { id: 'L1', name: 'القناة الأولى', type: 'live', url: 'http://x/a.m3u8', logo: '', group: 'رياضة' };
   const L2 = { id: 'L2', name: 'قناة الثانية', type: 'live', url: 'http://x/b.m3u8', logo: '', group: 'رياضة' };
+  const M2 = { id: 'M88', name: 'فيلم ثانٍ', type: 'movie', url: 'http://x/g.mp4', logo: '', group: 'أفلام' };
   const M = { id: 'M77', name: 'فيلم تجريبي', type: 'movie', url: 'http://x/f.mp4', logo: '', group: 'أفلام' };
 
   console.log('═══ 1) المفضلة من المشغل (فيلم) ═══');
@@ -252,6 +253,61 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   Player.uiVisible = false;                                          // محاكاة 3.5ث انقضت من جديد
   Player.onKey({ key: 'Enter', preventDefault() {} });
   T('مخفية: Enter = تشغيل/إيقاف', Player.video.paused === true);
+
+  console.log('═══ 9) v1.0.3: ساعة بالثواني + صلاحية + قناة بالرقم + ريموت ═══');
+  // الساعة بالثواني
+  App.clockTick();
+  T('الساعة تعرض ثواني (فاصلتان)', (els['clock'].textContent.match(/:/g) || []).length >= 2);
+  // الصلاحية من الكود (xtream حقيقي)
+  App.src = { type: 'xtream', account: { user_info: { exp_date: Math.floor((Date.now() + 40 * 86400000) / 1000) } }, live: [L1], movies: [], series: [] };
+  App.clockTick();
+  T('صلاحية الكود تحت الساعة (أخضر + تاريخ)', els['expLine'].textContent.includes('تنتهي') && els['expLine'].className.includes('green'));
+  App.src.account.user_info.exp_date = Math.floor((Date.now() - 86400000) / 1000);
+  App.clockTick();
+  T('منتهية = أحمر', els['expLine'].className.includes('red') && els['expLine'].textContent.includes('منتهية'));
+  // صلاحية M3U يدوية من الحساب المحفوظ
+  sandbox.localStorage.setItem('source_url', 'http://mylist/m.php');
+  App.src = { type: 'm3u', live: [L1], movies: [], series: [] };
+  App.saveAccounts([{ id: 'a1', kind: 'm3u', label: 'M3U — mylist', value: 'http://mylist/m.php', exp: '2027-06-15', addedAt: '' }]);
+  App.clockTick();
+  T('صلاحية M3U اليدوية تحت الساعة', els['expLine'].textContent.includes('2027') && !els['expLine'].className.includes('red'));
+  // مركز الحسابات: حقل التاريخ + الشارة
+  App.buildAccounts();
+  T('حقل تاريخ الصلاحية في نموذج M3U', els['accountsBody'].innerHTML.includes('accExpInput'));
+  T('الشارة الخضراء للتاريخ اليدوي', els['accountsBody'].innerHTML.includes('badge-exp green'));
+  T('صف الحساب يعرض «ينتهي»', els['accountsBody'].innerHTML.includes('ينتهي 2027-06-15'));
+
+  // القناة بالرقم (ريموت التلفاز)
+  App.src = { type: 'm3u', live: [L1, L2, M, M2], movies: [], series: [] };
+  App.saveAccounts([]);
+  await App.openList('live');
+  App.startPlay(L1); await sleep(40);
+  Player.onKey({ key: '3', preventDefault() {} });
+  T('الرقم يظهر في OSD', els['pNum'].classList.contains('on') && els['pNum'].textContent === '3');
+  Player._commitNum();
+  T('الانتقال للقناة رقم 3', Player.current && Player.current.id === M.id);
+  Player.onKey({ key: '9', preventDefault() {} });
+  Player._commitNum();
+  T('رقم خارج النطاق = رسالة وبلا تغيير', Player.current.id === M.id);
+  T('OSD اختفى', !els['pNum'].classList.contains('on'));
+  // عدد مزدوج (قائمة >9): «12» فوري لأن maxLen=2
+  const many = [L1, L2, M, M2].concat(Array.from({ length: 10 }, (_, i) => ({ id: 'X' + i, name: 'ق' + i, type: 'live', url: 'http://x/' + i })));
+  App.src.live = many; App.openList('live'); await sleep(20);
+  App.startPlay(many[0]); await sleep(40);
+  Player.onKey({ key: '1', preventDefault() {} });
+  T('«1» ينتظر رقم ثانٍ', Player._numBuf === '1');
+  Player.onKey({ key: '2', preventDefault() {} });
+  T('«12» ينتقل فوراً (14 قناة)', Player.current && Player.current.id === 'X7');
+  // PageUp/PageDown = قناة تالية/سابقة
+  Player.onKey({ key: 'PageUp', preventDefault() {} });
+  T('PageUp = القناة التالية', Player.current.id === 'X8');
+  Player.onKey({ key: 'PageDown', preventDefault() {} });
+  T('PageDown = السابقة', Player.current.id === 'X7');
+  // BrowserBack في المشغل = رجوع
+  let bb = 0; const oldBack = App.back.bind(App); App.back = () => { bb++; oldBack(); };
+  documentMock._listeners['keydown'].forEach(f => f({ key: 'BrowserBack', target: {}, preventDefault() {} }));
+  App.back = oldBack;
+  T('BrowserBack بالريموت = رجوع من المشغل', bb === 1);
 
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);

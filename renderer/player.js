@@ -88,6 +88,33 @@ const Player = {
   },
 
   // 📺 v1.1.2: مثل الريموت — فوق/تحت = قناة تالية/سابقة (تنقل فوري بلا إعادة تحميل قائمة)
+  // 🔢 v1.0.3: قناة بالرقم كيما التلفاز الحقيقي — الأرقام تظهر أعلى الشاشة وتنتقل مباشرة
+  channelNumber(d) {
+    this._numBuf = (this._numBuf || '') + d;
+    const list = App._zapList || [];
+    clearTimeout(this._numT);
+    this.showNumOsd(this._numBuf);
+    if (this._numBuf.length >= String(list.length).length) { this._commitNum(); return; }   // اكتمل العدد
+    this._numT = setTimeout(() => this._commitNum(), 1400);                                  // مهلة كيما التلفاز
+  },
+  _commitNum() {
+    const n = parseInt(this._numBuf || '0', 10);
+    this._numBuf = ''; clearTimeout(this._numT);
+    const list = App._zapList || [];
+    if (!n || n > list.length) { this.hideNumOsd(); this.show('القناة ' + n + ' غير متوفرة', 1200); return; }
+    this.showNumOsd(String(n));          // الرقم يبقى ظاهراً لحظة الانتقال كيما التلفاز
+    App.startPlay(list[n - 1]);
+  },
+  showNumOsd(s) {
+    const el = document.getElementById('pNum');
+    if (!el) return;
+    el.textContent = s;
+    el.classList.add('on');
+    clearTimeout(this._numT2);
+    this._numT2 = setTimeout(() => this.hideNumOsd(), 1200);
+  },
+  hideNumOsd() { const el = document.getElementById('pNum'); if (el) el.classList.remove('on'); },
+
   zap(dir) {
     const ok = App.zap(dir);
     if (!ok) this.show('لا توجد قناة ' + (dir > 0 ? 'بعد' : 'قبل') + ' هذه', 900);
@@ -287,12 +314,17 @@ const Player = {
     this._gen++;
     clearInterval(this._wd);           // 🛠 v1.1.2: أوقف حارس التقطّع
     if (this.hls) { this.hls.destroy(); this.hls = null; }
+    this._numBuf = ''; clearTimeout(this._numT); this.hideNumOsd();   // 🔢 v1.0.3
     this.video.pause(); this.video.removeAttribute('src'); this.video.load();
     // 📺 v1.0.2: نبقى بملء الشاشة — التطبيق تلفاز (الخروج فقط من نافذة التأكيد)
     const cb = this.hideCb; this.hideCb = null;
     if (cb) cb('exit');
   },
   onKey(e) {
+    // 🔢 v1.0.3: أرقام الريموت (1-9) = قناة بالرقم + PageUp/Down = قناة تالية/سابقة — يعملان دائماً كيما التلفاز
+    if (e.key >= '0' && e.key <= '9') { if (this.isLive) this.channelNumber(e.key); e.preventDefault(); return; }
+    if (e.key === 'PageUp') { this.flashUi(); this.zap(1); e.preventDefault(); return; }
+    if (e.key === 'PageDown') { this.flashUi(); this.zap(-1); e.preventDefault(); return; }
     const wasVisible = this.uiVisible;    // 📺 v1.0.2: احكم على الحالة قبل إيقاظ الواجهة
     this.flashUi();
     if (wasVisible) {

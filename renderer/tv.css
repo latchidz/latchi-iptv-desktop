@@ -401,8 +401,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 
 /* ═══ 🚀 v1.0.2: Royal Grid — مطابقة تلفاز LATCHI 100% ═══
    البطاقة: 168×98dp، زوايا 26dp (15.5%/26.5%)، صورة خالصة، 4 فوق / 4 تحت */
-.cards { display: grid; grid-template-columns: repeat(4, minmax(196px, 262px)) !important;
-  justify-content: center; align-content: start; gap: 24px 30px !important; padding: 24px 48px 46px !important; }
+.cards { display: grid; grid-template-columns: repeat(4, minmax(158px, 192px)) !important;
+  justify-content: center; align-content: start; gap: 36px 46px !important; padding: 26px 48px 46px !important; }
 .tcard { aspect-ratio: 168 / 98; border-radius: 15.5% / 26.5% !important;
   padding: 0 !important; border: none !important; background: #1A1A30 !important;
   overflow: hidden; position: relative; cursor: pointer;
@@ -420,3 +420,22 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 
 /* إخفاء مؤشر الفأرة في المشغل (روح التلفاز) */
 body.no-cursor, body.no-cursor * { cursor: none !important; }
+
+/* ═══ 📺 v1.0.3: هيدر التلفاز — ساعة بالثواني وسط + سطر الصلاحية تحتها ═══ */
+.tv-header { position: relative; }
+.hdr-clock { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  text-align: center; line-height: 1.25; pointer-events: none; }
+.hdr-clock .clock { font-size: 21px; font-weight: bold; letter-spacing: .5px; }
+.exp-line { font-size: 11.5px; font-weight: bold; }
+.exp-line.green { color: #7FE6A0; text-shadow: 0 0 10px rgba(127, 230, 160, .35); }
+.exp-line.orange { color: #FFC46B; text-shadow: 0 0 10px rgba(255, 196, 107, .35); }
+.exp-line.red { color: #FF7B7B; text-shadow: 0 0 10px rgba(255, 123, 123, .4); }
+.exp-line.gray { color: var(--muted); }
+
+/* 🔢 v1.0.3: OSD رقم القناة (أرقام الريموت) — أعلى يسار الشاشة كيما التلفاز */
+.p-num { position: absolute; top: 20px; left: 26px; z-index: 30;
+  background: rgba(8, 13, 31, .88); border: 2px solid var(--gold); border-radius: 14px;
+  color: var(--gold); font-size: 30px; font-weight: bold; padding: 6px 20px;
+  letter-spacing: 3px; direction: ltr; display: none;
+  box-shadow: 0 0 22px rgba(217, 169, 78, .35), 0 8px 20px rgba(0, 0, 0, .5); }
+.p-num.on { display: block; animation: exitPop .15s ease; }

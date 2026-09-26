@@ -34,7 +34,35 @@ const App = {
 
   clockTick() {
     const el = document.getElementById('clock');
-    if (el) el.textContent = new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' });
+    // ⏱ v1.0.3: الساعة تمشي بالثواني كيما التلفاز
+    if (el) el.textContent = new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    this.expTick();
+  },
+
+  // 📅 v1.0.3: سطر تاريخ انتهاء الصلاحية تحت الساعة — الحقيقي من الكود، أو المُدخل يدوياً مع رابط M3U
+  expTick() {
+    const el = document.getElementById('expLine');
+    if (!el) return;
+    const info = this.expiryInfo();
+    el.textContent = info.text;
+    el.className = 'exp-line ' + info.cls;
+  },
+  expiryInfo() {
+    if (!this.src) return { text: '', cls: '' };
+    const acc = (this.src.account && this.src.account.user_info) || {};
+    let ts = null;
+    if (this.src.type === 'xtream' && acc.exp_date) ts = +acc.exp_date * 1000;   // الكود: التاريخ الحقيقي من الخادم
+    else {
+      const url = localStorage.getItem('source_url') || '';
+      const saved = this.getAccounts().find(x => x.value === url);               // M3U: التاريخ المُدخل يدوياً
+      if (saved && saved.exp) ts = new Date(saved.exp + 'T23:59:59').getTime();
+    }
+    if (!ts) return { text: 'غير محددة المدة', cls: 'gray' };
+    const dstr = new Date(ts).toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' });
+    const days = Math.ceil((ts - Date.now()) / 86400000);
+    if (days < 0) return { text: '⛔ منتهية — ' + dstr, cls: 'red' };
+    if (days <= 7) return { text: '⏳ تنتهي ' + dstr + ' · باقي ' + days + ' يوم', cls: 'orange' };
+    return { text: '📅 تنتهي ' + dstr + ' · باقي ' + days + ' يوم', cls: 'green' };
   },
 
   // ═══ الشاشات ═══
@@ -133,16 +161,18 @@ const App = {
     } finally { this.hideChecking(); }
   },
 
-  async applyM3u(url, msgEl) {
+  async applyM3u(url, msgEl, expDate) {
     msgEl.className = 'verify-msg';
     if (!/^https?:\/\//.test(url)) { msgEl.textContent = 'أدخل رابط M3U صحيحاً يبدأ بـ http'; msgEl.classList.add('err'); return false; }
     msgEl.textContent = '⏳ تحميل القائمة (المرة الأولى فقط — ثم تبقى محفوظة)...';
-    this.user = { name: 'M3U مباشر', expires: '', code: '' };
+    // 📅 v1.0.3: تاريخ الصلاحية المُدخل يدوياً مع الرابط (يظهر تحت الساعة وفي مركز الحسابات)
+    const expTxt = expDate ? new Date(expDate + 'T12:00:00').toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    this.user = { name: 'M3U مباشر', expires: expTxt, code: '', expDate: expDate || '' };
     this.showChecking();                      // ⏳ v1.0.1
     try {
       await this.loadSource(url, false, url, { welcome: true });
       let host = url; try { host = new URL(url).hostname; } catch (e) {}
-      this.rememberAccount('m3u', 'M3U — ' + host, url);
+      this.rememberAccount('m3u', 'M3U — ' + host, url, expDate || '');
       return true;
     } catch (e) {
       msgEl.textContent = '✗ ' + e.message; msgEl.classList.add('err'); return false;
@@ -151,7 +181,10 @@ const App = {
 
   async doVerify() { return this.applyCode(document.getElementById('codeInput').value.trim(), document.getElementById('verifyMsg')); },
 
-  async doM3u() { return this.applyM3u(document.getElementById('m3uInput').value.trim(), document.getElementById('verifyMsg')); },
+  async doM3u() {
+    const expEl = document.getElementById('m3uExpInput');
+    return this.applyM3u(document.getElementById('m3uInput').value.trim(), document.getElementById('verifyMsg'), expEl ? expEl.value : '');
+  },
 
   async loadSource(url, silent, saveUrl, opts = {}) {
     try {
@@ -564,32 +597,35 @@ const App = {
     try { return JSON.parse(localStorage.getItem('saved_accounts') || '[]'); } catch (e) { return []; }
   },
   saveAccounts(l) { localStorage.setItem('saved_accounts', JSON.stringify(l)); },
-  rememberAccount(kind, label, value) {
+  rememberAccount(kind, label, value, exp) {
     if (!value) return;
     const list = this.getAccounts().filter(a => a.value !== value);
-    list.unshift({ id: 'a' + Date.now() + Math.floor(Math.random() * 999), kind, label: label || 'حساب', value, addedAt: new Date().toLocaleDateString('ar-DZ') });
+    list.unshift({ id: 'a' + Date.now() + Math.floor(Math.random() * 999), kind, label: label || 'حساب', value, exp: exp || '', addedAt: new Date().toLocaleDateString('ar-DZ') });
     this.saveAccounts(list.slice(0, 20));   // حد أقصى 20 مثل الهاتف
   },
 
   buildAccounts() {
     const acc = (this.src && this.src.account && this.src.account.user_info) || {};
     const isX = this.src && this.src.type === 'xtream';
-    const exp = acc.exp_date ? new Date(+acc.exp_date * 1000).toLocaleDateString('ar-DZ') : (this.user?.expires || '—');
-    // 🎨 v1.0: شارة الصلاحية الملونة (أخضر/برتقالي/أحمر/رمادي)
+    const curUrl = localStorage.getItem('source_url') || '';
+    const list = this.getAccounts();
+    // 📅 v1.0.3: صلاحية M3U اليدوية (من الحقل) تُحسب كالحقيقية
+    const savedAcc = list.find(x => x.value === curUrl);
+    const m3uExp = (!isX && savedAcc && savedAcc.exp) ? new Date(savedAcc.exp + 'T23:59:59').getTime() : null;
+    const expTs = isX ? (acc.exp_date ? +acc.exp_date * 1000 : null) : m3uExp;
+    const exp = expTs ? new Date(expTs).toLocaleDateString('ar-DZ') : (this.user?.expires || '—');
+    // 🎨 شارة الصلاحية الملونة (أخضر/برتقالي/أحمر/رمادي) — كود أو M3U يدوي
     let badge;
-    if (!isX) badge = '<span class="badge-exp gray">غير متوفر — رابط مباشر</span>';
-    else if (acc.exp_date) {
+    if (expTs) {
       const days = Math.ceil((+acc.exp_date * 1000 - Date.now()) / 86400000);
       if (days < 0) badge = '<span class="badge-exp red">⛔ منتهي الصلاحية</span>';
       else if (days <= 7) badge = `<span class="badge-exp orange">⏳ ${days} يوم متبقٍ</span>`;
       else badge = `<span class="badge-exp green">✓ ${days} يوم متبقٍ</span>`;
     } else badge = '<span class="badge-exp gray">غير محدد</span>';
     const created = acc.created_at ? new Date(+acc.created_at * 1000).toLocaleDateString('ar-DZ') : '';
-    const curUrl = localStorage.getItem('source_url') || '';
-    const list = this.getAccounts();
     const rows = list.length ? list.map(a => `
       <div class="acc-row${a.value === curUrl ? ' acc-active' : ''}">
-        <div class="acc-info"><b>${esc(a.label)}</b><span>${a.kind === 'code' ? '🎫 كود تفعيل' : '🔗 M3U مباشر'} · أضيف ${esc(a.addedAt || '')}</span></div>
+        <div class="acc-info"><b>${esc(a.label)}</b><span>${a.kind === 'code' ? '🎫 كود تفعيل' : '🔗 M3U مباشر'} · أضيف ${esc(a.addedAt || '')}${a.exp ? ' · 📅 ينتهي ' + esc(a.exp) : ''}</span></div>
         <div class="acc-actions">
           ${a.value === curUrl ? '<span class="acc-now">✓ نشط</span>' : `<button class="p-btn" data-acc-go="${a.id}">🚪 دخول</button>`}
           <button class="p-btn" data-acc-del="${a.id}">🗑 حذف</button>
@@ -617,13 +653,14 @@ const App = {
       <div class="set-card"><h3>🔗 إضافة رابط M3U مباشر</h3>
         <div class="input-row" style="margin-bottom:10px">
           <input id="accM3uInput" class="tv-input" placeholder="http://... (رابط get.php أو .m3u)" style="width:100%">
+          <input id="accExpInput" class="tv-input" type="date" title="تاريخ انتهاء صلاحية الرابط (اختياري — يظهر تحت الساعة)" style="width:100%;margin-top:8px">
           <button class="paste-btn" data-paste="accM3uInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
         </div>
         <button class="gold-btn" id="accM3uBtn" style="width:100%">🔗 إضافة ودخول</button>
       </div>
       <div class="set-card"><div id="accMsg" class="verify-msg"></div></div>`;
     document.getElementById('accCodeBtn').onclick = () => this.applyCode(document.getElementById('accCodeInput').value.trim(), document.getElementById('accMsg'));
-    document.getElementById('accM3uBtn').onclick = () => this.applyM3u(document.getElementById('accM3uInput').value.trim(), document.getElementById('accMsg'));
+    document.getElementById('accM3uBtn').onclick = () => this.applyM3u(document.getElementById('accM3uInput').value.trim(), document.getElementById('accMsg'), document.getElementById('accExpInput').value);
     document.getElementById('accCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('accCodeBtn').click(); });
     document.getElementById('accM3uInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('accM3uBtn').click(); });
     document.querySelectorAll('[data-acc-go]').forEach(b => b.onclick = async () => {
@@ -689,7 +726,8 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (App.screen === 'player') {
-    if (e.key === 'Escape') { App.back(); }
+    if (e.key === 'Escape' || e.key === 'BrowserBack') { App.back(); }
+    else if (e.key === 'Home' || e.key === 'BrowserHome') { App.show('home', true); }
     else Player.onKey(e);
     return;
   }
@@ -700,10 +738,17 @@ document.addEventListener('keydown', (e) => {
     case 'ArrowLeft': spatialMove(-1, 0); e.preventDefault(); break;
     case 'ArrowRight': spatialMove(1, 0); e.preventDefault(); break;
     case 'Enter': if (cur) { cur.click(); if (cur.classList.contains('tv-input')) cur.focus(); } e.preventDefault(); break;
-    case 'Escape': case 'Backspace':
+    case 'Escape': case 'Backspace': case 'BrowserBack':    // 🎮 v1.0.3: ريموت البلوتوث يرسل BrowserBack لزر الرجوع
       if (App.screen === 'home') App.showExitDlg();          // ⏻ v1.0.2: زر الرجوع في الرئيسية = تأكيد الخروج كيما التلفاز
       else if (App.screen !== 'verify') App.back();
       e.preventDefault(); break;
+    case 'Home': case 'BrowserHome':                          // 🏠 v1.0.3: زر Home بالريموت = الرئيسية
+      App.show('home', true); e.preventDefault(); break;
+    case 'PageUp': case 'PageDown': {                         // 📄 v1.0.3: تمرير القوائم الطويلة كيما التلفاز
+      const sc = document.querySelector('.screen.active .list-body') || document.querySelector('.screen.active #accountsBody');
+      if (sc) sc.scrollBy({ top: (e.key === 'PageUp' ? -1 : 1) * sc.clientHeight * 0.8, behavior: 'smooth' });
+      e.preventDefault(); break;
+    }
   }
 });
 // 🖱 v1.0.2: المؤشر يختفي بعد 2.5ث بلا حركة داخل المشغل (كيما التلفاز)
