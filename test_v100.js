@@ -162,10 +162,14 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   App.show('home', true);
   const cards = els['cards'].children;
   T('8 بطاقات', cards.length === 8);
-  T('بطاقات بصور webp الرسمية', cards[0]._html.includes('tv_card_live.webp') && cards[1]._html.includes('tv_card_bein.webp')
-    && cards[2]._html.includes('tv_card_films.webp') && cards[3]._html.includes('tv_card_series.webp')
-    && cards[4]._html.includes('tv_card_favorites.webp') && cards[5]._html.includes('ic_glow_play.webp')
-    && cards[6]._html.includes('tv_card_accounts.webp') && cards[7]._html.includes('tv_card_settings.webp'));
+  T('ترتيب تلفاز: بث/أفلام/مسلسلات/beIN فوق', cards[0]._html.includes('tv_card_live.webp')
+    && cards[1]._html.includes('tv_card_films.webp') && cards[2]._html.includes('tv_card_series.webp')
+    && cards[3]._html.includes('tv_card_bein.webp'));
+  T('تحت: مفضلة/متابعة/حسابات/إعدادات', cards[4]._html.includes('tv_card_favorites.webp')
+    && cards[5]._html.includes('tv_card_continue.webp') && cards[6]._html.includes('tv_card_accounts.webp')
+    && cards[7]._html.includes('tv_card_settings.webp'));
+  T('صورة خالصة بلا طبقة نص (كيما التلفاز)', !cards[0]._html.includes('tcard-body')
+    && !cards[0]._html.includes('tcard-shade'));
   const bgs = els['homeBgs'].children;
   T('10 خلفيات محمّلة', bgs.length === 10 && bgs[0].src.includes('latchi_bg_tv_1.webp'));
   T('خلفية واحدة ظاهرة (.on)', bgs.filter(b => b.classList.contains('on')).length === 1);

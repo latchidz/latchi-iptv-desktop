@@ -399,8 +399,20 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .exit-chip:hover, .exit-chip.focused { border-color: #FF7B7B; color: #FFC4C4;
   box-shadow: 0 0 16px rgba(255, 123, 123, .4); transform: translateY(-1px); }
 
-/* شبكة الرئيسية 4×2 كيما واجهة التلفاز بالضبط */
-.cards { grid-template-columns: repeat(4, minmax(205px, 248px)) !important; justify-content: center; row-gap: 30px !important; }
+/* ═══ 🚀 v1.0.2: Royal Grid — مطابقة تلفاز LATCHI 100% ═══
+   البطاقة: 168×98dp، زوايا 26dp (15.5%/26.5%)، صورة خالصة، 4 فوق / 4 تحت */
+.cards { display: grid; grid-template-columns: repeat(4, minmax(196px, 262px)) !important;
+  justify-content: center; align-content: start; gap: 24px 30px !important; padding: 24px 48px 46px !important; }
+.tcard { aspect-ratio: 168 / 98; border-radius: 15.5% / 26.5% !important;
+  padding: 0 !important; border: none !important; background: #1A1A30 !important;
+  overflow: hidden; position: relative; cursor: pointer;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .5); transition: transform .16s, box-shadow .16s; }
+.tcard .tcard-img { position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block; border-radius: inherit; }
+.tcard .tcard-shade, .tcard .tcard-body { display: none !important; }
+.tcard:hover, .tcard.focused { transform: scale(1.07); background: #1A1A30 !important;
+  box-shadow: 0 0 0 4px var(--gold), 0 0 34px rgba(217, 169, 78, .55), 0 16px 40px rgba(0, 0, 0, .6);
+  z-index: 2; }
 
 /* تركيز أزرار المشغل (ريموت) */
 .p-btn.focused { border-color: var(--gold) !important; box-shadow: var(--focus-glow);

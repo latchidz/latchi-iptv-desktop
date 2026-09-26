@@ -175,13 +175,14 @@ const App = {
   buildHome() {
     const s = this.src ? LatchiAPI.stats(this.src) : { live: 0, movies: 0, series: 0, unit: 'فئة' };
     const u = s.unit || '';
+    // 🚀 v1.0.2: Royal Grid — نفس ترتيب تلفاز LATCHI (4 فوق / 4 تحت)
     const cards = [
       { img: 'tv_card_live', t: 'البث المباشر', c: s.live + ' ' + (u || 'قناة'), go: () => this.openList('live') },
-      { img: 'tv_card_bein', t: 'beIN سبورت', c: 'القنوات الرياضية', go: () => this.openList('live', 'bein') },
       { img: 'tv_card_films', t: 'الأفلام', c: s.movies + ' ' + (u || 'فيلم'), go: () => this.openList('movies') },
       { img: 'tv_card_series', t: 'المسلسلات', c: s.series + ' ' + (u || 'مسلسل'), go: () => this.openList('series') },
+      { img: 'tv_card_bein', t: 'beIN سبورت', c: 'القنوات الرياضية', go: () => this.openList('live', 'bein') },
       { img: 'tv_card_favorites', t: 'المفضلة', c: this.favs.length + ' عنصر', go: () => this.openList('fav') },
-      { img: 'ic_glow_play', t: 'متابعة المشاهدة', c: this.continueList().length + ' عنصر', go: () => this.openList('cw') },
+      { img: 'tv_card_continue', t: 'متابعة المشاهدة', c: this.continueList().length + ' عنصر', go: () => this.openList('cw') },
       { img: 'tv_card_accounts', t: 'مركز الحسابات', c: this.getAccounts().length + ' حساب محفوظ', go: () => this.push('accounts') },
       { img: 'tv_card_settings', t: 'الإعدادات', c: 'الحساب والبيانات', go: () => this.push('settings') }
     ];
@@ -190,10 +191,9 @@ const App = {
     cards.forEach(c => {
       const d = document.createElement('div');
       d.className = 'tcard';
-      // 🖼 v1.0: صورة البطاقة الرسمية من فن التلفاز + تعمية فوقها + المحتوى
-      d.innerHTML = `<img class="tcard-img" src="../assets/${c.img}.webp" alt="" onerror="this.style.display='none'">
-        <div class="tcard-shade"></div>
-        <div class="tcard-body"><div class="t">${c.t}</div><div class="c">${c.c}</div></div>`;
+      // 📺 v1.0.2: صورة خالصة 100% كتلفاز LATCHI (الفن يحمل الأيقونة والعنوان) — بلا أي طبقة نص
+      d.title = `${c.t} — ${c.c}`;
+      d.innerHTML = `<img class="tcard-img" src="../assets/${c.img}.webp" alt="${c.t}" onerror="this.style.display='none'">`;
       d.onclick = () => c.go();
       el.appendChild(d);
     });
