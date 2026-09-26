@@ -9,9 +9,11 @@
 
 <!-- ═══ 🎬 السبلاش ═══ -->
 <div id="splash" class="screen active">
-  <img class="splash-bg" src="../assets/splash.webp" alt="">
-  <div class="splash-title">IPTV LATCHI DZ</div>
-  <div class="splash-loading"><div class="spinner"></div></div>
+  <img class="splash-bg" src="../assets/splash_owner_tv.webp" alt="">
+  <div class="splash-veil"></div>
+  <div class="splash-brand">IPTV <span>LATCHI DZ</span></div>
+  <div class="splash-ver">V1.0</div>
+  <div class="splash-loading"><div class="spinner"></div><div class="splash-hint">جارٍ التشغيل…</div></div>
 </div>
 
 <!-- ═══ 🔑 شاشة التحقق ═══ -->
@@ -24,11 +26,17 @@
       <button class="vtab" data-tab="m3u">🔗 رابط M3U</button>
     </div>
     <div id="vtab-code" class="vbody">
-      <input id="codeInput" class="tv-input" type="text" placeholder="أدخل كود التفعيل هنا" autocomplete="off" spellcheck="false">
+      <div class="input-row">
+        <input id="codeInput" class="tv-input" type="text" placeholder="أدخل كود التفعيل هنا" autocomplete="off" spellcheck="false">
+        <button class="paste-btn" data-paste="codeInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
+      </div>
       <button id="codeBtn" class="gold-btn">✓ تحقق الآن</button>
     </div>
     <div id="vtab-m3u" class="vbody hidden">
-      <input id="m3uInput" class="tv-input" type="text" placeholder="http://...playlist.m3u" autocomplete="off" spellcheck="false">
+      <div class="input-row">
+        <input id="m3uInput" class="tv-input" type="text" placeholder="http://...playlist.m3u" autocomplete="off" spellcheck="false">
+        <button class="paste-btn" data-paste="m3uInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
+      </div>
       <button id="m3uBtn" class="gold-btn">⬇ حمّل القائمة</button>
     </div>
     <div id="verifyMsg" class="verify-msg"></div>
@@ -37,8 +45,10 @@
 
 <!-- ═══ 🏠 الرئيسية ═══ -->
 <div id="home" class="screen">
-  <header class="tv-header">
+  <div id="homeBgs"></div>
+  <header class="tv-header glass">
     <div class="logo">LATCHI <span>IPTV</span> <em>VIP</em></div>
+    <span class="ver-chip">V1.0</span>
     <div class="clock" id="clock"></div>
     <div class="user-chip" id="userChip">👤</div>
   </header>

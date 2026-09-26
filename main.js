@@ -1,5 +1,5 @@
 // 🖥️ LATCHI IPTV Desktop — العملية الرئيسية
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, clipboard } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -38,6 +38,11 @@ function createWindow() {
 }
 
 // 🆔 معرّف جهاز ثابت (لنظام التحقق — نفس فلسفة أندرويد)
+// 📋 v1.0: قراءة الحافظة — زر اللصق بلا Ctrl+V
+ipcMain.handle('clipboard-read', () => {
+  try { return clipboard.readText() || ''; } catch { return ''; }
+});
+
 ipcMain.handle('device-id', () => {
   const ifaces = os.networkInterfaces();
   let mac = '';

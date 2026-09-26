@@ -11,6 +11,11 @@ const App = {
   async boot() {
     Player.init();
     Player.hideCb = () => App.back();
+    // 📋 v1.0: زر اللصق المباشر (مفوَّض — يغطي كل الحقول حتى المولّدة ديناميكياً)
+    document.addEventListener('click', e => {
+      const b = e.target && e.target.closest ? e.target.closest('.paste-btn[data-paste]') : null;
+      if (b) this.pasteTo(b.dataset.paste, b);
+    });
     this.clockTick(); setInterval(() => this.clockTick(), 1000);
     await new Promise(r => setTimeout(r, 1400)); // سبلاش قصير (سرعة الإقلاع أهم)
     const saved = localStorage.getItem('source_url');
@@ -57,7 +62,7 @@ const App = {
   },
 
   onShown(name) {
-    if (name === 'home') this.buildHome();
+    if (name === 'home') { this.buildHome(); this.startHomeBgs(); }
     if (name === 'settings') this.buildSettings();
     if (name === 'accounts') this.buildAccounts();
     this.focusFirst(name);
@@ -132,24 +137,69 @@ const App = {
     const s = this.src ? LatchiAPI.stats(this.src) : { live: 0, movies: 0, series: 0, unit: 'فئة' };
     const u = s.unit || '';
     const cards = [
-      { ic: '📡', t: 'البث المباشر', c: s.live + ' ' + (u || 'قناة'), go: () => this.openList('live') },
-      { ic: '⚽', t: 'beIN سبورت', c: 'القنوات الرياضية', go: () => this.openList('live', 'bein') },
-      { ic: '🎬', t: 'الأفلام', c: s.movies + ' ' + (u || 'فيلم'), go: () => this.openList('movies') },
-      { ic: '📺', t: 'المسلسلات', c: s.series + ' ' + (u || 'مسلسل'), go: () => this.openList('series') },
-      { ic: '⭐', t: 'المفضلة', c: this.favs.length + ' عنصر', go: () => this.openList('fav') },
-      { ic: '⏯', t: 'متابعة المشاهدة', c: this.continueList().length + ' عنصر', go: () => this.openList('cw') },
-      { ic: '👤', t: 'مركز الحسابات', c: this.getAccounts().length + ' حساب محفوظ', go: () => this.push('accounts') },
-      { ic: '⚙️', t: 'الإعدادات', c: 'الحساب والبيانات', go: () => this.push('settings') }
+      { img: 'tv_card_live', t: 'البث المباشر', c: s.live + ' ' + (u || 'قناة'), go: () => this.openList('live') },
+      { img: 'tv_card_bein', t: 'beIN سبورت', c: 'القنوات الرياضية', go: () => this.openList('live', 'bein') },
+      { img: 'tv_card_films', t: 'الأفلام', c: s.movies + ' ' + (u || 'فيلم'), go: () => this.openList('movies') },
+      { img: 'tv_card_series', t: 'المسلسلات', c: s.series + ' ' + (u || 'مسلسل'), go: () => this.openList('series') },
+      { img: 'tv_card_favorites', t: 'المفضلة', c: this.favs.length + ' عنصر', go: () => this.openList('fav') },
+      { img: 'ic_glow_play', t: 'متابعة المشاهدة', c: this.continueList().length + ' عنصر', go: () => this.openList('cw') },
+      { img: 'tv_card_accounts', t: 'مركز الحسابات', c: this.getAccounts().length + ' حساب محفوظ', go: () => this.push('accounts') },
+      { img: 'tv_card_settings', t: 'الإعدادات', c: 'الحساب والبيانات', go: () => this.push('settings') }
     ];
     const el = document.getElementById('cards');
     el.innerHTML = '';
     cards.forEach(c => {
       const d = document.createElement('div');
       d.className = 'tcard';
-      d.innerHTML = `<span class="ic">${c.ic}</span><div class="t">${c.t}</div><div class="c">${c.c}</div>`;
+      // 🖼 v1.0: صورة البطاقة الرسمية من فن التلفاز + تعمية فوقها + المحتوى
+      d.innerHTML = `<img class="tcard-img" src="../assets/${c.img}.webp" alt="" onerror="this.style.display='none'">
+        <div class="tcard-shade"></div>
+        <div class="tcard-body"><div class="t">${c.t}</div><div class="c">${c.c}</div></div>`;
       d.onclick = () => c.go();
       el.appendChild(d);
     });
+  },
+
+  // ═══ 🌌 v1.0: خلفيات الرئيسية المتغيرة (فن التلفاز — 10 خلفيات، تبديل ناعم كل 25ث) ═══
+  startHomeBgs() {
+    const host = document.getElementById('homeBgs');
+    if (!host) return;
+    if (!host.children.length) {
+      for (let i = 1; i <= 10; i++) {
+        const img = document.createElement('img');
+        img.src = `../assets/latchi_bg_tv_${i}.webp`;
+        img.alt = '';
+        host.appendChild(img);
+      }
+    }
+    const imgs = Array.from(host.children);
+    let idx = Math.floor(Math.random() * imgs.length);
+    imgs.forEach((im, i) => im.classList.toggle('on', i === idx));
+    clearInterval(this._bgTimer);
+    this._bgTimer = setInterval(() => {
+      imgs[idx].classList.remove('on');
+      idx = (idx + 1 + Math.floor(Math.random() * (imgs.length - 1))) % imgs.length; // لا تكرار نفس الخلفية
+      imgs[idx].classList.add('on');
+    }, 25000);
+  },
+
+  // ═══ 📋 v1.0: اللصق من الحافظة بضغطة زر (بلا Ctrl+V) ═══
+  async pasteTo(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    let txt = '';
+    try {
+      if (window.latchi && window.latchi.readClipboard) txt = await window.latchi.readClipboard();
+      else if (navigator.clipboard) txt = await navigator.clipboard.readText();
+    } catch (e) { txt = ''; }
+    txt = (txt || '').trim();
+    if (txt) {
+      input.value = txt;
+      input.focus();
+      if (btn) { btn.classList.add('pasted'); setTimeout(() => btn.classList.remove('pasted'), 700); }
+    } else if (btn) {
+      btn.classList.add('paste-empty'); setTimeout(() => btn.classList.remove('paste-empty'), 700);
+    }
   },
 
   continueList() {
@@ -277,6 +327,7 @@ const App = {
       return;
     }
     const isPoster = ['movies', 'series', 'fav', 'cw'].includes(kind) && shown[0] && shown[0].type !== 'live';
+    const mixed = ['fav', 'cw'].includes(kind);   // ⭐ v1.0: قوائم مختلطة (قنوات + أفلام/حلقات معاً)
     if (!shown.length) {
       body.innerHTML = `<div class="load-hint">${q ? 'لا توجد نتائج للبحث' : 'لا توجد عناصر في هذه الفئة'}</div>`;
       this.focusFirst('list');
@@ -284,14 +335,17 @@ const App = {
     }
     const container = document.createElement('div');
     container.className = isPoster ? 'poster-grid' : 'chan-list';
+    if (mixed && isPoster) container.classList.add('mixed-list');
     body.appendChild(container);
     // 🎯 رسم على دفعات (حماية الحاسوب الضعيف: لا تجميد واجهة مهما طالت القائمة)
     const BATCH = 60;
     const self = this;
+    // ⭐ v1.0: في القوائم المختلطة — البث الحي صف قناة، والباقي بطاقة بوستر
+    const mkItem = (it) => (mixed && it.type === 'live') ? self.chanRow(it) : (isPoster ? self.posterCard(it) : self.chanRow(it));
     (function renderChunk(i) {
       const end = Math.min(i + BATCH, shown.length);
       const frag = document.createDocumentFragment();
-      for (let j = i; j < end; j++) frag.appendChild(isPoster ? self.posterCard(shown[j]) : self.chanRow(shown[j]));
+      for (let j = i; j < end; j++) frag.appendChild(mkItem(shown[j]));
       container.appendChild(frag);
       if (end < shown.length) requestAnimationFrame(() => renderChunk(end));
       else self.focusFirst('list');
@@ -480,8 +534,18 @@ const App = {
 
   buildAccounts() {
     const acc = (this.src && this.src.account && this.src.account.user_info) || {};
+    const isX = this.src && this.src.type === 'xtream';
     const exp = acc.exp_date ? new Date(+acc.exp_date * 1000).toLocaleDateString('ar-DZ') : (this.user?.expires || '—');
-    const conns = acc.active_connections != null ? `${acc.active_connections} / ${acc.max_connections}` : '—';
+    // 🎨 v1.0: شارة الصلاحية الملونة (أخضر/برتقالي/أحمر/رمادي)
+    let badge;
+    if (!isX) badge = '<span class="badge-exp gray">غير متوفر — رابط مباشر</span>';
+    else if (acc.exp_date) {
+      const days = Math.ceil((+acc.exp_date * 1000 - Date.now()) / 86400000);
+      if (days < 0) badge = '<span class="badge-exp red">⛔ منتهي الصلاحية</span>';
+      else if (days <= 7) badge = `<span class="badge-exp orange">⏳ ${days} يوم متبقٍ</span>`;
+      else badge = `<span class="badge-exp green">✓ ${days} يوم متبقٍ</span>`;
+    } else badge = '<span class="badge-exp gray">غير محدد</span>';
+    const created = acc.created_at ? new Date(+acc.created_at * 1000).toLocaleDateString('ar-DZ') : '';
     const curUrl = localStorage.getItem('source_url') || '';
     const list = this.getAccounts();
     const rows = list.length ? list.map(a => `
@@ -495,17 +559,27 @@ const App = {
     document.getElementById('accountsBody').innerHTML = `
       <div class="set-card"><h3>👤 الحساب الحالي</h3>
         <div class="row"><span>الاسم</span><b>${esc(this.user?.name || '—')}</b></div>
-        <div class="row"><span>النوع</span><b>${this.src?.type === 'xtream' ? 'Xtream Codes' : (this.src ? 'M3U مباشر' : '—')}</b></div>
-        <div class="row"><span>ينتهي في</span><b>${esc(String(exp))}</b></div>
-        <div class="row"><span>الاتصالات</span><b>${esc(conns)}</b></div>
+        ${acc.username ? `<div class="row"><span>مستخدم الخادم</span><b>${esc(acc.username)}</b></div>` : ''}
+        <div class="row"><span>النوع</span><b>${isX ? 'Xtream Codes' : (this.src ? 'M3U مباشر' : '—')}</b></div>
+        ${acc.status ? `<div class="row"><span>الحالة</span><b class="${acc.status === 'Active' ? 'ok-txt' : 'bad-txt'}">${acc.status === 'Active' ? '✓ نشط' : esc(acc.status)}</b></div>` : ''}
+        ${created ? `<div class="row"><span>تاريخ الإنشاء</span><b>${created}</b></div>` : ''}
+        <div class="row"><span>ينتهي في</span><b>${esc(String(exp))} ${badge}</b></div>
+        ${acc.max_connections ? `<div class="row"><span>حد الأجهزة</span><b>${esc(String(acc.max_connections))} جهاز</b></div>` : ''}
+        ${acc.active_connections != null ? `<div class="row"><span>متصل الآن</span><b>${esc(String(acc.active_connections))} / ${esc(String(acc.max_connections != null ? acc.max_connections : '—'))}</b></div>` : ''}
       </div>
       <div class="set-card"><h3>📋 الحسابات المحفوظة (${list.length}/20)</h3>${rows}</div>
       <div class="set-card"><h3>➕ إضافة بكود التفعيل</h3>
-        <input id="accCodeInput" class="tv-input" placeholder="أدخل كود التفعيل هنا..." style="width:100%;margin-bottom:10px">
+        <div class="input-row" style="margin-bottom:10px">
+          <input id="accCodeInput" class="tv-input" placeholder="أدخل كود التفعيل هنا..." style="width:100%">
+          <button class="paste-btn" data-paste="accCodeInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
+        </div>
         <button class="gold-btn" id="accCodeBtn" style="width:100%">🎫 تفعيل ودخول</button>
       </div>
       <div class="set-card"><h3>🔗 إضافة رابط M3U مباشر</h3>
-        <input id="accM3uInput" class="tv-input" placeholder="http://... (رابط get.php أو .m3u)" style="width:100%;margin-bottom:10px">
+        <div class="input-row" style="margin-bottom:10px">
+          <input id="accM3uInput" class="tv-input" placeholder="http://... (رابط get.php أو .m3u)" style="width:100%">
+          <button class="paste-btn" data-paste="accM3uInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
+        </div>
         <button class="gold-btn" id="accM3uBtn" style="width:100%">🔗 إضافة ودخول</button>
       </div>
       <div class="set-card"><div id="accMsg" class="verify-msg"></div></div>`;

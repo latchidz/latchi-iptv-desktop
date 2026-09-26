@@ -219,3 +219,140 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .acc-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
 .acc-now { color: #7CE38B; font-weight: 700; font-size: 13px; }
 .acc-empty { color: var(--muted); text-align: center; padding: 16px; border: 1px dashed var(--line); border-radius: 12px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   🎨 v1.0 — الطبقة العصرية النهائية (ديزاين احترافي + فن التلفاز)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── دخول الشاشات بحركة ناعمة ─── */
+.screen.active { animation: screenIn .38s cubic-bezier(.2, .8, .25, 1); }
+@keyframes screenIn { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
+
+/* ─── 🎬 السبلاش الجديد (فن التلفاز الرسمي) ─── */
+#splash { background: #000; }
+#splash .splash-bg { animation: splashZoom 9s ease-out forwards; }
+@keyframes splashZoom { from { transform: scale(1.08); } to { transform: scale(1); } }
+.splash-veil { position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(3,6,18,.55) 0%, rgba(3,6,18,.12) 40%, rgba(3,6,18,.82) 100%); }
+.splash-brand { position: absolute; bottom: 15%; width: 100%; text-align: center;
+  font-size: 46px; font-weight: bold; color: #fff; letter-spacing: 6px;
+  text-shadow: 0 4px 30px rgba(0,0,0,.9), 0 0 60px rgba(217,169,78,.35);
+  animation: brandUp .9s .25s cubic-bezier(.2,.8,.25,1) both; }
+.splash-brand span { color: var(--gold); }
+@keyframes brandUp { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
+.splash-ver { position: absolute; top: 26px; left: 30px; font-size: 14px; font-weight: bold;
+  color: var(--gold); background: rgba(6,9,19,.72); border: 1px solid var(--gold2);
+  border-radius: 20px; padding: 5px 15px; letter-spacing: 2px;
+  backdrop-filter: blur(6px); animation: brandUp .8s .45s both; }
+.splash-loading { gap: 12px; align-items: center; }
+.splash-hint { color: #C9CEE8; font-size: 13.5px; letter-spacing: 1px; }
+
+/* ─── 🌌 خلفيات الرئيسية المتغيرة ─── */
+#homeBgs { position: absolute; inset: 0; overflow: hidden; background: var(--bg); }
+#homeBgs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; filter: brightness(.38) saturate(1.12);
+  transition: opacity 1.6s ease-in-out; will-change: opacity; }
+#homeBgs img.on { opacity: 1; }
+#home::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(6,9,19,.72) 0%, rgba(6,9,19,.25) 34%, rgba(6,9,19,.55) 72%, rgba(6,9,19,.88) 100%); }
+#home > header { position: relative; z-index: 3; }
+#home > .cards { position: relative; z-index: 2; }
+
+/* ─── الهيدر الزجاجي ─── */
+.tv-header.glass { background: rgba(10, 15, 36, .55) !important;
+  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border-bottom: 1px solid rgba(217, 169, 78, .22); }
+.ver-chip { font-size: 12px; font-weight: bold; color: #241A05; letter-spacing: 1.5px;
+  background: linear-gradient(135deg, #FFE9A8, var(--gold2));
+  border-radius: 20px; padding: 4px 13px; box-shadow: 0 2px 10px rgba(217,169,78,.35); }
+
+/* ─── 🏠 بطاقات الرئيسية المصورة ─── */
+.cards { align-content: start !important; padding: 40px 56px 60px !important; }
+.tcard { position: relative; overflow: hidden; padding: 0 !important; text-align: right !important;
+  min-height: 218px; border-radius: 20px; border-color: rgba(34, 40, 79, .9);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .45);
+  transition: transform .22s cubic-bezier(.2,.8,.25,1), border-color .22s, box-shadow .22s; }
+.tcard-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  transition: transform .45s cubic-bezier(.2,.8,.25,1); }
+.tcard-shade { position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(6,9,19,0) 34%, rgba(6,9,19,.62) 66%, rgba(6,9,19,.92) 100%); }
+.tcard-body { position: absolute; inset-inline: 0; bottom: 0; padding: 14px 16px 15px; }
+.tcard .t { font-size: 18px; font-weight: bold; text-shadow: 0 2px 10px #000; }
+.tcard .c { font-size: 12px; color: #C8CEEA; margin-top: 4px; text-shadow: 0 1px 6px #000; }
+.tcard:hover { transform: translateY(-6px) scale(1.02); border-color: var(--gold2);
+  box-shadow: 0 20px 48px rgba(0,0,0,.6), 0 0 26px rgba(217,169,78,.22); }
+.tcard:hover .tcard-img { transform: scale(1.07); }
+.tcard.focused { transform: translateY(-6px) scale(1.04) !important;
+  border-color: var(--gold) !important; background: var(--panel) !important;
+  box-shadow: var(--focus-glow), 0 22px 52px rgba(0,0,0,.6) !important; }
+
+/* ─── 📋 زر اللصق ─── */
+.input-row { display: flex; gap: 10px; align-items: stretch; }
+.input-row .tv-input { flex: 1; text-align: right; }
+.paste-btn { flex: 0 0 56px; display: flex; align-items: center; justify-content: center;
+  background: rgba(20, 27, 61, .92); color: var(--goldsoft); cursor: pointer;
+  border: 2px solid var(--line); border-radius: 14px;
+  transition: border-color .18s, color .18s, transform .18s, background .18s; }
+.paste-btn:hover { border-color: var(--gold2); color: var(--gold);
+  background: rgba(30, 40, 85, .95); transform: translateY(-1px); }
+.paste-btn.focused { border-color: var(--gold) !important; box-shadow: var(--focus-glow); }
+.paste-btn.pasted { background: rgba(124, 227, 139, .18) !important; border-color: #7CE38B !important;
+  color: #7CE38B !important; animation: pastePop .45s; }
+.paste-btn.paste-empty { animation: pasteShake .4s; border-color: #FF7B7B; color: #FF7B7B; }
+@keyframes pastePop { 40% { transform: scale(1.14); } }
+@keyframes pasteShake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+/* ─── زر ذهبي بلمعة ─── */
+.gold-btn { position: relative; overflow: hidden; border-radius: 16px !important;
+  box-shadow: 0 6px 22px rgba(217, 169, 78, .3);
+  transition: transform .18s, box-shadow .18s; }
+.gold-btn::after { content: ''; position: absolute; top: 0; height: 100%; width: 46px;
+  right: -70px; background: linear-gradient(105deg, transparent, rgba(255,255,255,.5), transparent);
+  transform: skewX(-18deg); animation: btnShine 3.4s ease-in-out infinite; }
+@keyframes btnShine { 0%, 55% { right: -70px; } 100% { right: 130%; } }
+.gold-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(217,169,78,.45); }
+
+/* ─── بطاقات الإعدادات الزجاجية ─── */
+.set-card { background: rgba(14, 20, 48, .72) !important;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(34, 40, 79, .95) !important;
+  box-shadow: 0 12px 34px rgba(0,0,0,.35);
+  transition: border-color .2s; }
+.set-card:hover { border-color: rgba(217, 169, 78, .4) !important; }
+.ok-txt { color: #7CE38B; font-weight: 700; }
+.bad-txt { color: #FF7B7B; font-weight: 700; }
+
+/* ─── 🏷️ شارة الصلاحية الملونة ─── */
+.badge-exp { display: inline-block; font-size: 11.5px; font-weight: bold; border-radius: 16px;
+  padding: 3px 11px; margin-right: 8px; vertical-align: middle; }
+.badge-exp.green { color: #7CE38B; background: rgba(124,227,139,.12); border: 1px solid rgba(124,227,139,.45); }
+.badge-exp.orange { color: #FFC46B; background: rgba(255,196,107,.12); border: 1px solid rgba(255,196,107,.45); }
+.badge-exp.red { color: #FF7B7B; background: rgba(255,123,123,.13); border: 1px solid rgba(255,123,123,.5); }
+.badge-exp.gray { color: #9AA0C5; background: rgba(154,160,197,.1); border: 1px solid rgba(154,160,197,.4); }
+
+/* ─── ⭐ القوائم المختلطة (مفضلة/متابعة): قنوات صفوف + بوسترات معاً ─── */
+.poster-grid.mixed-list .chan { grid-column: 1 / -1; max-width: 760px; }
+
+/* ─── حركات البوستر/القناة/الحلقة بالفأرة ─── */
+.pcard:hover { transform: translateY(-5px); border-color: var(--gold2) !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,.5), 0 0 20px rgba(217,169,78,.16); }
+.pwrap:hover .pcard { border-color: var(--gold2); }
+.chan:hover { border-color: var(--gold2) !important; transform: translateX(-4px);
+  background: var(--panel2) !important; }
+.ep:hover { border-color: var(--gold2) !important; transform: translateY(-3px); }
+
+/* ─── مشغل زجاجي ─── */
+.p-controls { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.p-btn { background: rgba(20, 27, 61, .68) !important; border-radius: 13px !important;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: transform .16s, border-color .16s, background .16s; }
+.p-btn:hover { border-color: var(--gold2) !important; transform: translateY(-2px); }
+.p-center-msg { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.14); box-shadow: 0 24px 70px rgba(0,0,0,.65); }
+
+/* ─── شريط تمرير رفيع ذهبي ─── */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: rgba(8, 13, 31, .6); }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #3A4378, #262E5E);
+  border-radius: 6px; border: 1px solid rgba(217,169,78,.18); }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, var(--gold2), #8A6B28); }

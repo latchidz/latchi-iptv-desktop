@@ -7,5 +7,7 @@ contextBridge.exposeInMainWorld('latchi', {
   // 💾 كاش القرص — التحميل مرة واحدة فقط
   cacheGet: (k) => ipcRenderer.invoke('cache-get', k),
   cacheSet: (k, v, ttl) => ipcRenderer.invoke('cache-set', k, v, ttl),
-  cacheClear: () => ipcRenderer.invoke('cache-clear')
+  cacheClear: () => ipcRenderer.invoke('cache-clear'),
+  // 📋 v1.0: زر اللصق المباشر
+  readClipboard: () => ipcRenderer.invoke('clipboard-read')
 });
