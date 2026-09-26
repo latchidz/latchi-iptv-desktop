@@ -63,11 +63,8 @@ const Player = {
     this._resumeAt = (!this.isLive && opts.resumeAt) ? opts.resumeAt : 0;
     this.show('⏳ جارٍ فتح البث...', 0);
     this.flashUi();
-    // 🛠 v1.1.3: أي تشغيل (قناة/فيلم/حلقة) = شاشة كاملة فوراً مثل التلفاز — Esc/رجوع يغلق ويعود للقائمة
-    try {
-      if (!document.fullscreenElement && document.documentElement.requestFullscreen)
-        document.documentElement.requestFullscreen().catch(() => {});
-    } catch (e) {}
+    // 📺 v1.0.2: التطبيق كله بملء الشاشة دائماً (نافذة التلفاز) — إعادة تأكيد عبر IPC عند أي تشغيل
+    try { if (window.latchi && window.latchi.setFullscreen) window.latchi.setFullscreen(true); } catch (e) {}
     this._startWatchdog();             // 🛠 v1.1.2: حارس التقطّع الصامت
     this._tryCandidate();
   },
@@ -223,9 +220,27 @@ const Player = {
     localStorage.setItem('vol', this.video.volume);
     this.show('🔊 ' + Math.round(this.video.volume * 100) + '%', 700);
   },
-  fullscreen() {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else document.documentElement.requestFullscreen();
+  async fullscreen() {
+    let on = true;
+    try { if (window.latchi && window.latchi.isFullscreen) on = await window.latchi.isFullscreen(); } catch (e) {}
+    try { if (window.latchi && window.latchi.setFullscreen) window.latchi.setFullscreen(!on); } catch (e) {}
+    this.show(on ? '🗗 نافذة' : '⛶ شاشة كاملة', 900);
+  },
+  // 🎛 v1.0.2: أزرار المشغل كيما التلفاز — قائمة الأزرار المرئية
+  playerBtns() {
+    return ['pPlay', 'pRew', 'pFwd', 'pVol', 'pFull', 'pFav', 'pExit']
+      .map(id => document.getElementById(id))
+      .filter(b => b && b.offsetParent && b.style.display !== 'none');
+  },
+  // ←→ تنقل التركيز بين الأزرار (RTL: اليسار = التالي بصرياً) مع دوران دائري
+  moveBtnFocus(dir) {
+    const btns = this.playerBtns();
+    if (!btns.length) return;
+    let i = btns.findIndex(b => b.classList.contains('focused'));
+    if (i < 0) { btns[dir > 0 ? 0 : btns.length - 1].classList.add('focused'); return; }
+    btns[i].classList.remove('focused');
+    i = (i + dir + btns.length) % btns.length;
+    btns[i].classList.add('focused');
   },
   fav() {
     App.toggleFav(this.current);
@@ -265,6 +280,7 @@ const Player = {
     clearTimeout(this.hideTimer);
     this.hideTimer = setTimeout(() => {
       this.ui.classList.add('hidden-ui'); this.uiVisible = false;
+      this.playerBtns().forEach(b => b.classList.remove('focused'));   // 🎛 v1.0.2
     }, 3500);
   },
   close() {
@@ -272,16 +288,34 @@ const Player = {
     clearInterval(this._wd);           // 🛠 v1.1.2: أوقف حارس التقطّع
     if (this.hls) { this.hls.destroy(); this.hls = null; }
     this.video.pause(); this.video.removeAttribute('src'); this.video.load();
-    // 🛠 v1.1.1: اخرج من ملء الشاشة + الاستدعاء مرة واحدة فقط (منع التداخل اللانهائي)
-    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen(); } catch (e) {}
+    // 📺 v1.0.2: نبقى بملء الشاشة — التطبيق تلفاز (الخروج فقط من نافذة التأكيد)
     const cb = this.hideCb; this.hideCb = null;
     if (cb) cb('exit');
   },
   onKey(e) {
+    const wasVisible = this.uiVisible;    // 📺 v1.0.2: احكم على الحالة قبل إيقاظ الواجهة
     this.flashUi();
+    if (wasVisible) {
+      // 🎛 v1.0.2 (ريموت التلفاز): الأزرار ظاهرة → ←/→ تنقل بينها وEnter يفعّل المركز عليه
+      switch (e.key) {
+        case 'ArrowLeft': this.moveBtnFocus(1); e.preventDefault(); return;    // RTL: يسار = التالي
+        case 'ArrowRight': this.moveBtnFocus(-1); e.preventDefault(); return;
+        case 'ArrowUp': this.zap(1); e.preventDefault(); return;
+        case 'ArrowDown': this.zap(-1); e.preventDefault(); return;
+        case 'Enter': {
+          const f = this.playerBtns().find(b => b.classList.contains('focused'));
+          if (f) f.click(); else this.toggle();
+          e.preventDefault(); return;
+        }
+        case ' ': this.toggle(); e.preventDefault(); return;
+        case 'f': case 'F': this.fullscreen(); return;
+        case 'm': case 'M': this.toggleMute(); return;
+      }
+      return;
+    }
+    // 📺 v1.1.2 مثل الريموت: يمين/يسار = صوت (وفي الأفلام: تقديم/ترجيع)، فوق/تحت = قناة تالية/سابقة
     switch (e.key) {
       case ' ': case 'Enter': this.toggle(); e.preventDefault(); break;
-      // 📺 v1.1.2 مثل الريموت: يمين/يسار = صوت (وفي الأفلام: تقديم/ترجيع)، فوق/تحت = قناة تالية/سابقة
       case 'ArrowLeft': this.isLive ? this.volume(-.05) : this.seek(-10); e.preventDefault(); break;
       case 'ArrowRight': this.isLive ? this.volume(.05) : this.seek(10); e.preventDefault(); break;
       case 'ArrowUp': this.zap(1); e.preventDefault(); break;

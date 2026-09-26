@@ -20,6 +20,7 @@ function createWindow() {
     width: 1280,
     height: 720,
     maximize: true,   // 🛠 v1.1.3: النافذة تأخذ مقاس الشاشة كاملاً (طلب العميل)
+    fullscreen: true, // 📺 v1.0.2: التطبيق يشتغل بملء الشاشة كيما التلفاز (طلب العميل)
     minWidth: 960,
     minHeight: 600,
     backgroundColor: '#060913',
@@ -38,6 +39,22 @@ function createWindow() {
 }
 
 // 🆔 معرّف جهاز ثابت (لنظام التحقق — نفس فلسفة أندرويد)
+// ⌨️ v1.0.2: F11 = تبديل ملء الشاشة (احتياط للخروج من وضع التلفاز)
+try {
+  win.webContents.on('before-input-event', (e, input) => {
+    if (input && input.key === 'F11' && input.type === 'keyDown') {
+      win.setFullScreen(!win.isFullScreen());
+      e.preventDefault();
+    }
+  });
+} catch (err) {}
+
+// 📺 v1.0.2: التحكم في ملء الشاشة عبر IPC (المشغل/الرندرر)
+ipcMain.handle('set-fullscreen', (e, on) => { if (win) win.setFullScreen(!!on); });
+ipcMain.handle('is-fullscreen', () => !!(win && win.isFullScreen()));
+// ⏻ v1.0.2: خروج نظيف من نافذة التأكيد «هل تريد الخروج من التطبيق؟»
+ipcMain.handle('app-quit', () => app.quit());
+
 // 📋 v1.0: قراءة الحافظة — زر اللصق بلا Ctrl+V
 ipcMain.handle('clipboard-read', () => {
   try { return clipboard.readText() || ''; } catch { return ''; }

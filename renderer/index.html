@@ -54,6 +54,7 @@
     <span class="ver-chip">V1.0</span>
     <div class="clock" id="clock"></div>
     <div class="user-chip" id="userChip">👤</div>
+    <div class="exit-chip" id="exitBtn" title="خروج من التطبيق">⏻</div>
   </header>
   <div class="cards" id="cards"></div>
 </div>
@@ -122,9 +123,21 @@
       <button class="p-btn" id="pFav">☆ مفضلة</button>
       <button class="p-btn p-exit" id="pExit">✕ خروج</button>
     </div>
-    <div class="p-hint">مسافة: تشغيل/إيقاف • أسهم: تنقل/صوت • F: ملء الشاشة • Esc: رجوع</div>
+    <div class="p-hint">↑↓ قناة • ←→ أزرار المشغل عند ظهورها (صوت/تقديم عند اختفائها) • Enter تأكيد • مسافة تشغيل • Esc رجوع</div>
   </div>
   <div class="p-center-msg hidden" id="pCenter"></div>
+</div>
+
+<!-- ═══ ⏻ v1.0.2: نافذة تأكيد الخروج (كيما التلفاز — أسهم + Enter) ═══ -->
+<div id="exitDlg" class="exit-dlg hidden">
+  <div class="exit-panel">
+    <div class="exit-ic">⏻</div>
+    <div class="exit-q">هل تريد الخروج من التطبيق؟</div>
+    <div class="exit-btns">
+      <button class="p-btn exit-ok" id="exitOk">✓ نعم، خروج</button>
+      <button class="p-btn" id="exitCancel">✗ إلغاء</button>
+    </div>
+  </div>
 </div>
 
 <script src="../node_modules/hls.js/dist/hls.min.js"></script>

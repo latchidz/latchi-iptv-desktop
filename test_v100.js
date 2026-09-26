@@ -40,7 +40,7 @@ function makeEl(id) {
  'home', 'homeBgs', 'clock', 'userChip', 'cards', 'list', 'searchInput', 'catsBar', 'listBody',
  'details', 'detailsBody', 'settings', 'settingsBody', 'accounts', 'accountsBody', 'player', 'video', 'playerUi',
  'pName', 'pLive', 'pTime', 'pSeekWrap', 'pSeekFill', 'pPlay', 'pRew', 'pFwd', 'pVol', 'pFull', 'pFav', 'pExit', 'pCenter',
- 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg', 'checkingOv', 'welcome'].forEach(id => els[id] = makeEl(id));
+ 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg', 'checkingOv', 'welcome', 'exitDlg', 'exitOk', 'exitCancel', 'exitBtn'].forEach(id => els[id] = makeEl(id));
 
 const store = {};
 const localStorage = {
@@ -203,6 +203,51 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   T('applyCode من البداية للنهاية (كود→ترحيب)', okCode === true && App.screen === 'welcome' && els['checkingOv'].classList.contains('hidden'));
   await sleep(2700);
   T('انتهى بالرئيسية', App.screen === 'home');
+
+  console.log('═══ 8) v1.0.2: نافذة الخروج + ريموت المشغل + ملء الشاشة ═══');
+  const kd = ev => (documentMock._listeners['keydown'] || []).forEach(f => f(Object.assign({ target: {}, preventDefault() {} }, ev)));
+  App.show('home', true);
+  let quitFired = 0;
+  sandbox.latchi.quitApp = () => { quitFired++; };
+  App.showExitDlg();
+  T('نافذة الخروج تظهر', App.exitDlgOpen());
+  T('الإلغاء مركّز افتراضياً (الآمن)', els['exitCancel'].classList.contains('focused') && !els['exitOk'].classList.contains('focused'));
+  kd({ key: 'ArrowLeft' });
+  T('السهم ينقل التركيز إلى «نعم»', els['exitOk'].classList.contains('focused'));
+  kd({ key: 'Enter' });
+  T('Enter على «نعم» = خروج', quitFired === 1);
+  App.showExitDlg(); kd({ key: 'Escape' });
+  T('Esc يلغي النافذة', !App.exitDlgOpen());
+  kd({ key: 'Backspace' });
+  T('زر الرجوع في الرئيسية يفتح نافذة الخروج', App.exitDlgOpen());
+  App.hideExitDlg();
+  els['exitCancel'].click ? null : null;
+
+  // ريموت المشغل
+  const fsCalls = [];
+  sandbox.latchi.setFullscreen = (on) => { fsCalls.push(on); };
+  sandbox.latchi.isFullscreen = async () => true;
+  App.src = { type: 'm3u', live: [L1, L2], movies: [M], series: [] };
+  await App.openList('live');
+  App.startPlay(L1); await sleep(40);
+  T('التشغيل يعيد تأكيد ملء الشاشة (IPC)', fsCalls.includes(true));
+  T('الأزرار ظاهرة بعد التشغيل', Player.uiVisible === true);
+  els['pRew'].style.display = 'none'; els['pFwd'].style.display = 'none';   // بث حي
+  Player.onKey({ key: 'ArrowLeft', preventDefault() {} });
+  T('← يركّز زر التشغيل', els['pPlay'].classList.contains('focused'));
+  Player.onKey({ key: 'ArrowLeft', preventDefault() {} });
+  T('← ثانية يركّز التالي (الصوت)', els['pVol'].classList.contains('focused') && !els['pPlay'].classList.contains('focused'));
+  Player.onKey({ key: 'Enter', preventDefault() {} });
+  T('Enter يفعّل زر الصوت (كتم)', els['video'].muted === true);
+  // مخفية (بعد 3.5ث): كل ضغة أولى تتصرف كيما الريموت الكلاسيكي
+  Player.uiVisible = false;
+  Player.playerBtns().forEach(b => b.classList.remove('focused'));   // مؤقت الإخفاء يمسح التركيز
+  Player.video.volume = 0.5;
+  Player.onKey({ key: 'ArrowRight', preventDefault() {} });
+  T('مخفية: يمين = صوت+ (0.5→0.55)', Math.abs(Player.video.volume - 0.55) < 0.001);
+  Player.uiVisible = false;                                          // محاكاة 3.5ث انقضت من جديد
+  Player.onKey({ key: 'Enter', preventDefault() {} });
+  T('مخفية: Enter = تشغيل/إيقاف', Player.video.paused === true);
 
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);

@@ -372,3 +372,39 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .checking-ov.hidden { display: none !important; }
 .checking-ov img { width: 100%; height: 100%; object-fit: cover; animation: checkIn .45s ease-out; }
 @keyframes checkIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ═══ ⏻🎛 v1.0.2: وضع التلفاز الكامل — خروج + شبكة + ريموت المشغل ═══ */
+
+/* نافذة تأكيد الخروج */
+.exit-dlg { position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center;
+  background: rgba(3, 6, 16, .62); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); }
+.exit-dlg.hidden { display: none !important; }
+.exit-panel { background: rgba(14, 20, 48, .94); border: 2px solid var(--gold2); border-radius: 22px;
+  padding: 32px 46px; text-align: center; max-width: 92vw;
+  box-shadow: 0 0 0 6px rgba(217, 169, 78, .14), 0 28px 70px rgba(0, 0, 0, .7);
+  animation: exitPop .22s cubic-bezier(.2, .8, .25, 1); }
+@keyframes exitPop { from { opacity: 0; transform: scale(.9); } }
+.exit-ic { font-size: 42px; color: #FF7B7B; margin-bottom: 10px;
+  filter: drop-shadow(0 0 16px rgba(255, 123, 123, .5)); }
+.exit-q { font-size: 19px; font-weight: bold; margin-bottom: 22px; }
+.exit-btns { display: flex; gap: 14px; justify-content: center; }
+.exit-btns .p-btn { min-width: 138px; font-size: 15px; }
+.exit-btns .p-btn.focused { border-color: var(--gold) !important; box-shadow: var(--focus-glow); transform: translateY(-2px); }
+.exit-btns .exit-ok.focused { border-color: #FF7B7B !important;
+  box-shadow: 0 0 0 3px #fff, 0 0 24px rgba(255, 123, 123, .7); }
+
+/* زر الخروج في هيدر الرئيسية */
+.exit-chip { background: var(--panel2); border: 1px solid #8B3A3A; color: #FF9A9A; border-radius: 20px;
+  padding: 5px 14px; font-size: 15px; cursor: pointer; transition: all .18s; }
+.exit-chip:hover, .exit-chip.focused { border-color: #FF7B7B; color: #FFC4C4;
+  box-shadow: 0 0 16px rgba(255, 123, 123, .4); transform: translateY(-1px); }
+
+/* شبكة الرئيسية 4×2 كيما واجهة التلفاز بالضبط */
+.cards { grid-template-columns: repeat(4, minmax(205px, 248px)) !important; justify-content: center; row-gap: 30px !important; }
+
+/* تركيز أزرار المشغل (ريموت) */
+.p-btn.focused { border-color: var(--gold) !important; box-shadow: var(--focus-glow);
+  transform: translateY(-2px) scale(1.04); }
+
+/* إخفاء مؤشر الفأرة في المشغل (روح التلفاز) */
+body.no-cursor, body.no-cursor * { cursor: none !important; }

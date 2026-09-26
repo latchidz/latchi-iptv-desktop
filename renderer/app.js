@@ -74,6 +74,29 @@ const App = {
     this._welcomeTimer = setTimeout(() => { if (this.screen === 'welcome') this.show('home', true); }, 2600);
   },
 
+  // ═══ ⏻ v1.0.2: نافذة تأكيد الخروج «كيما التلفاز» — أسهم + Enter ═══
+  exitDlgOpen() { const d = document.getElementById('exitDlg'); return !!(d && !d.classList.contains('hidden')); },
+  showExitDlg() {
+    const d = document.getElementById('exitDlg');
+    if (!d) return;
+    d.classList.remove('hidden');
+    this._exitFocus = 'cancel';           // الآمن أولاً (الإلغاء)
+    this._paintExitDlg();
+  },
+  hideExitDlg() { const d = document.getElementById('exitDlg'); if (d) d.classList.add('hidden'); },
+  _paintExitDlg() {
+    const ok = document.getElementById('exitOk'), c = document.getElementById('exitCancel');
+    if (!ok || !c) return;
+    ok.classList.toggle('focused', this._exitFocus === 'ok');
+    c.classList.toggle('focused', this._exitFocus === 'cancel');
+  },
+  moveExitFocus() { this._exitFocus = this._exitFocus === 'ok' ? 'cancel' : 'ok'; this._paintExitDlg(); },
+  confirmExitDlg() { if (this._exitFocus === 'ok') this.doQuit(); else this.hideExitDlg(); },
+  doQuit() {
+    try { if (window.latchi && window.latchi.quitApp) { window.latchi.quitApp(); return; } } catch (e) {}
+    try { window.close(); } catch (e) {}
+  },
+
   onShown(name) {
     if (name === 'home') { this.buildHome(); this.startHomeBgs(); }
     if (name === 'settings') this.buildSettings();
@@ -657,6 +680,14 @@ document.addEventListener('keydown', (e) => {
     if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return;
     return; // الكتابة حرة داخل الحقل
   }
+  // ⏻ v1.0.2: نافذة الخروج مفتوحة → الأسهم تنقل بين نعم/إلغاء وEnter يؤكد
+  if (App.exitDlgOpen()) {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') App.moveExitFocus();
+    else if (e.key === 'Enter') App.confirmExitDlg();
+    else if (e.key === 'Escape' || e.key === 'Backspace') App.hideExitDlg();
+    e.preventDefault();
+    return;
+  }
   if (App.screen === 'player') {
     if (e.key === 'Escape') { App.back(); }
     else Player.onKey(e);
@@ -669,8 +700,21 @@ document.addEventListener('keydown', (e) => {
     case 'ArrowLeft': spatialMove(-1, 0); e.preventDefault(); break;
     case 'ArrowRight': spatialMove(1, 0); e.preventDefault(); break;
     case 'Enter': if (cur) { cur.click(); if (cur.classList.contains('tv-input')) cur.focus(); } e.preventDefault(); break;
-    case 'Escape': case 'Backspace': if (App.screen !== 'verify' && App.screen !== 'home') App.back(); e.preventDefault(); break;
+    case 'Escape': case 'Backspace':
+      if (App.screen === 'home') App.showExitDlg();          // ⏻ v1.0.2: زر الرجوع في الرئيسية = تأكيد الخروج كيما التلفاز
+      else if (App.screen !== 'verify') App.back();
+      e.preventDefault(); break;
   }
+});
+// 🖱 v1.0.2: المؤشر يختفي بعد 2.5ث بلا حركة داخل المشغل (كيما التلفاز)
+let _curTimer = null;
+document.addEventListener('mousemove', () => {
+  const b = document.body;
+  if (b) b.classList.remove('no-cursor');
+  clearTimeout(_curTimer);
+  _curTimer = setTimeout(() => {
+    if (App.screen === 'player' && b) b.classList.add('no-cursor');
+  }, 2500);
 });
 // الفأرة = نفس التركيز
 document.addEventListener('mouseover', (e) => {
@@ -690,6 +734,10 @@ document.querySelectorAll('.vtab').forEach(t => t.onclick = () => {
   App.focusFirst('verify');
 });
 document.querySelectorAll('.nav-back').forEach(b => b.onclick = () => App.back());
+document.getElementById('exitBtn').onclick = () => App.showExitDlg();
+document.getElementById('exitOk').onclick = () => App.doQuit();
+document.getElementById('exitCancel').onclick = () => App.hideExitDlg();
+document.getElementById('exitDlg').onclick = (e) => { if (e.target === e.currentTarget) App.hideExitDlg(); };
 document.getElementById('codeBtn').onclick = () => App.doVerify();
 document.getElementById('m3uBtn').onclick = () => App.doM3u();
 document.getElementById('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') App.doVerify(); });

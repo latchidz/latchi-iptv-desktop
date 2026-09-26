@@ -9,5 +9,9 @@ contextBridge.exposeInMainWorld('latchi', {
   cacheSet: (k, v, ttl) => ipcRenderer.invoke('cache-set', k, v, ttl),
   cacheClear: () => ipcRenderer.invoke('cache-clear'),
   // 📋 v1.0: زر اللصق المباشر
-  readClipboard: () => ipcRenderer.invoke('clipboard-read')
+  readClipboard: () => ipcRenderer.invoke('clipboard-read'),
+  // 📺 v1.0.2: ملء الشاشة + الخروج
+  setFullscreen: (on) => ipcRenderer.invoke('set-fullscreen', on),
+  isFullscreen: () => ipcRenderer.invoke('is-fullscreen'),
+  quitApp: () => ipcRenderer.invoke('app-quit')
 });
