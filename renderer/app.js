@@ -702,6 +702,43 @@ const App = {
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ═══ ⌨️ التنقل المكاني (فلسفة الريموت: أسهم + OK + رجوع) ═══
+// 🎯 v1.0.5: تنقل شبكة البوسترات بالفهرس الرياضي — لا هندسة ولا أخطاء:
+// ↑↓ = صف كامل (بثلاثة دائماً)، ←→ = عنصر عنصر باحترام RTL مع التفاف داخل الصف (لا طريق مسدود أبداً)
+function gridNav(dx, dy) {
+  const active = document.querySelector('.screen.active');
+  if (!active || !active.querySelector) return false;
+  const cur = active.querySelector('.pcard.focused');
+  const grid = active.querySelector('.poster-grid');
+  if (!cur || !grid || !grid.contains(cur)) return false;
+  const cards = [...grid.querySelectorAll('.pcard')];   // كل البطاقات — حتى غير المرسومة بعد (content-visibility)
+  let i = cards.indexOf(cur);
+  if (i < 0 || cards.length < 2) return false;
+  let cols = 3;
+  try {
+    if (typeof getComputedStyle === 'function') {
+      const n = getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length;
+      if (n >= 1) cols = n;
+    }
+  } catch (e) {}
+  let j;
+  if (dy !== 0) {
+    j = i + dy * cols;                                  // صف كامل: بثلاثة (أو أعمدة النافذة الصغيرة)
+    if (j < 0 || j >= cards.length) return false;       // حافة القائمة → دع spatialMove يقرر (الفئات فوق)
+  } else {
+    const rowStart = Math.floor(i / cols) * cols;
+    const rowEnd = Math.min(rowStart + cols, cards.length) - 1;
+    j = i - dx;                                         // RTL: السهم الأيسر = العنصر التالي
+    if (j < rowStart) j = rowEnd;                       // التفاف داخل الصف — يمين→يسار
+    if (j > rowEnd) j = rowStart;
+  }
+  const t = cards[j];
+  if (!t) return false;
+  cur.classList.remove('focused');
+  t.classList.add('focused');
+  try { (t.parentElement || t).scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
+  return true;
+}
+
 function spatialMove(dx, dy) {
   const root = document.querySelector('.screen.active');
   if (!root) return;
@@ -753,10 +790,10 @@ document.addEventListener('keydown', (e) => {
   }
   const cur = document.querySelector('.screen.active .focused');
   switch (e.key) {
-    case 'ArrowUp': spatialMove(0, -1); e.preventDefault(); break;
-    case 'ArrowDown': spatialMove(0, 1); e.preventDefault(); break;
-    case 'ArrowLeft': spatialMove(-1, 0); e.preventDefault(); break;
-    case 'ArrowRight': spatialMove(1, 0); e.preventDefault(); break;
+    case 'ArrowUp': if (!gridNav(0, -1)) spatialMove(0, -1); e.preventDefault(); break;
+    case 'ArrowDown': if (!gridNav(0, 1)) spatialMove(0, 1); e.preventDefault(); break;
+    case 'ArrowLeft': if (!gridNav(-1, 0)) spatialMove(-1, 0); e.preventDefault(); break;
+    case 'ArrowRight': if (!gridNav(1, 0)) spatialMove(1, 0); e.preventDefault(); break;
     case 'Enter': if (cur) { cur.click(); if (cur.classList.contains('tv-input')) cur.focus(); } e.preventDefault(); break;
     case 'Escape': case 'Backspace': case 'BrowserBack':    // 🎮 v1.0.3: ريموت البلوتوث يرسل BrowserBack لزر الرجوع
       if (App.screen === 'home') App.showExitDlg();          // ⏻ v1.0.2: زر الرجوع في الرئيسية = تأكيد الخروج كيما التلفاز

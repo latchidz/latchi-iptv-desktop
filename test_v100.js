@@ -336,6 +336,49 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   try { App.focusFirst('list'); } catch (e) { noCrash = false; }
   T('ذاكرة لعنصر محذوف تتجاهل بلا أخطاء', noCrash && !dead.classList.contains('focused'));
 
+  console.log('═══ 11) v1.0.5: تنقل الشبكة بالفهرس — بثلاثة بلا أخطاء (ريموت + كيبورد) ═══');
+  const gcards = Array.from({ length: 12 }, (_, k) => makeEl('gc' + k));
+  const gridEl = makeEl('grid'); gridEl.className = 'poster-grid';
+  gridEl.querySelectorAll = sel => (sel === '.pcard' ? gcards.slice() : []);
+  gridEl.contains = el => gcards.includes(el);
+  els['list'].querySelector = function (sel) {
+    if (sel === '.poster-grid') return gridEl;
+    if (sel === '.pcard.focused') return gcards.find(c => c.classList.contains('focused')) || null;
+    return null;
+  };
+  const prevDocQ = documentMock.querySelector;
+  documentMock.querySelector = function (sel) {
+    if (sel === '.screen.active') return els['list'];
+    if (sel === '.screen.active .focused') return gcards.find(c => c.classList.contains('focused')) || null;
+    return prevDocQ ? prevDocQ.call(this, sel) : null;
+  };
+  sandbox.getComputedStyle = () => ({ gridTemplateColumns: '1fr 1fr 1fr' });
+  App.screen = 'list';
+  const kd2 = ev => (documentMock._listeners['keydown'] || []).forEach(f => f(Object.assign({ target: {}, preventDefault() {} }, ev)));
+  const focusedIdx = () => gcards.findIndex(c => c.classList.contains('focused'));
+  const focus = k => { gcards.forEach(c => c.classList.remove('focused')); gcards[k].classList.add('focused'); };
+  focus(1); kd2({ key: 'ArrowLeft' });
+  T('RTL: ← = العنصر التالي', focusedIdx() === 2);
+  focus(2); kd2({ key: 'ArrowLeft' });
+  T('← من آخر الصف يلتف لأوله (لا طريق مسدود)', focusedIdx() === 0);
+  focus(0); kd2({ key: 'ArrowRight' });
+  T('RTL: → = السابق مع التفاف', focusedIdx() === 2);
+  focus(1); kd2({ key: 'ArrowDown' });
+  T('↓ = صف كامل بثلاثة', focusedIdx() === 4);
+  focus(4); kd2({ key: 'ArrowUp' });
+  T('↑ = صف كامل بثلاثة', focusedIdx() === 1);
+  focus(10); kd2({ key: 'ArrowDown' });
+  T('↓ من الصف الأخير = ثابت بلا أخطاء', focusedIdx() === 10);
+  focus(1); kd2({ key: 'ArrowUp' });
+  T('↑ من الصف الأول = ثابت (يصعد للفئات في الواقع)', focusedIdx() === 1);
+  let opened = 0; gcards[5].onclick = () => { opened++; };
+  focus(5); kd2({ key: 'Enter' });
+  T('Enter على البطاقة المركزة = فتحها', opened === 1);
+  sandbox.getComputedStyle = () => ({ gridTemplateColumns: '1fr 1fr' });
+  focus(0); kd2({ key: 'ArrowDown' });
+  T('نافذة أصغر (عمودان): ↓ = +2 تلقائياً', focusedIdx() === 2);
+  documentMock.querySelector = prevDocQ;
+
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('خطأ:', e); process.exit(2); });
