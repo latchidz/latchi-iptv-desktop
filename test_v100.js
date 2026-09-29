@@ -40,7 +40,7 @@ function makeEl(id) {
  'home', 'homeBgs', 'clock', 'userChip', 'cards', 'list', 'searchInput', 'catsBar', 'listBody',
  'details', 'detailsBody', 'settings', 'settingsBody', 'accounts', 'accountsBody', 'player', 'video', 'playerUi',
  'pName', 'pLive', 'pTime', 'pSeekWrap', 'pSeekFill', 'pPlay', 'pRew', 'pFwd', 'pVol', 'pFull', 'pFav', 'pExit', 'pCenter',
- 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg', 'checkingOv', 'welcome', 'exitDlg', 'exitOk', 'exitCancel', 'exitBtn', 'pNum', 'expLine', 'm3uExpInput', 'accExpInput'].forEach(id => els[id] = makeEl(id));
+ 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg', 'checkingOv', 'welcome', 'exitDlg', 'exitOk', 'exitCancel', 'exitBtn', 'pNum', 'expLine', 'm3uExpInput', 'accExpInput', 'prayerChip', 'prayerTxt', 'pEpg', 'pMark', 'pmQ'].forEach(id => els[id] = makeEl(id));
 
 const store = {};
 const localStorage = {
@@ -388,6 +388,62 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   T('توسيط الشبكة + هوامش آمنة', css.includes('align-content: center !important') && css.includes('calc(100% - 80px)'));
   T('تأثير الماوس: إبراز + حواف مضيئة', /\.tcard:hover\s*\{[^}]*scale\(1\.05\)/s.test(css));
   T('استجابة النوافذ الصغيرة (عمودان ثم واحد)', css.includes('repeat(2, minmax(0, 1fr))') && /@media \(max-width: 480px\)/.test(css));
+
+  console.log('═══ 13) v1.0.6: الشريط العلوي الحي + EPG + العلامة المائية ═══');
+  // 👤 اسم المستخدم من الخادم في الهيدر
+  App.src = { type: 'xtream', categories: { live: [], movie: [], series: [] }, account: { user_info: { username: 'iskander_pro' } } };
+  App.user = { name: 'x' };
+  App.show('home', true);
+  T('اسم المستخدم من الخادم في الهيدر', els['userChip'].textContent.includes('iskander_pro'));
+
+  // 🕌 مواقيت الصلاة: fetch وهمي (ipapi → aladhan) بنفس منطق أندرويد
+  sandbox.atob = s => Buffer.from(s, 'base64').toString('utf8');
+  const nowTs = Math.floor(Date.now() / 1000);
+  let fetchCalls = 0;
+  sandbox.fetch = async (url) => {
+    fetchCalls++;
+    const u = String(url);
+    const json = u.includes('ipapi.co') ? { latitude: 36.9, longitude: 8.35, city: 'Annaba' }
+      : u.includes('aladhan') ? { data: { timings: { Fajr: '05:31', Dhuhr: '12:41', Asr: '15:59', Maghrib: '19:02', Isha: '20:17' } } }
+      : u.includes('get_short_epg') ? { epg_listings: [{ title: Buffer.from('مباراة ودية — LATCHI CUP', 'utf8').toString('base64'), start_timestamp: nowTs - 600, end_timestamp: nowTs + 5400 }] }
+      : {};
+    return { ok: true, json: async () => json };
+  };
+  sandbox.localStorage.removeItem('prayer_cache');
+  await App.initPrayer();
+  const pc = JSON.parse(sandbox.localStorage.getItem('prayer_cache') || '{}');
+  T('الموقع بالـIP ثم المواقيت (ipapi+aladhan)', fetchCalls === 2 && pc.region === 'Annaba' && pc.timings && pc.timings.Asr === '15:59');
+  T('كاش يومي (لا إعادة جلب)', (() => { const c = fetchCalls; App.initPrayer(); return fetchCalls === c; })());
+  App.updatePrayerChip();
+  T('الشريحة تعرض الصلاة القادمة + الوقت', !els['prayerChip'].classList.contains('hidden')
+    && /(?:الفجر|الظهر|العصر|المغرب|العشاء) \d{1,2}:\d{2}/.test(els['prayerTxt'].textContent));
+  sandbox.localStorage.removeItem('prayer_cache');
+  App.updatePrayerChip();
+  T('بلا كاش (فشل الشبكة) = مخفية بصمت', els['prayerChip'].classList.contains('hidden'));
+
+  // 📺 EPG داخل المشغل (xtream)
+  sandbox.LatchiAPI._src = { type: 'xtream', server: 'http://sx', username: 'u', password: 'p' };
+  sandbox.localStorage.removeItem('epg|1');
+  App.src = { type: 'xtream', categories: { live: [], movie: [], series: [] }, live: [], movies: [], series: [] };
+  els['video'].videoWidth = 1920; els['video'].videoHeight = 1080;
+  App.startPlay(L1); await sleep(60);
+  T('EPG: عنوان البرنامج الحالي في شريط المعلومات', !els['pEpg'].classList.contains('hidden') && els['pEpg'].textContent.includes('مباراة ودية'));
+  T('العلامة المائية: LATCHI DZ + جودة FHD', els['pMark'] && els['pmQ'].textContent === 'FHD' && Player._markT);
+  T('العلامة تتحرك بين الزاويتين (toggle)', (() => { els['pMark'].classList.toggle('swap'); const on = els['pMark'].classList.contains('swap'); els['pMark'].classList.toggle('swap'); return on; })());
+  els['video'].videoWidth = 3840; els['video'].videoHeight = 2160;
+  Player._updQuality();
+  T('جودة 4K ديناميكية', els['pmQ'].textContent === '4K');
+  // 🖱 الفأرة والنقرة
+  App.screen = 'player';
+  Player.hideUi();
+  (documentMock._listeners['mousemove'] || []).forEach(f => f({}));
+  T('تحريك الفأرة يوقظ شريط المعلومات', Player.uiVisible === true);
+  els['video'].click();
+  T('نقرة الشاشة تخفي الشريط', Player.uiVisible === false);
+  els['video'].click();
+  T('نقرة ثانية تعيده', Player.uiVisible === true);
+  App.back();
+  T('الخروج يوقف مؤقت العلامة المائية', Player._markT === 0);
 
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);

@@ -17,6 +17,29 @@ const LatchiAPI = {
   _mem: {},          // كاش الذاكرة للجلسة الحالية
 
   // 💾 كاش القرص (عبر IPC — يبقى بعد إغلاق التطبيق)
+  // 📺 v1.0.6: البرنامج الحالي (EPG مختصر) — xtream فقط، كاش دقيقتين
+  async shortEpg(itemId) {
+    const x = LatchiAPI._src;
+    if (!x || x.type !== 'xtream' || !itemId) return null;
+    const sid = String(itemId).replace(/^L/, '');
+    const k = 'epg|' + sid;
+    try { const hit = await LatchiAPI.cget(k); if (hit) return hit; } catch (e) {}
+    try {
+      const r = await fetch(`${x.server}/player_api.php?username=${encodeURIComponent(x.username)}&password=${encodeURIComponent(x.password)}&action=get_short_epg&stream_id=${encodeURIComponent(sid)}`);
+      const j = await r.json();
+      const now = (j && j.epg_listings && j.epg_listings[0]) || null;
+      let out = null;
+      if (now) {
+        let title = now.title || '';
+        try { if (typeof atob === 'function') title = atob(title); } catch (e) {}
+        const fmt = ts => { const d = new Date(ts * 1000); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); };
+        out = { title: String(title).trim(), time: (now.start_timestamp && now.end_timestamp) ? fmt(+now.start_timestamp) + ' - ' + fmt(+now.end_timestamp) : '' };
+      }
+      try { await LatchiAPI.cset(k, out, 120000); } catch (e) {}
+      return out;
+    } catch (e) { return null; }
+  },
+
   async cget(key) {
     if (key in this._mem) return this._mem[key];
     try {

@@ -3,7 +3,7 @@ const Player = {
   video: null, hls: null, ui: null, hideTimer: null,
   current: null, isLive: true, hideCb: null, uiVisible: true,
   _candidates: [], _candIdx: 0, _netRetries: 0, _mediaRecovered: false, _mediaSwapped: false, _gen: 0,
-  _played: false, _sameReload: 0, _stallMs: 0, _wd: 0,
+  _played: false, _sameReload: 0, _stallMs: 0, _wd: 0, _markT: 0,
 
   init() {
     this.video = document.getElementById('video');
@@ -16,6 +16,11 @@ const Player = {
     document.getElementById('pExit').onclick = () => this.close();
     document.getElementById('pFav').onclick = () => this.fav();
     document.getElementById('pSeekWrap').onclick = (e) => this.seekTo(e);
+    // 📺 v1.0.6: الضغط على الشاشة = إظهار/إخفاء شريط المعلومات (كيما التلفاز)
+    this.video.onclick = () => { if (this.uiVisible) this.hideUi(); else this.flashUi(); };
+    // 🎚 v1.0.6: جودة البث الحية (SD/HD/FHD/4K) للعلامة المائية
+    this.video.addEventListener('loadedmetadata', () => this._updQuality());
+    this.video.addEventListener('resize', () => this._updQuality());
     this.video.addEventListener('timeupdate', () => this.onTime());
     this.video.addEventListener('ended', () => { if (this.hideCb) this.hideCb('ended'); });
     this.video.addEventListener('error', () => {
@@ -66,7 +71,50 @@ const Player = {
     // 📺 v1.0.2: التطبيق كله بملء الشاشة دائماً (نافذة التلفاز) — إعادة تأكيد عبر IPC عند أي تشغيل
     try { if (window.latchi && window.latchi.setFullscreen) window.latchi.setFullscreen(true); } catch (e) {}
     this._startWatchdog();             // 🛠 v1.1.2: حارس التقطّع الصامت
+    this.loadEpg(item);                // 📺 v1.0.6: البرنامج الحالي (EPG) في شريط المعلومات
+    this._startMark();                 // 💧 v1.0.6: العلامة المائية العائمة (حماية من احتراق الشاشة)
     this._tryCandidate();
+  },
+
+  // ═══ 📺 v1.0.6: شريط معلومات المشغل — EPG من الخادم (xtream) ═══
+  async loadEpg(item) {
+    const el = document.getElementById('pEpg');
+    if (!el) return;
+    if (!item || item.type !== 'live' || !(typeof LatchiAPI !== 'undefined' && LatchiAPI._src && LatchiAPI._src.type === 'xtream')) {
+      el.classList.add('hidden'); el.textContent = '';
+      return;
+    }
+    try {
+      const epg = await LatchiAPI.shortEpg(item.id);
+      if (Player.current !== item) return;                    // غيّرنا القناة أثناء الجلب
+      if (epg && epg.title) {
+        el.textContent = '📺 ' + epg.title + (epg.time ? '  ·  ' + epg.time : '');
+        el.classList.remove('hidden');
+      } else { el.classList.add('hidden'); el.textContent = ''; }
+    } catch (e) { el.classList.add('hidden'); }
+  },
+
+  // ═══ 💧 v1.0.6: العلامة المائية العائمة — LATCHI DZ + الجودة، تتنقل كل 15 ثانية ═══
+  _startMark() {
+    clearInterval(this._markT);
+    const m0 = document.getElementById('pMark');
+    if (m0) m0.classList.remove('swap');      // تبدأ من اليمين دائماً
+    this._markT = setInterval(() => {
+      const m = document.getElementById('pMark');
+      if (m) m.classList.toggle('swap');      // يمين ↔ يسار (transition في CSS)
+    }, 15000);
+    this._updQuality();
+  },
+  _updQuality() {
+    const q = document.getElementById('pmQ');
+    if (!q) return;
+    const w = this.video.videoWidth || 0, h = this.video.videoHeight || 0;
+    q.textContent = (w >= 3840 || h >= 2160) ? '4K' : (w >= 1920 || h >= 1080) ? 'FHD' : (w >= 1280 || h >= 720) ? 'HD' : (w ? 'SD' : '—');
+  },
+
+  hideUi() {                                  // 📺 v1.0.6: إخفاء فوري (نقرة الشاشة)
+    this.ui.classList.add('hidden-ui'); this.uiVisible = false;
+    this.playerBtns().forEach(b => b.classList.remove('focused'));
   },
 
   // 🛠 v1.1.2: حارس التقطّع — البث يتجمد بصمت بلا أحداث خطأ → تنبيه لطيف كل 12 ثانية
@@ -305,15 +353,14 @@ const Player = {
   flashUi() {
     this.ui.classList.remove('hidden-ui'); this.uiVisible = true;
     clearTimeout(this.hideTimer);
-    this.hideTimer = setTimeout(() => {
-      this.ui.classList.add('hidden-ui'); this.uiVisible = false;
-      this.playerBtns().forEach(b => b.classList.remove('focused'));   // 🎛 v1.0.2
-    }, 3500);
+    this.hideTimer = setTimeout(() => this.hideUi(), 3500);
   },
   close() {
     this._gen++;
     clearInterval(this._wd);           // 🛠 v1.1.2: أوقف حارس التقطّع
     if (this.hls) { this.hls.destroy(); this.hls = null; }
+    clearInterval(this._markT); this._markT = 0;                      // 💧 v1.0.6
+    const _epgEl = document.getElementById('pEpg'); if (_epgEl) { _epgEl.classList.add('hidden'); _epgEl.textContent = ''; }
     this._numBuf = ''; clearTimeout(this._numT); this.hideNumOsd();   // 🔢 v1.0.3
     this.video.pause(); this.video.removeAttribute('src'); this.video.load();
     // 📺 v1.0.2: نبقى بملء الشاشة — التطبيق تلفاز (الخروج فقط من نافذة التأكيد)

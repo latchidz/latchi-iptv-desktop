@@ -37,6 +37,61 @@ const App = {
     // ⏱ v1.0.3: الساعة تمشي بالثواني كيما التلفاز
     if (el) el.textContent = new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     this.expTick();
+    this.updatePrayerChip();     // 🕌 v1.0.6: الصلاة القادمة (حساب محلي خفيف من الكاش)
+  },
+
+  // ═══ 🕌 v1.0.6: مواقيت الصلاة بالموقع الجغرافي (نفس منطق تلفاز/هاتف أندرويد) ═══
+  // ipapi.co (IP) → api.aladhan.com (method=3) — كاش يومي كامل: صفر بطء على الواجهة
+  async initPrayer() {
+    if (this._prayerBusy) return;
+    const cache = this._prayerCache();
+    const today = new Date().toISOString().slice(0, 10);
+    if (cache && cache.date === today && cache.timings) return;   // كاش اليوم سليم
+    if (typeof fetch !== 'function') return;
+    this._prayerBusy = true;
+    try {
+      let sig;
+      try { sig = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(4500) : undefined; } catch (e) {}
+      let lat = 36.7538, lon = 3.0588, region = 'الجزائر';       // احتياط: العاصمة (نفس أندرويد)
+      try {
+        const r = await fetch('https://ipapi.co/json/', sig ? { signal: sig } : {});
+        const j = await r.json();
+        if (j && typeof j.latitude === 'number' && typeof j.longitude === 'number') {
+          lat = j.latitude; lon = j.longitude;
+          region = j.city || j.region || 'الجزائر';
+        }
+      } catch (e) {}
+      const ts = Math.floor(Date.now() / 1000);
+      const r2 = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lon}&method=3`, sig ? { signal: sig } : {});
+      const j2 = await r2.json();
+      const t = j2 && j2.data && j2.data.timings;
+      if (t) localStorage.setItem('prayer_cache', JSON.stringify({
+        date: today, region,
+        timings: { Fajr: t.Fajr, Dhuhr: t.Dhuhr, Asr: t.Asr, Maghrib: t.Maghrib, Isha: t.Isha }
+      }));
+    } catch (e) { /* فشل صامت — لا يؤثر على الواجهة */ }
+    finally { this._prayerBusy = false; }
+  },
+  _prayerCache() { try { return JSON.parse(localStorage.getItem('prayer_cache') || 'null'); } catch (e) { return null; } },
+  updatePrayerChip() {
+    const chip = document.getElementById('prayerChip'), txt = document.getElementById('prayerTxt');
+    if (!chip || !txt) return;
+    const c = this._prayerCache();
+    if (!c || !c.timings || !c.date) { chip.classList.add('hidden'); return; }
+    if (c.date !== new Date().toISOString().slice(0, 10)) { this.initPrayer(); return; }   // يوم جديد → تحديث
+    const names = { Fajr: 'الفجر', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
+    const now = new Date();
+    const cur = now.getHours() * 60 + now.getMinutes();
+    let next = null, best = Infinity;
+    for (const k of Object.keys(names)) {
+      const p = (c.timings[k] || '').split(':');
+      const mins = p.length >= 2 ? (+p[0]) * 60 + (+p[1]) : -1;
+      if (mins > cur && mins - cur < best) { best = mins - cur; next = { name: names[k], time: (c.timings[k] || '').slice(0, 5) }; }
+    }
+    if (!next) next = { name: 'الفجر', time: (c.timings.Fajr || '').slice(0, 5) };   // بعد العشاء → فجر الغد
+    txt.textContent = next.name + ' ' + next.time;
+    chip.title = '🕌 مواقيت الصلاة — ' + (c.region || '') + (best < Infinity ? ' · الصلاة القادمة بعد ' + best + ' دقيقة' : '');
+    chip.classList.remove('hidden');
   },
 
   // 📅 v1.0.3: سطر تاريخ انتهاء الصلاحية تحت الساعة — الحقيقي من الكود، أو المُدخل يدوياً مع رابط M3U
@@ -134,7 +189,7 @@ const App = {
   },
 
   onShown(name) {
-    if (name === 'home') { this.buildHome(); this.startHomeBgs(); }
+    if (name === 'home') { this.buildHome(); this.startHomeBgs(); this.initPrayer(); }
     if (name === 'settings') this.buildSettings();
     if (name === 'accounts') this.buildAccounts();
     this.focusFirst(name);
@@ -226,6 +281,14 @@ const App = {
 
   // ═══ الرئيسية ═══
   buildHome() {
+    // 👤 v1.0.6: اسم المستخدم الحقيقي من الخادم في الهيدر
+    const uc = document.getElementById('userChip');
+    if (uc) {
+      const un = (this.src && this.src.account && this.src.account.user_info && this.src.account.user_info.username)
+        || (this.user && this.user.name) || '';
+      uc.textContent = un ? '👤 ' + un : '👤';
+      uc.title = un || '';
+    }
     const s = this.src ? LatchiAPI.stats(this.src) : { live: 0, movies: 0, series: 0, unit: 'فئة' };
     const u = s.unit || '';
     // 🚀 v1.0.2: Royal Grid — نفس ترتيب تلفاز LATCHI (4 فوق / 4 تحت)
@@ -813,6 +876,7 @@ let _curTimer = null;
 document.addEventListener('mousemove', () => {
   const b = document.body;
   if (b) b.classList.remove('no-cursor');
+  if (App.screen === 'player' && typeof Player !== 'undefined') { try { Player.flashUi(); } catch (e) {} }   // 📺 v1.0.6
   clearTimeout(_curTimer);
   _curTimer = setTimeout(() => {
     if (App.screen === 'player' && b) b.classList.add('no-cursor');

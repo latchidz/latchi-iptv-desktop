@@ -477,3 +477,27 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
   letter-spacing: 3px; direction: ltr; display: none;
   box-shadow: 0 0 22px rgba(217, 169, 78, .35), 0 8px 20px rgba(0, 0, 0, .5); }
 .p-num.on { display: block; animation: exitPop .15s ease; }
+
+/* ═══ 🕌 v1.0.6: شريحة مواقيت الصلاة في الهيدر (مثل تلفاز/هاتف LATCHI) ═══ */
+.prayer-chip { display: flex; align-items: center; gap: 7px; background: rgba(16, 24, 56, .72);
+  border: 1px solid var(--line); border-radius: 20px; padding: 5px 14px;
+  font-size: 13px; font-weight: bold; cursor: default; transition: all .18s; }
+.prayer-chip .pr-ic { font-size: 15px; filter: drop-shadow(0 0 8px rgba(217, 169, 78, .4)); }
+.prayer-chip:hover { border-color: var(--gold); box-shadow: 0 0 14px rgba(217, 169, 78, .35); transform: translateY(-1px); }
+@media (max-width: 1150px) { .prayer-chip span[id="prayerTxt"] { display: none; } .prayer-chip { padding: 5px 10px; } }
+
+/* 📺 v1.0.6: سطر البرنامج الحالي (EPG) في شريط معلومات المشغل */
+.p-epg { padding: 2px 6px 0; font-size: 14.5px; font-weight: bold; color: #E8ECFF;
+  text-shadow: 0 1px 8px #000, 0 0 18px rgba(0, 0, 0, .6); overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis; }
+
+/* ═══ 💧 v1.0.6: العلامة المائية العائمة — LATCHI DZ + الجودة ═══
+   تنتقل بين الزاويتين السفليتين كل 15 ثانية (حماية من احتراق الشاشة) */
+.p-mark { position: absolute; bottom: 22px; left: 36px; z-index: 15; text-align: center;
+  pointer-events: none; opacity: .85; direction: ltr;
+  transition: transform 1.6s cubic-bezier(.4, 0, .2, 1); }
+.p-mark.swap { transform: translateX(calc(100vw - 100% - 72px)); }
+.pm-b { font-size: 15px; font-weight: 900; letter-spacing: 2.5px; color: rgba(255, 255, 255, .88);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .85), 0 0 14px rgba(217, 169, 78, .35); }
+.pm-q { font-size: 10.5px; font-weight: bold; color: var(--goldsoft); letter-spacing: 1.2px;
+  text-shadow: 0 1px 3px #000; margin-top: 1px; }
