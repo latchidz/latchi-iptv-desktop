@@ -501,3 +501,68 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
   text-shadow: 0 1px 4px rgba(0, 0, 0, .85), 0 0 14px rgba(217, 169, 78, .35); }
 .pm-q { font-size: 10.5px; font-weight: bold; color: var(--goldsoft); letter-spacing: 1.2px;
   text-shadow: 0 1px 3px #000; margin-top: 1px; }
+
+/* ═══ 🎬 v1.0.7: الواجهة الأسطورية ثلاثية الأعمدة — فئات | عناصر | مشغل مصغر ═══ */
+.pane3 { display: flex; height: calc(100% - 76px); overflow: hidden; }
+.pane { overflow-y: auto; }
+.pane-cats { flex: 0 0 20%; background: rgba(8, 13, 31, .72); border-inline-end: 1px solid var(--line); padding: 14px 10px; }
+.pane-items { flex: 0 0 40%; border-inline-end: 1px solid var(--line); padding: 14px 14px 30px; }
+.pane-detail { flex: 0 0 40%; padding: 18px 18px 30px; }
+
+/* فئة */
+.pcat { padding: 10px 14px; border-radius: 12px; font-size: 13.5px; font-weight: bold; color: var(--muted);
+  cursor: pointer; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border: 2px solid transparent; transition: all .15s; }
+.pcat:hover { color: #fff; background: rgba(30, 40, 84, .5); }
+.pcat.active { background: linear-gradient(160deg, #2A3566, #1A2350); color: var(--gold); border-color: var(--gold2); }
+.pcat.focused { border-color: var(--gold) !important; box-shadow: var(--focus-glow); color: #fff; }
+
+/* صف عنصر */
+.pitem { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 2px solid var(--line);
+  border-radius: 13px; padding: 8px 12px; margin-bottom: 8px; cursor: pointer; transition: all .14s; }
+.pitem img { width: 46px; height: 46px; border-radius: 9px; object-fit: contain; background: #0A0E22; flex: 0 0 46px; }
+.pitem .pi-t { flex: 1; min-width: 0; }
+.pitem .pi-n { font-size: 13.5px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pitem .pi-g { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.pitem .rec-dot { width: 9px; height: 9px; background: #FF5B5B; border-radius: 50%; flex: 0 0 9px;
+  animation: recBlink 1.6s infinite; }
+.pitem .pi-play { color: var(--goldsoft); font-size: 14px; opacity: 0; transition: opacity .14s; }
+.pitem:hover { border-color: var(--gold2); transform: translateX(-2px); }
+.pitem:hover .pi-play { opacity: 1; }
+.pitem.sel { border-color: var(--gold); background: linear-gradient(160deg, #242E5E, #182048);
+  box-shadow: 0 0 14px rgba(217, 169, 78, .18); }
+.pitem.focused { border-color: var(--gold) !important; box-shadow: var(--focus-glow); transform: translateX(-2px); }
+
+/* المشغل المصغر */
+.mini-wrap { position: relative; aspect-ratio: 16 / 9; background: #04060F; border: 2px solid var(--line);
+  border-radius: 16px; overflow: hidden; cursor: pointer; transition: all .16s; }
+.mini-wrap video { width: 100%; height: 100%; object-fit: contain; display: block; background: #04060F; }
+.mini-load { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 34px; background: rgba(4, 6, 15, .55); }
+.mini-fs { position: absolute; inset-inline: 0; bottom: 0; padding: 7px 12px; font-size: 12px; font-weight: bold;
+  color: #fff; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .75)); opacity: 0; transition: opacity .18s; }
+.mini-wrap:hover, .mini-wrap.focused { border-color: var(--gold); box-shadow: var(--focus-glow); }
+.mini-wrap:hover .mini-fs, .mini-wrap.focused .mini-fs { opacity: 1; }
+.mini-wrap.focused { outline: 3px solid var(--gold); outline-offset: 4px; }
+
+/* تفاصيل العنصر */
+.mini-info { margin-top: 14px; }
+.mini-empty { color: var(--muted); text-align: center; padding: 40px 10px; font-size: 15px; }
+.mini-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 12px; }
+.mini-poster { width: 86px; border-radius: 10px; object-fit: cover; }
+.mini-meta { flex: 1; min-width: 0; }
+.mini-name { font-size: 19px; font-weight: bold; line-height: 1.3; }
+.mini-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.mini-epg { font-size: 12.5px; color: #C8CEEA; margin-top: 7px; background: rgba(24, 32, 72, .6);
+  border-radius: 9px; padding: 6px 10px; }
+.mini-epg.hidden { display: none; }
+.mini-desc { font-size: 12.5px; color: #B9C0DE; line-height: 1.65; max-height: 150px; overflow-y: auto; margin-bottom: 10px; }
+.mini-btns { display: flex; gap: 10px; }
+.mini-btns .p-btn { flex: 1; }
+
+/* ⚠️ زر الحذف الشامل (منطقة الخطر) */
+.danger-btn { width: 100%; padding: 13px; font-family: inherit; font-size: 14.5px; font-weight: bold;
+  color: #FFC4C4; background: rgba(90, 20, 24, .55); border: 2px solid #B34A4A; border-radius: 13px;
+  cursor: pointer; transition: all .16s; }
+.danger-btn:hover, .danger-btn.focused { background: rgba(140, 26, 30, .8); border-color: #FF7B7B;
+  color: #fff; box-shadow: 0 0 18px rgba(255, 123, 123, .35); transform: translateY(-1px); }

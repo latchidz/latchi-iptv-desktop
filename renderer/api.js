@@ -40,6 +40,22 @@ const LatchiAPI = {
     } catch (e) { return null; }
   },
 
+  // 🎞 v1.0.7: معلومات الفيلم (الوصف) — xtream فقط، كاش 10 دقائق
+  async vodInfo(itemId) {
+    const x = LatchiAPI._src;
+    if (!x || x.type !== 'xtream' || !itemId) return null;
+    const sid = String(itemId).replace(/^M/, '');
+    const k = 'vod|' + sid;
+    try { const hit = await LatchiAPI.cget(k); if (hit) return hit; } catch (e) {}
+    try {
+      const r = await fetch(`${x.server}/player_api.php?username=${encodeURIComponent(x.username)}&password=${encodeURIComponent(x.password)}&action=get_vod_info&stream_id=${encodeURIComponent(sid)}`);
+      const j = await r.json();
+      const info = j && j.info ? { plot: String(j.info.plot || j.info.description || '').trim() } : null;
+      try { await LatchiAPI.cset(k, info, 600000); } catch (e) {}
+      return info;
+    } catch (e) { return null; }
+  },
+
   async cget(key) {
     if (key in this._mem) return this._mem[key];
     try {

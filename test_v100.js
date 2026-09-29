@@ -40,7 +40,7 @@ function makeEl(id) {
  'home', 'homeBgs', 'clock', 'userChip', 'cards', 'list', 'searchInput', 'catsBar', 'listBody',
  'details', 'detailsBody', 'settings', 'settingsBody', 'accounts', 'accountsBody', 'player', 'video', 'playerUi',
  'pName', 'pLive', 'pTime', 'pSeekWrap', 'pSeekFill', 'pPlay', 'pRew', 'pFwd', 'pVol', 'pFull', 'pFav', 'pExit', 'pCenter',
- 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg', 'checkingOv', 'welcome', 'exitDlg', 'exitOk', 'exitCancel', 'exitBtn', 'pNum', 'expLine', 'm3uExpInput', 'accExpInput', 'prayerChip', 'prayerTxt', 'pEpg', 'pMark', 'pmQ'].forEach(id => els[id] = makeEl(id));
+ 'accCodeBtn', 'accM3uBtn', 'accCodeInput', 'accM3uInput', 'accMsg', 'checkingOv', 'welcome', 'exitDlg', 'exitOk', 'exitCancel', 'exitBtn', 'pNum', 'expLine', 'm3uExpInput', 'accExpInput', 'prayerChip', 'prayerTxt', 'pEpg', 'pMark', 'pmQ', 'pane3', 'paneCats', 'paneItems', 'paneDetail', 'miniWrap', 'miniVid', 'miniLoad', 'miniInfo', 'miniEpg', 'miniDesc', 'miniGoBtn', 'miniFavBtn', 'miniEpsBtn', 'accWipeBtn'].forEach(id => els[id] = makeEl(id));
 
 const store = {};
 const localStorage = {
@@ -115,13 +115,11 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   console.log('═══ 2) المفضلة تظهر فعلياً في قائمة المفضلة (مختلطة) ═══');
   App.back();                          // رجوع للمشغِّل السابق؟ → للقائمة/الرئيسية
   await App.openList('fav');
-  const body = els['listBody'];
-  const cont = body.children[0];
   T('قائمة المفضلة فتحت', App.listCtx && App.listCtx.kind === 'fav' && App.screen === 'list');
   T('العنصران موجودان (فيلم + قناة)', App.listCtx.items.length === 2);
-  T('حاوية poster-grid', cont && cont.className.includes('poster-grid'));
-  const rendered = cont.children.map(c => c.className);
-  T('القناة صف chan والفيلم بطاقة pwrap', rendered.some(c => c.includes('chan')) && rendered.some(c => c.includes('pwrap')));
+  const favRows = els['paneItems'].children.map(c => c.className || '');
+  T('الواجهة الثلاثية: صفا pitem (قناة + فيلم)', favRows.length === 2 && favRows.every(c => c.includes('pitem')));
+  T('العمود الثالث: دعوة للاختيار', els['miniInfo'].innerHTML.includes('اختر'));
 
   console.log('═══ 3) زر اللصق (بلا Ctrl+V) ═══');
   clipText = 'http://paste.test/playlist.m3u';
@@ -311,7 +309,8 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
 
   console.log('═══ 10) v1.0.4: حفظ موضع الفوكيز عند الرجوع من التفاصيل ═══');
   // محاكاة بحث .focused داخل شاشة القائمة (المحاكاة العامة ترجع null)
-  if (!els['list'].children.includes(els['listBody'])) els['list'].children.push(els['listBody']);   // المحاكاة مسطّحة — اربط الجسم بالشاشة
+  if (!els['list'].children.includes(els['paneItems'])) els['list'].children.push(els['paneItems']);   // المحاكاة مسطّحة — اربط الأعمدة بالشاشة
+  if (!els['list'].children.includes(els['paneCats'])) els['list'].children.push(els['paneCats']);
   els['list'].querySelector = function (sel) {
     if (sel !== '.focused') return null;
     const walk = (n) => { for (const ch of (n.children || [])) { if (ch.classList && ch.classList.contains('focused')) return ch; const r = walk(ch); if (r) return r; } return null; };
@@ -319,16 +318,15 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   };
   App.src = { type: 'm3u', live: [L1], movies: [M, M2], series: [] };
   await App.openList('movies'); await sleep(60);
-  const grid = els['listBody'].children[0];
-  T('شبكة البوسترات (حاوية)', grid && grid.className === 'poster-grid');
-  T('بطاقتان (أفلام)', grid.children.length === 2);
-  const pcard2 = grid.children[1].children[0];
+  const grid = els['paneItems'];
+  T('عمود العناصر (واجهة ثلاثية)', grid.children.length === 2 && grid.children[0].className.includes('pitem'));
+  const pcard2 = grid.children[1];
   pcard2.classList.add('focused');
   App.push('details');
   T('موضع الفوكيز حُفظ عند مغادرة القائمة', App._focusMem && App._focusMem['list'] === pcard2);
   pcard2.classList.remove('focused');          // المحاكاة لا تمسح تلقائياً — نمسح كيما الواقع
   App.back();
-  T('الرجوع من التفاصيل = نفس البوستر مركز', pcard2.classList.contains('focused'));
+  T('الرجوع من التفاصيل = نفس العنصر مركز', pcard2.classList.contains('focused'));
   // ذاكرة قديمة لعنصر ميت = تتجاهل بأمان
   const dead = makeEl('dead'); dead.isConnected = false;
   App._focusMem = { list: dead };
@@ -444,6 +442,43 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   T('نقرة ثانية تعيده', Player.uiVisible === true);
   App.back();
   T('الخروج يوقف مؤقت العلامة المائية', Player._markT === 0);
+
+  console.log('═══ 14) v1.0.7: الواجهة الثلاثية + المشغل المصغر + الحذف الشامل ═══');
+  App.src = { type: 'm3u', live: [L1, L2], movies: [M, M2], series: [] };
+  await App.openList('movies'); await sleep(40);
+  T('العمود الأول: فئات M3U كقائمة عمودية', els['paneCats'].children.length >= 2 && els['paneCats'].children[0].className.includes('pcat'));
+  els['paneItems'].children[1].click();
+  await sleep(20);
+  T('اختيار الفيلم: المصغر اشتغل فوراً', App._miniItem && App._miniItem.id === M2.id && els['miniInfo'].innerHTML.includes(M2.name));
+  T('الصف المختار مُبرَز (.sel)', els['paneItems'].children[1].classList.contains('sel'));
+  T('زر ملء الشاشة في التفاصيل', els['miniInfo'].innerHTML.includes('miniGoBtn'));
+  els['miniWrap'].click();
+  await sleep(30);
+  T('نقرة المصغر = مشغل ملء الشاشة', App.screen === 'player' && Player.current && Player.current.id === M2.id);
+  App.back(); await sleep(30);
+  T('الرجوع = الواجهة المقسمة والمصغر استأنف نفس العنصر', App.screen === 'list' && App._miniItem && App._miniItem.id === M2.id);
+  const S1 = { id: 'S9', name: 'مسلسل تجريبي', type: 'series', url: '', logo: '', group: 'دراما' };
+  App.src.series = [S1];
+  await App.openList('series'); await sleep(40);
+  els['paneItems'].children[0].click(); await sleep(20);
+  T('مسلسل: تفاصيل + زر الحلقات بلا تشغيل تلقائي', els['miniInfo'].innerHTML.includes('miniEpsBtn') && els['miniLoad'].classList.contains('hidden'));
+  // 🗑 الحذف الشامل
+  sandbox.localStorage.setItem('saved_accounts', '[{"id":"a1"}]');
+  sandbox.localStorage.setItem('favs', '[{"id":"L1"}]');
+  sandbox.localStorage.setItem('source_url', 'http://x/y');
+  sandbox.localStorage.setItem('cw_M77', '{"item":{},"at":10,"dur":100,"ts":1}');
+  sandbox.localStorage.setItem('favs', '[{"id":"L1"}]');
+  let cacheCleared = 0;
+  sandbox.latchi.cacheClear = () => { cacheCleared++; };
+  App.showWipeDlg();
+  T('نافذة تأكيد الحذف (سياق wipe)', App.exitDlgOpen() && App._exitAction === 'wipe');
+  kd({ key: 'ArrowLeft' });
+  kd({ key: 'Enter' });
+  await sleep(20);
+  T('الحذف الشامل: مسح الحسابات والمفضلة والرابط والمتابعة', cacheCleared === 1
+    && sandbox.localStorage.getItem('saved_accounts') === null && sandbox.localStorage.getItem('favs') === null
+    && sandbox.localStorage.getItem('source_url') === null && sandbox.localStorage.getItem('cw_M77') === null);
+  T('العودة لشاشة الدخول الأولى', App.screen === 'verify');
 
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);

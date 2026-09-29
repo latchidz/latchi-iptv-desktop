@@ -122,6 +122,8 @@ const App = {
 
   // ═══ الشاشات ═══
   show(name, resetStack = false) {
+    // 🎬 v1.0.7: مغادرة شاشة القائمة (لغير المشغل) = إيقاف المشغل المصغر
+    if (this.screen === 'list' && name !== 'list' && name !== 'player') this.miniStop();
     // 🎯 v1.0.4: احفظ موضع الفوكيز عند مغادرة الشاشة — الرجوع من التفاصيل يرجعك لنفس البوستر بالضبط
     if (this.screen && this.screen !== name) {
       try {
@@ -148,6 +150,8 @@ const App = {
       Player.close();
       const prev = this.navStack.pop();
       if (prev) this.show(prev); else this.show('home', true);
+      // 🎬 v1.0.7: خروج ملء الشاشة → عودة للواجهة المقسمة والمصغر يستأنف نفس العنصر
+      if (prev === 'list' && this._miniItem && this.listCtx && !this.listCtx.loading) this.miniPlay(this._miniItem);
       return;
     }
     const prev = this.navStack.pop();
@@ -165,6 +169,38 @@ const App = {
     this._welcomeTimer = setTimeout(() => { if (this.screen === 'welcome') this.show('home', true); }, 2600);
   },
 
+  // ═══ 🗑 v1.0.7: حذف جميع الحسابات — إعادة ضبط المصنع (تأكيد بالأسهم كيما الخروج) ═══
+  showWipeDlg() {
+    const d = document.getElementById('exitDlg');
+    if (!d) return;
+    // نعيد استعمال نافذة التأكيد بنص الحذف
+    const q = d.querySelector('.exit-q'), ok = document.getElementById('exitOk');
+    if (q) q.textContent = '⚠️ حذف جميع الحسابات والمفضلة نهائياً؟';
+    if (ok) { ok.classList.add('exit-ok'); ok.textContent = '🗑 نعم، احذف كل شيء'; }
+    this._exitAction = 'wipe';
+    this.showExitDlg();
+  },
+  wipeAll() {
+    try {
+      const keep = {};   // لا نحتفظ بشيء — مسح كلي
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k) keys.push(k); }
+      keys.forEach(k => {
+        if (k.startsWith('cw_') || k.startsWith('epg|') || k.startsWith('m3u|') || k.startsWith('xt|') ||
+            ['saved_accounts', 'source_url', 'latchi_favs', 'favs', 'prayer_cache'].includes(k)) localStorage.removeItem(k);
+      });
+      this.favs = [];
+      this.src = null; this.user = null;
+      this._focusMem = {}; this._zapList = [];
+      this.miniStop(); this._miniItem = null;
+      try { if (typeof LatchiAPI !== 'undefined' && LatchiAPI._mem) LatchiAPI._mem = {}; } catch (e2) {}
+      try { if (window.latchi && window.latchi.cacheClear) window.latchi.cacheClear(); } catch (e3) {}   // كاش القرص كذلك
+    } catch (e) {}
+    this.show('verify', true);
+    const v = document.getElementById('verifyMsg');
+    if (v) { v.className = 'verify-msg'; v.textContent = 'تم مسح جميع البيانات — أدخل كوداً أو رابطاً للبدء من جديد'; }
+  },
+
   // ═══ ⏻ v1.0.2: نافذة تأكيد الخروج «كيما التلفاز» — أسهم + Enter ═══
   exitDlgOpen() { const d = document.getElementById('exitDlg'); return !!(d && !d.classList.contains('hidden')); },
   showExitDlg() {
@@ -174,7 +210,16 @@ const App = {
     this._exitFocus = 'cancel';           // الآمن أولاً (الإلغاء)
     this._paintExitDlg();
   },
-  hideExitDlg() { const d = document.getElementById('exitDlg'); if (d) d.classList.add('hidden'); },
+  hideExitDlg() {
+    const d = document.getElementById('exitDlg');
+    if (d) {
+      d.classList.add('hidden');
+      const q = d.querySelector('.exit-q'), ok = document.getElementById('exitOk');
+      if (q) q.textContent = 'هل تريد الخروج من التطبيق؟';
+      if (ok) ok.textContent = '✓ نعم، خروج';
+      this._exitAction = null;
+    }
+  },
   _paintExitDlg() {
     const ok = document.getElementById('exitOk'), c = document.getElementById('exitCancel');
     if (!ok || !c) return;
@@ -182,7 +227,12 @@ const App = {
     c.classList.toggle('focused', this._exitFocus === 'cancel');
   },
   moveExitFocus() { this._exitFocus = this._exitFocus === 'ok' ? 'cancel' : 'ok'; this._paintExitDlg(); },
-  confirmExitDlg() { if (this._exitFocus === 'ok') this.doQuit(); else this.hideExitDlg(); },
+  confirmExitDlg() {
+    const act = this._exitAction;
+    this._exitAction = null;
+    if (this._exitFocus === 'ok') { if (act === 'wipe') this.wipeAll(); else this.doQuit(); }
+    else this.hideExitDlg();
+  },
   doQuit() {
     try { if (window.latchi && window.latchi.quitApp) { window.latchi.quitApp(); return; } } catch (e) {}
     try { window.close(); } catch (e) {}
@@ -210,7 +260,7 @@ const App = {
       }
       delete this._focusMem[name];   // العنصر لم يعد موجوداً (أعيد بناء الصفحة) — سلوك عادي
     }
-    const f = root.querySelector('.focused') || root.querySelector('.tcard, .vtab, .gold-btn, .cat-chip, .chan, .pcard, .ep, .back-btn, .tv-input, .p-btn');
+    const f = root.querySelector('.focused') || root.querySelector('.tcard, .vtab, .gold-btn, .pcat, .pitem, .chan, .pcard, .ep, .back-btn, .tv-input, .p-btn, .mini-wrap');
     if (f) f.classList.add('focused');
   },
 
@@ -357,6 +407,104 @@ const App = {
     }
   },
 
+  // ═══ 🎬 v1.0.7: المشغل المصغر (العمود الثالث) — يشتغل فور اختيار العنصر ═══
+  miniPlay(item) {
+    const v = document.getElementById('miniVid');
+    if (!v) return;
+    this.miniStop();
+    this._miniItem = item || null;
+    if (!item || !item.url) return;
+    const ld = document.getElementById('miniLoad');
+    if (ld) ld.classList.remove('hidden');
+    v.onplaying = () => { const l = document.getElementById('miniLoad'); if (l) l.classList.add('hidden'); };
+    v.onerror = () => { const l = document.getElementById('miniLoad'); if (l) l.classList.add('hidden'); };
+    const url = item.url;
+    if (/\.m3u8(\?|$)/i.test(url) && typeof Hls !== 'undefined' && Hls.isSupported && Hls.isSupported()) {
+      try {
+        this._miniHls = new Hls({ enableWorker: true });
+        this._miniHls.loadSource(url);
+        this._miniHls.attachMedia(v);
+        this._miniHls.on(Hls.Events.ERROR, (e, d) => {
+          if (d && d.fatal && item.urlTs) { try { v.src = item.urlTs; v.play().catch(() => {}); } catch (err) {} }
+        });
+      } catch (e) { try { v.src = url; } catch (e2) {} }
+    } else {
+      try { v.src = url; } catch (e) {}
+    }
+    try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+  },
+  miniStop() {
+    try { if (this._miniHls) this._miniHls.destroy(); } catch (e) {}
+    this._miniHls = null;
+    const v = document.getElementById('miniVid');
+    if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); v.onerror = null; v.onplaying = null; } catch (e) {} }
+    const ld = document.getElementById('miniLoad');
+    if (ld) ld.classList.add('hidden');
+  },
+  miniFull() {
+    const it = this._miniItem;
+    if (!it) return;
+    this.miniStop();                       // المشغل الكامل يأخذ الدور — والرجوع يستأنف المصغر
+    this.startPlay(it);
+  },
+  // اختيار عنصر من العمود الأوسط: تشغيل فوري في المصغر + تفاصيل في العمود الثالث
+  selectItem(it) {
+    this.listCtx.selected = it;
+    this.renderMiniInfo();
+    if (it && it.type === 'series') this.miniStop();    // المسلسل: تفاصيل + زر الحلقات (بلا تشغيل تلقائي)
+    else this.miniPlay(it);
+    // حدّث إبراز الصف المختار
+    const items = document.getElementById('paneItems');
+    if (items) [...(items.children || [])].forEach(el => el.classList && el.classList.toggle('sel', el.dataset && el.dataset.id === (it && it.id)));
+  },
+  renderMiniInfo() {
+    const el = document.getElementById('miniInfo');
+    if (!el) return;
+    const it = this.listCtx && this.listCtx.selected;
+    if (!it) { el.innerHTML = '<div class="mini-empty">👋 اختر قناة أو فيلماً من القائمة ليعمل هنا فوراً</div>'; return; }
+    const isX = this.src && this.src.type === 'xtream';
+    const live = it.type === 'live', movie = it.type === 'movie', series = it.type === 'series';
+    const poster = it.logo ? `<img class="mini-poster" src="${esc(it.logo)}" onerror="this.style.display='none'">` : '';
+    el.innerHTML = `
+      <div class="mini-head">${poster}
+        <div class="mini-meta">
+          <div class="mini-name">${esc(it.name || '')}</div>
+          <div class="mini-sub">${live ? '● بث مباشر' : series ? '🎬 مسلسل' : '🎞 فيلم'} ${it.group ? ' · ' + esc(it.group) : ''}</div>
+          <div class="mini-epg hidden" id="miniEpg"></div>
+        </div>
+      </div>
+      ${series ? '<button class="gold-btn" id="miniEpsBtn" style="width:100%">🎬 عرض المواسم والحلقات</button>' : ''}
+      <div class="mini-desc" id="miniDesc">${live || series ? '' : '<span class="mini-desc-wait">…</span>'}</div>
+      <div class="mini-btns">
+        ${!series ? '<button class="p-btn mini-go" id="miniGoBtn">⛶ شاهد بملء الشاشة</button>' : ''}
+        <button class="p-btn" id="miniFavBtn">${this.isFav(it) ? '★ في المفضلة' : '☆ أضف للمفضلة'}</button>
+      </div>`;
+    const go = document.getElementById('miniGoBtn');
+    if (go) go.onclick = () => this.miniFull();
+    const fv = document.getElementById('miniFavBtn');
+    if (fv) fv.onclick = () => { this.toggleFav(it); this.renderMiniInfo(); };
+    const eps = document.getElementById('miniEpsBtn');
+    if (eps) eps.onclick = () => this.openDetails(it);
+    // EPG للقنوات الحية (xtream) — نفس مصدر شريط المشغل
+    if (live && isX) {
+      LatchiAPI.shortEpg(it.id).then(epg => {
+        const e2 = document.getElementById('miniEpg');
+        if (e2 && epg && epg.title && this.listCtx && this.listCtx.selected === it) {
+          e2.textContent = '📺 ' + epg.title + (epg.time ? ' · ' + epg.time : '');
+          e2.classList.remove('hidden');
+        }
+      }).catch(() => {});
+    }
+    // وصف الفيلم (xtream) — get_vod_info مع كاش
+    if (movie && isX) {
+      LatchiAPI.vodInfo(it.id).then(info => {
+        const d = document.getElementById('miniDesc');
+        if (d && info && info.plot && this.listCtx && this.listCtx.selected === it) d.textContent = info.plot;
+        else if (d) d.textContent = '';
+      }).catch(() => { const d = document.getElementById('miniDesc'); if (d) d.textContent = ''; });
+    }
+  },
+
   continueList() {
     const out = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -378,7 +526,8 @@ const App = {
       let items, title;
       if (kind === 'fav') { items = this.favs; title = 'المفضلة'; }
       else { items = this.continueList().map(v => Object.assign({}, v.item, { _resume: v.at, _dur: v.dur })); title = 'متابعة المشاهدة'; }
-      this.listCtx = { kind, items, filter: null, title, cat: 'الكل' };
+      this.listCtx = { kind, items, filter: null, title, cat: 'الكل', selected: null };
+      this.miniStop(); this._miniItem = null;
       this.buildList();
       this.push('list');
       return;
@@ -393,13 +542,15 @@ const App = {
         items = items.filter(c => /bein|be ?n ?sports|سبورت/i.test(c.name + ' ' + (c.group || '')));
         title = 'beIN سبورت';
       }
-      this.listCtx = { kind, items, filter, title, cat: 'الكل' };
+      this.listCtx = { kind, items, filter, title, cat: 'الكل', selected: null };
+      this.miniStop(); this._miniItem = null;
       this.buildList();
       this.push('list');
       return;
     }
     // ═══ Xtream كسوي ═══
-    this.listCtx = { kind, filter, title: filter === 'bein' ? 'beIN سبورت' : (kind === 'live' ? 'البث المباشر' : kind === 'movies' ? 'الأفلام' : 'المسلسلات'), items: [], cat: null, loading: true };
+    this.listCtx = { kind, filter, title: filter === 'bein' ? 'beIN سبورت' : (kind === 'live' ? 'البث المباشر' : kind === 'movies' ? 'الأفلام' : 'المسلسلات'), items: [], cat: null, loading: true, selected: null };
+    this.miniStop(); this._miniItem = null;
     this.buildList();
     this.push('list');
     // beIN: نجلب فئات beIN فقط ونحمّلها (قليلة وخفيفة)
@@ -442,69 +593,73 @@ const App = {
   },
 
   buildList() {
+    // ═══ 🎬 v1.0.7: الواجهة الثلاثية — فئات (يمين) | عناصر (وسط) | مشغل مصغر + تفاصيل (يسار) ═══
     const ctx = this.listCtx || {};
-    const { kind, items, title } = ctx;
-    const body = document.getElementById('listBody');
-    // ═══ شريط الفئات ═══
-    const catsBar = document.getElementById('catsBar');
-    catsBar.innerHTML = '';
-    const mk = (label, val, cb) => {
+    const { kind, items } = ctx;
+    const paneCats = document.getElementById('paneCats');
+    const paneItems = document.getElementById('paneItems');
+    if (!paneCats || !paneItems) return;
+    // ── العمود 1: الفئات (20%) ──
+    paneCats.innerHTML = '';
+    const mkCat = (label, val, go) => {
       const c = document.createElement('div');
-      c.className = 'cat-chip' + ((ctx.cat === val || (cb && cb.isActive)) ? ' active' : '');
+      c.className = 'pcat' + ((ctx.cat === val) ? ' active' : '');
       c.textContent = label;
-      c.onclick = () => cb ? cb.go() : null;
-      catsBar.appendChild(c);
+      c.onclick = go;
+      paneCats.appendChild(c);
     };
     if (this.src && this.src.type === 'xtream' && ['live', 'movies', 'series'].includes(kind) && ctx.filter !== 'bein') {
-      // فئات الخادم — مخفاة الممنوعة + ترتيب التلفاز
-      const rawCats = this.src.categories[kind === 'movies' ? 'movie' : kind] || [];
-      const cats = LatchiAPI.orderCategories(rawCats);
-      cats.forEach(cat => mk(cat.name, cat.name, { go: () => this.loadCategory(cat), isActive: ctx.cat === cat.name }));
+      const cats = LatchiAPI.orderCategories(this.src.categories[kind === 'movies' ? 'movie' : kind] || []);
+      cats.forEach(cat => mkCat(cat.name, cat.name, () => this.loadCategory(cat)));
     } else if (this.src && this.src.type === 'm3u' && Array.isArray(items)) {
-      // M3U: مجموعات القائمة نفسها مرتبة بترتيب التلفاز
       const groups = [...new Set(items.map(i => i.group || 'عام'))];
       const ranked = LatchiAPI.orderCategories(groups.map(g => ({ id: g, name: g }))).map(c => c.name);
-      const cur = ctx.cat || 'الكل';
-      mk('🏷 الكل', 'الكل', { go: () => { this.listCtx.cat = 'الكل'; this.buildList(); }, isActive: cur === 'الكل' });
-      ranked.forEach(g => mk(g, g, { go: () => { this.listCtx.cat = g; this.buildList(); }, isActive: cur === g }));
+      mkCat('🏷 الكل', 'الكل', () => { this.listCtx.cat = 'الكل'; this.buildList(); });
+      ranked.forEach(g => mkCat(g, g, () => { this.listCtx.cat = g; this.buildList(); }));
+    } else {
+      mkCat('🏷 ' + (ctx.title || 'القائمة'), 'الكل', null);
     }
-    // ═══ العناصر ═══
+    // ── العمود 2: العناصر (40%) ──
     const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
     let shown = Array.isArray(items) ? items.filter(i =>
       (ctx.cat === 'الكل' || !ctx.cat || (i.group || 'عام') === ctx.cat) &&
       (!q || (i.name || '').toLowerCase().includes(q))) : [];
-    // Xtream: العناصر كلها من نفس الفئة أصلاً (لا فلترة إضافية بالفئة)
-    this._zapList = shown;   // 📺 v1.1.2: قائمة التنقل بالريموت (فوق/تحت داخل المشغل)
-    body.innerHTML = '';
+    this._zapList = shown;   // 📺 قائمة التنقل بالريموت داخل المشغل
+    paneItems.innerHTML = '';
     if (ctx.loading) {
-      body.innerHTML = '<div class="load-hint">⏳ جارٍ فتح الفئة... <span class="hint-sub">(المرة الأولى فقط — بعدها تبقى محفوظة)</span></div>';
+      paneItems.innerHTML = '<div class="load-hint">⏳ جارٍ فتح الفئة... <span class="hint-sub">(المرة الأولى فقط — بعدها تبقى محفوظة)</span></div>';
       this.focusFirst('list');
       return;
     }
-    const isPoster = ['movies', 'series', 'fav', 'cw'].includes(kind) && shown[0] && shown[0].type !== 'live';
-    const mixed = ['fav', 'cw'].includes(kind);   // ⭐ v1.0: قوائم مختلطة (قنوات + أفلام/حلقات معاً)
     if (!shown.length) {
-      body.innerHTML = `<div class="load-hint">${q ? 'لا توجد نتائج للبحث' : 'لا توجد عناصر في هذه الفئة'}</div>`;
+      paneItems.innerHTML = `<div class="load-hint">${q ? 'لا توجد نتائج للبحث' : 'لا توجد عناصر في هذه الفئة'}</div>`;
       this.focusFirst('list');
       return;
     }
-    const container = document.createElement('div');
-    container.className = isPoster ? 'poster-grid' : 'chan-list';
-    if (mixed && isPoster) container.classList.add('mixed-list');
-    body.appendChild(container);
-    // 🎯 رسم على دفعات (حماية الحاسوب الضعيف: لا تجميد واجهة مهما طالت القائمة)
-    const BATCH = 60;
     const self = this;
-    // ⭐ v1.0: في القوائم المختلطة — البث الحي صف قناة، والباقي بطاقة بوستر
-    const mkItem = (it) => (mixed && it.type === 'live') ? self.chanRow(it) : (isPoster ? self.posterCard(it) : self.chanRow(it));
+    const mkRow = (it) => {
+      const d = document.createElement('div');
+      d.className = 'pitem' + (ctx.selected && ctx.selected.id === it.id ? ' sel' : '');
+      d.dataset.id = it.id;
+      const live = it.type === 'live';
+      d.innerHTML = `<img loading="lazy" decoding="async" src="${esc(it.logo || '')}" onerror="this.style.visibility='hidden'">
+        <div class="pi-t"><div class="pi-n">${esc(it.name || '')}</div><div class="pi-g">${live ? '● مباشر' : (it.group ? esc(it.group) : '')}</div></div>
+        ${live ? '<span class="rec-dot"></span>' : '<span class="pi-play">▶</span>'}`;
+      d.onclick = () => self.selectItem(it);
+      return d;
+    };
+    // 🎯 رسم على دفعات (حماية الحاسوب الضعيف مهما طالت القائمة)
+    const BATCH = 60;
     (function renderChunk(i) {
       const end = Math.min(i + BATCH, shown.length);
       const frag = document.createDocumentFragment();
-      for (let j = i; j < end; j++) frag.appendChild(mkItem(shown[j]));
-      container.appendChild(frag);
+      for (let j = i; j < end; j++) frag.appendChild(mkRow(shown[j]));
+      paneItems.appendChild(frag);
       if (end < shown.length) requestAnimationFrame(() => renderChunk(end));
       else self.focusFirst('list');
     })(0);
+    // ── العمود 3: المشغل المصغر + التفاصيل ──
+    this.renderMiniInfo();
   },
 
   posterCard(it) {
@@ -741,7 +896,12 @@ const App = {
         </div>
         <button class="gold-btn" id="accM3uBtn" style="width:100%">🔗 إضافة ودخول</button>
       </div>
+      <div class="set-card"><h3>⚠️ منطقة الخطر</h3>
+        <button class="danger-btn" id="accWipeBtn">🗑 حذف جميع الحسابات (إعادة ضبط المصنع)</button>
+        <div class="hint-sub" style="margin-top:8px">يمسح كل الحسابات والمفضلة وسجل المشاهدة ويعود لشاشة الدخول الأولى</div>
+      </div>
       <div class="set-card"><div id="accMsg" class="verify-msg"></div></div>`;
+    document.getElementById('accWipeBtn').onclick = () => this.showWipeDlg();
     document.getElementById('accCodeBtn').onclick = () => this.applyCode(document.getElementById('accCodeInput').value.trim(), document.getElementById('accMsg'));
     document.getElementById('accM3uBtn').onclick = () => this.applyM3u(document.getElementById('accM3uInput').value.trim(), document.getElementById('accMsg'), document.getElementById('accExpInput').value);
     document.getElementById('accCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('accCodeBtn').click(); });
@@ -806,7 +966,7 @@ function spatialMove(dx, dy) {
   const root = document.querySelector('.screen.active');
   if (!root) return;
   const cur = root.querySelector('.focused');
-  const focusables = [...root.querySelectorAll('.tcard, .vtab, .gold-btn, .cat-chip, .chan, .pcard, .ep, .back-btn, .tv-input, .p-btn, .set-card .p-btn')].filter(el => el.offsetParent);
+  const focusables = [...root.querySelectorAll('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .back-btn, .tv-input, .p-btn, .mini-wrap, .set-card .p-btn')].filter(el => el.offsetParent);
   if (!focusables.length) return;
   if (!cur) { focusables[0].classList.add('focused'); return; }
   const cr = cur.getBoundingClientRect();
@@ -884,7 +1044,7 @@ document.addEventListener('mousemove', () => {
 });
 // الفأرة = نفس التركيز
 document.addEventListener('mouseover', (e) => {
-  const t = e.target.closest('.tcard, .vtab, .gold-btn, .cat-chip, .chan, .pcard, .ep, .back-btn, .p-btn, .tv-input');
+  const t = e.target.closest('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .back-btn, .p-btn, .tv-input, .mini-wrap');
   if (t && t.offsetParent) {
     document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
     t.classList.add('focused');
@@ -900,6 +1060,7 @@ document.querySelectorAll('.vtab').forEach(t => t.onclick = () => {
   App.focusFirst('verify');
 });
 document.querySelectorAll('.nav-back').forEach(b => b.onclick = () => App.back());
+document.getElementById('miniWrap').onclick = () => App.miniFull();
 document.getElementById('exitBtn').onclick = () => App.showExitDlg();
 document.getElementById('exitOk').onclick = () => App.doQuit();
 document.getElementById('exitCancel').onclick = () => App.hideExitDlg();
