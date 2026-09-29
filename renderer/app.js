@@ -316,7 +316,7 @@ const App = {
       }
       delete this._focusMem[name];   // العنصر لم يعد موجوداً (أعيد بناء الصفحة) — سلوك عادي
     }
-    const f = root.querySelector('.focused') || root.querySelector('.tcard, .vtab, .gold-btn, .pcat, .pitem, .chan, .pcard, .ep, .back-btn, .tv-input, .p-btn, .mini-wrap');
+    const f = root.querySelector('.focused') || root.querySelector('.tcard, .vtab, .gold-btn, .pcat, .pitem, .chan, .pcard, .ep, .acc-card, .back-btn, .tv-input, .p-btn, .mini-wrap');
     if (f) f.classList.add('focused');
   },
 
@@ -936,15 +936,24 @@ const App = {
       else badge = `<span class="badge-exp green">✓ ${days} يوم متبقٍ</span>`;
     } else badge = '<span class="badge-exp gray">غير محدد</span>';
     const created = acc.created_at ? new Date(+acc.created_at * 1000).toLocaleDateString('ar-DZ') : '';
-    const rows = list.length ? list.map(a => `
-      <div class="acc-row${a.value === curUrl ? ' acc-active' : ''}">
-        <div class="acc-info"><b>${esc(a.label)}</b><span>${a.kind === 'code' ? '🎫 كود تفعيل' : '🔗 M3U مباشر'} · أضيف ${esc(a.addedAt || '')}${a.exp ? ' · 📅 ينتهي ' + esc(a.exp) : ''}</span></div>
-        <div class="acc-actions">
-          ${a.value === curUrl ? '<span class="acc-now">✓ نشط</span>' : `<button class="p-btn" data-acc-go="${a.id}">🚪 دخول</button>`}
-          <button class="p-btn" data-acc-del="${a.id}">🗑 حذف</button>
-        </div>
-      </div>`).join('') : '<div class="acc-empty">لا توجد حسابات محفوظة بعد — أضف واحداً بالأسفل 👇</div>';
+    // 🎨 v1.0: بطاقات الحسابات — كل الحسابات ظاهرة دفعة واحدة؛
+    // النقر/OK على البطاقة يفتح الحساب مباشرة، والأسهم تتنقل بينها بسلاسة.
+    const rows = list.length ? `<div class="acc-cards">${list.map(a => {
+      const active = a.value === curUrl;
+      return `
+      <div class="acc-card${active ? ' acc-active' : ''}" data-acc-id="${a.id}"${active ? ' data-acc-home="1"' : ` data-acc-go="${a.id}"`} tabindex="0">
+        ${active ? '<span class="acc-now">✓ نشط الآن</span>' : ''}
+        <button class="acc-del" data-acc-del="${a.id}" title="حذف هذا الحساب">🗑</button>
+        <div class="acc-ico">${a.kind === 'code' ? '🎫' : '🔗'}</div>
+        <b class="acc-lbl">${esc(a.label)}</b>
+        <span class="acc-sub">${a.kind === 'code' ? 'كود تفعيل' : 'M3U مباشر'}${a.exp ? ' · 📅 ينتهي ' + esc(a.exp) : ''}</span>
+        <span class="acc-open">${active ? 'اضغط للعودة للرئيسية' : 'اضغط للفتح مباشرة ←'}</span>
+      </div>`;
+    }).join('')}</div>` : '<div class="acc-empty">لا توجد حسابات محفوظة بعد — أضف واحداً بالأسفل 👇</div>';
     document.getElementById('accountsBody').innerHTML = `
+      <div class="set-card"><h3>🗂 حساباتك (${list.length}/20) — انقر حساباً لفتحه مباشرة</h3>${rows}
+        <div class="hint-sub" style="margin-top:8px">الأسهم تتنقل بين البطاقات وOK تفتح المحددة — 🗑 بالزاوية تحذف حساباً واحداً</div>
+      </div>
       <div class="set-card"><h3>👤 الحساب الحالي</h3>
         <div class="row"><span>الاسم</span><b>${esc(this.user?.name || '—')}</b></div>
         ${acc.username ? `<div class="row"><span>مستخدم الخادم</span><b>${esc(acc.username)}</b></div>` : ''}
@@ -955,7 +964,6 @@ const App = {
         ${acc.max_connections ? `<div class="row"><span>حد الأجهزة</span><b>${esc(String(acc.max_connections))} جهاز</b></div>` : ''}
         ${acc.active_connections != null ? `<div class="row"><span>متصل الآن</span><b>${esc(String(acc.active_connections))} / ${esc(String(acc.max_connections != null ? acc.max_connections : '—'))}</b></div>` : ''}
       </div>
-      <div class="set-card"><h3>📋 الحسابات المحفوظة (${list.length}/20)</h3>${rows}</div>
       <div class="set-card"><h3>➕ إضافة بكود التفعيل</h3>
         <div class="input-row" style="margin-bottom:10px">
           <input id="accCodeInput" class="tv-input" placeholder="أدخل كود التفعيل هنا..." style="width:100%">
@@ -972,8 +980,8 @@ const App = {
         <button class="gold-btn" id="accM3uBtn" style="width:100%">🔗 إضافة ودخول</button>
       </div>
       <div class="set-card"><h3>⚠️ منطقة الخطر</h3>
-        <button class="danger-btn" id="accWipeBtn">🗑 حذف جميع الحسابات (إعادة ضبط المصنع)</button>
-        <div class="hint-sub" style="margin-top:8px">يمسح كل الحسابات والمفضلة وسجل المشاهدة ويعود لشاشة الدخول الأولى</div>
+        <button class="danger-btn" id="accWipeBtn">🗑 حذف جميع الحسابات</button>
+        <div class="hint-sub" style="margin-top:8px">يمسح الحسابات وكل ما يخصها فقط (المفضلة وسجل المشاهدة والكاش) ويعود لشاشة إدخال الحساب — التطبيق نفسه لا يُغلق ولا يُعاد ضبطه</div>
       </div>
       <div class="set-card"><div id="accMsg" class="verify-msg"></div></div>`;
     document.getElementById('accWipeBtn').onclick = () => this.showWipeDlg();
@@ -981,8 +989,10 @@ const App = {
     document.getElementById('accM3uBtn').onclick = () => this.applyM3u(document.getElementById('accM3uInput').value.trim(), document.getElementById('accMsg'), document.getElementById('accExpInput').value);
     document.getElementById('accCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('accCodeBtn').click(); });
     document.getElementById('accM3uInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('accM3uBtn').click(); });
-    document.querySelectorAll('[data-acc-go]').forEach(b => b.onclick = async () => {
-      const a = list.find(x => x.id === b.dataset.accGo);
+    // 🎨 v1.0: البطاقة كاملة قابلة للنقر — فتح مباشر أو عودة للرئيسية إن كانت نشطة
+    document.querySelectorAll('.acc-card').forEach(card => card.onclick = async () => {
+      if (card.dataset.accHome) { this.show('home', true); return; }   // الحساب النشط: الرئيسية
+      const a = list.find(x => x.id === card.dataset.accGo);
       if (!a) return;
       const msg = document.getElementById('accMsg');
       msg.className = 'verify-msg'; msg.textContent = '⏳ جارٍ الدخول إلى ' + a.label + '...';
@@ -991,7 +1001,8 @@ const App = {
       catch (e) { msg.textContent = '✗ تعذر الدخول — قد يكون الحساب منتهياً: ' + e.message; msg.classList.add('err'); }
       finally { this.hideChecking(); }
     });
-    document.querySelectorAll('[data-acc-del]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-acc-del]').forEach(b => b.onclick = (ev) => {
+      ev.stopPropagation();                   // 🗑 الحذف لا يفتح البطاقة
       this.saveAccounts(this.getAccounts().filter(x => x.id !== b.dataset.accDel));
       this.buildAccounts(); this.focusFirst('accounts');
     });
@@ -1041,7 +1052,7 @@ function spatialMove(dx, dy) {
   const root = document.querySelector('.screen.active');
   if (!root) return;
   const cur = root.querySelector('.focused');
-  const focusables = [...root.querySelectorAll('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .back-btn, .tv-input, .p-btn, .mini-wrap, .set-card .p-btn')].filter(el => el.offsetParent);
+  const focusables = [...root.querySelectorAll('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .acc-card, .back-btn, .tv-input, .p-btn, .mini-wrap, .set-card .p-btn')].filter(el => el.offsetParent);
   if (!focusables.length) return;
   if (!cur) { focusables[0].classList.add('focused'); return; }
   const cr = cur.getBoundingClientRect();

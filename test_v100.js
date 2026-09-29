@@ -480,6 +480,22 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
     && sandbox.localStorage.getItem('source_url') === null && sandbox.localStorage.getItem('cw_M77') === null);
   T('العودة لشاشة الدخول الأولى', App.screen === 'verify');
 
+  console.log('═══ 15) v1.0: بطاقات الحسابات — فتح مباشر بالنقر ═══');
+  localStorage.setItem('saved_accounts', JSON.stringify([
+    { id: 'A1', kind: 'code', label: 'VIP إسكندر', value: 'http://srv/vip', exp: '', addedAt: '2026/09/01' },
+    { id: 'A2', kind: 'm3u', label: 'M3U — host.com', value: 'http://srv/m3u', exp: '2026-12-01', addedAt: '2026/09/02' }
+  ]));
+  localStorage.setItem('source_url', 'http://srv/vip');
+  App.src = { type: 'm3u', live: [L1], movies: [M], series: [] };
+  App.buildAccounts();
+  const accHtml = els['accountsBody'].innerHTML;
+  T('بطاقتا حساب ظاهرتان معاً', accHtml.includes('acc-card') && (accHtml.match(/data-acc-id/g) || []).length === 2);
+  T('البطاقة النشطة مُميّزة مع شارة «نشط الآن»', accHtml.includes('acc-active') && accHtml.includes('acc-now') && accHtml.includes('data-acc-home'));
+  T('البطاقة غير النشطة تحمل فتحاً مباشراً', accHtml.includes('data-acc-go="A2"'));
+  T('زر حذف خاص بكل بطاقة', (accHtml.match(/data-acc-del/g) || []).length === 2);
+  T('تلميح الفتح على البطاقة', accHtml.includes('اضغط للفتح مباشرة'));
+  T('نص منطقة الخطر: الحسابات فقط دون إعادة ضبط التطبيق', accHtml.includes('حذف جميع الحسابات') && !accHtml.includes('إعادة ضبط المصنع') && accHtml.includes('لا يُغلق'));
+
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('خطأ:', e); process.exit(2); });
