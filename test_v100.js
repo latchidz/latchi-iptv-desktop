@@ -452,11 +452,14 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   T('اختيار الفيلم: المصغر اشتغل فوراً', App._miniItem && App._miniItem.id === M2.id && els['miniInfo'].innerHTML.includes(M2.name));
   T('الصف المختار مُبرَز (.sel)', els['paneItems'].children[1].classList.contains('sel'));
   T('زر ملء الشاشة في التفاصيل', els['miniInfo'].innerHTML.includes('miniGoBtn'));
+  const miniSrcBefore = els['miniVid'].src || '';
   els['miniWrap'].click();
   await sleep(30);
   T('نقرة المصغر = مشغل ملء الشاشة', App.screen === 'player' && Player.current && Player.current.id === M2.id);
+  T('تكبير سلس (v1.0.0): وضع الاستحواذ نشط بلا أي إعادة تحميل', Player._miniFs === true && (els['miniVid'].src || '') === miniSrcBefore);
   App.back(); await sleep(30);
   T('الرجوع = الواجهة المقسمة والمصغر استأنف نفس العنصر', App.screen === 'list' && App._miniItem && App._miniItem.id === M2.id);
+  T('رجوع سلس: نفس البث مستمر — لم يُعَد تحميله إطلاقاً', (els['miniVid'].src || '') === miniSrcBefore && !Player._miniFs && !App._miniFsReturn);
   const S1 = { id: 'S9', name: 'مسلسل تجريبي', type: 'series', url: '', logo: '', group: 'دراما' };
   App.src.series = [S1];
   await App.openList('series'); await sleep(40);

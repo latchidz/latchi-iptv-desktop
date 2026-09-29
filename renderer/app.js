@@ -179,6 +179,11 @@ const App = {
   show(name, resetStack = false) {
     // 🎬 v1.0.7: مغادرة شاشة القائمة (لغير المشغل) = إيقاف المشغل المصغر
     if (this.screen === 'list' && name !== 'list' && name !== 'player') this.miniStop();
+    // 🎬 v1.0.0: مغادرة شاشة المشغل (لغيرها) أثناء التكبير السلس = أعد العنصر لمكانه بهدوء
+    if (this.screen === 'player' && name !== 'player' && typeof Player !== 'undefined' && Player._miniFs) {
+      try { Player.exitMiniFs(); } catch (e) {}
+      this._miniFsReturn = false;
+    }
     // 🎯 v1.0.4: احفظ موضع الفوكيز عند مغادرة الشاشة — الرجوع من التفاصيل يرجعك لنفس البوستر بالضبط
     if (this.screen && this.screen !== name) {
       try {
@@ -206,8 +211,13 @@ const App = {
       Player.close();
       const prev = this.navStack.pop();
       if (prev) this.show(prev); else this.show('home', true);
-      // 🎬 v1.0.7: خروج ملء الشاشة → عودة للواجهة المقسمة والمصغر يستأنف نفس العنصر
-      if (prev === 'list' && this._miniItem && this.listCtx && !this.listCtx.loading) this.miniPlay(this._miniItem);
+      // 🎬 v1.0.0: خروج ملء الشاشة → عودة للواجهة المقسمة.
+      // من التكبير السلس: البث نفسه مستمر في المصغر (لا إعادة تحميل إطلاقاً) —
+      // غير ذلك: المصغر يستأنف نفس العنصر (سلوك v1.0.7).
+      if (prev === 'list' && this._miniItem && this.listCtx && !this.listCtx.loading) {
+        if (this._miniFsReturn) this._miniFsReturn = false;
+        else this.miniPlay(this._miniItem);
+      }
       return;
     }
     const prev = this.navStack.pop();
@@ -497,11 +507,22 @@ const App = {
     const ld = document.getElementById('miniLoad');
     if (ld) ld.classList.add('hidden');
   },
+  // 🎬 v1.0.0 (طلب العميل): التكبير من المصغر = نفس البث يستمر مباشرة — بلا أي إعادة تحميل.
+  // ننقل نفس عنصر الفيديو إلى شاشة المشغل (البث لم يتوقف) وكل أزرار المشغل تعمل عليه.
   miniFull() {
     const it = this._miniItem;
     if (!it) return;
-    this.miniStop();                       // المشغل الكامل يأخذ الدور — والرجوع يستأنف المصغر
-    this.startPlay(it);
+    if (this.screen !== 'player') this.push('player');
+    Player.hideCb = () => App.back();
+    Player.takeOver(it);
+  },
+
+  // يهدم بث المصغر تماماً (دون مساس _miniItem) — عند تبديل القناة من وضع التكبير السلس
+  miniStopHard() {
+    if (this._miniHls) { try { this._miniHls.destroy(); } catch (e) {} this._miniHls = null; }
+    const v = document.getElementById('miniVid');
+    if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} }
+    const l = document.getElementById('miniLoad'); if (l) l.classList.add('hidden');
   },
   // اختيار عنصر من العمود الأوسط: تشغيل فوري في المصغر + تفاصيل في العمود الثالث
   selectItem(it) {

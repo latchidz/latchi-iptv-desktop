@@ -16,27 +16,93 @@ const Player = {
     document.getElementById('pExit').onclick = () => this.close();
     document.getElementById('pFav').onclick = () => this.fav();
     document.getElementById('pSeekWrap').onclick = (e) => this.seekTo(e);
+    this._bindVideoEvents(this.video);
+  },
+
+  // 🔗 ربط أحداث عنصر فيديو (مرة واحدة لكل عنصر) — يستعمل أيضاً لعنصر المصغر عند التكبير السلس
+  _bindVideoEvents(v) {
+    if (!v) return;
+    try { v.volume = parseFloat(localStorage.getItem('vol') || '1'); } catch (e) {}
+    if (v._latchiBound) return;
+    v._latchiBound = true;
     // 📺 v1.0.6: الضغط على الشاشة = إظهار/إخفاء شريط المعلومات (كيما التلفاز)
-    this.video.onclick = () => { if (this.uiVisible) this.hideUi(); else this.flashUi(); };
+    v.onclick = () => { if (this.uiVisible) this.hideUi(); else this.flashUi(); };
     // 🎚 v1.0.6: جودة البث الحية (SD/HD/FHD/4K) للعلامة المائية
-    this.video.addEventListener('loadedmetadata', () => this._updQuality());
-    this.video.addEventListener('resize', () => this._updQuality());
-    this.video.addEventListener('timeupdate', () => this.onTime());
-    this.video.addEventListener('ended', () => { if (this.hideCb) this.hideCb('ended'); });
-    this.video.addEventListener('error', () => {
+    v.addEventListener('loadedmetadata', () => this._updQuality());
+    v.addEventListener('resize', () => this._updQuality());
+    v.addEventListener('timeupdate', () => this.onTime());
+    v.addEventListener('ended', () => { if (this.hideCb) this.hideCb('ended'); });
+    v.addEventListener('error', () => {
       if (this._usingHls) return; // أخطاء hls تُعالج في معالج Hls.Events.ERROR
       this._nextCandidate('خطأ في المصدر');
     });
     // مؤشر التخزين المؤقت
-    this.video.addEventListener('waiting', () => { if (!this.video.paused) this.center('⏳', 0); });
-    this.video.addEventListener('playing', () => {
+    v.addEventListener('waiting', () => { if (!v.paused) this.center('⏳', 0); });
+    v.addEventListener('playing', () => {
       this.hideCenter();
       // 🛠 v1.1.2: البث اشتغل = صفّر عدادات الاستعادة (التقطعات اللحظية لا تتراكم)
       this._played = true; this._netRetries = 0; this._stallMs = 0;
       this._mediaRecovered = false; this._mediaSwapped = false;
     });
-    this.video.addEventListener('canplay', () => { if (!this.video.paused) this.hideCenter(); });
-    this.video.volume = parseFloat(localStorage.getItem('vol') || '1');
+    v.addEventListener('canplay', () => { if (!v.paused) this.hideCenter(); });
+  },
+
+  // ═══ 🎬 v1.0.0 (طلب العميل): تكبير سلس من المصغر — نفس عنصر الفيديو ونفس البث، بلا أي إعادة تحميل ═══
+  takeOver(item) {
+    if (this._miniFs) this.exitMiniFs();
+    const miniVid = document.getElementById('miniVid');
+    if (!miniVid) { this.play(item); return; }        // احتياط: مسار عادي
+    this._origVideo = this.video;
+    this._miniFs = true;
+    try { this._miniSlot = miniVid.parentNode || null; } catch (e) { this._miniSlot = null; }
+    try {
+      const op = this._origVideo.parentNode;
+      if (op && op.insertBefore) op.insertBefore(miniVid, this._origVideo);
+    } catch (e) {}
+    try { this._origVideo.style.display = 'none'; } catch (e) {}
+    miniVid.classList.add('fs-from-mini');
+    this.video = miniVid;                             // كل أزرار المشغل تعمل على نفس البث الجاري
+    this._bindVideoEvents(miniVid);
+    // تهيئة واجهة المشغل حول البث الجاري — دون أي لمس للمصدر
+    this.current = item;
+    this.isLive = item.type === 'live';
+    this._gen++;
+    this._played = true; this._netRetries = 0; this._stallMs = 0; this._sameReload = 0;
+    this._mediaRecovered = false; this._mediaSwapped = false;
+    this._candidates = this.buildCandidates(item); this._candIdx = 0;
+    this._resumeAt = 0;
+    document.getElementById('pName').textContent = item.name;
+    document.getElementById('pLive').classList.toggle('hidden', !this.isLive);
+    document.getElementById('pSeekWrap').style.display = this.isLive ? 'none' : 'block';
+    document.getElementById('pRew').style.display = this.isLive ? 'none' : '';
+    document.getElementById('pFwd').style.display = this.isLive ? 'none' : '';
+    document.getElementById('pFav').textContent = App.isFav(item) ? '★ مفضلة' : '☆ مفضلة';
+    this.hideCenter();
+    this.flashUi();
+    try { if (window.latchi && window.latchi.setFullscreen) window.latchi.setFullscreen(true); } catch (e) {}
+    this._startWatchdog();
+    this.loadEpg(item);
+    this._startMark();
+  },
+
+  // 🎬 إنهاء التكبير السلس: نفس العنصر يعود لمكانه في المصغر — البث لم يتوقف لحظة
+  exitMiniFs() {
+    if (!this._miniFs) return false;
+    this._miniFs = false;
+    const miniVid = document.getElementById('miniVid');
+    try {
+      if (this._miniSlot && this._miniSlot.appendChild && miniVid) this._miniSlot.appendChild(miniVid);
+      if (miniVid) miniVid.classList.remove('fs-from-mini');
+    } catch (e) {}
+    try { if (this._origVideo) { this._origVideo.style.display = ''; this.video = this._origVideo; } } catch (e) {}
+    this._origVideo = null; this._miniSlot = null;
+    // أوقف مؤقتات واجهة المشغل — البث نفسه مستمر في المصغر
+    clearInterval(this._wd); this._wd = 0;
+    clearInterval(this._markT); this._markT = 0;
+    const _epgEl = document.getElementById('pEpg'); if (_epgEl) { _epgEl.classList.add('hidden'); _epgEl.textContent = ''; }
+    this._numBuf = ''; clearTimeout(this._numT); try { this.hideNumOsd(); } catch (e) {}
+    try { this.hideUi(); } catch (e) {}
+    return true;
   },
 
   // 🧱 بناء سلسلة الروابط المرشحة (نفس فلسفة الهاتف: صيغ متعددة ومحاولة تباعاً)
@@ -53,6 +119,12 @@ const Player = {
   },
 
   play(item, opts = {}) {
+    // 🎬 v1.0.0: تشغيل جديد أثناء التكبير السلس (تبديل قناة) — أنهِ الوضع واقتل بث المصغر القديم
+    if (this._miniFs) {
+      this.exitMiniFs();
+      try { if (typeof App !== 'undefined' && App.miniStopHard) App.miniStopHard(); } catch (e) {}
+      try { if (typeof App !== 'undefined' && App._miniItem) App._miniItem = item; } catch (e) {}
+    }
     this.current = item;
     this.isLive = item.type === 'live';
     this._gen++;                       // إلغاء أي محاولات قديمة عالقة
@@ -358,6 +430,14 @@ const Player = {
   close() {
     this._gen++;
     clearInterval(this._wd);           // 🛠 v1.1.2: أوقف حارس التقطّع
+    // 🎬 v1.0.0: عودة من التكبير السلس — البث يستمر في المصغر بلا أي إعادة تحميل
+    if (this._miniFs) {
+      try { if (typeof App !== 'undefined') App._miniFsReturn = true; } catch (e) {}   // back() لا يعيد التحميل
+      this.exitMiniFs();
+      const cb = this.hideCb; this.hideCb = null;
+      if (cb) cb('exit');
+      return;
+    }
     if (this.hls) { this.hls.destroy(); this.hls = null; }
     clearInterval(this._markT); this._markT = 0;                      // 💧 v1.0.6
     const _epgEl = document.getElementById('pEpg'); if (_epgEl) { _epgEl.classList.add('hidden'); _epgEl.textContent = ''; }
