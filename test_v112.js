@@ -155,5 +155,34 @@ T('رسالة «تعذر استعادة» ظهرت', els['pCenter'].textContent.
 T('بلا قفز بين الصيغ (البث كان حياً — الرسالة مباشرة)', Player._candIdx === 0);
 T('مؤشر (↑/↓) موجود في الرسالة لتجربة قناة أخرى', els['pCenter'].textContent.includes('↑/↓'));
 
+// ═══ 🛡 v1.0.0: حارس التغليف — كل ملف محلي يتطلبه main/preload يجب أن يكون ضمن build.files ═══
+// (سبب الخطأ الحرج: remote.js كان يعمل في التطوير لكنه لم يُضمَّن في app.asar → Cannot find module './remote')
+(function () {
+  const fs = require('fs'), path = require('path');
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+  const filesList = (pkg.build && pkg.build.files) || [];
+  const covered = (f) => filesList.some(pat => {
+    if (pat === f) return true;                                              // مطابقة صريحة
+    if (pat.endsWith('/**/*') && f.startsWith(pat.slice(0, -5))) return true; // مجلد بتكرارية
+    return false;
+  });
+  const missing = [], seen = {}, queue = ['main.js', 'preload.js'];
+  while (queue.length) {
+    const ef = queue.shift();
+    if (seen[ef]) continue; seen[ef] = true;
+    if (!covered(ef)) missing.push('غير مضمّن في build.files: ' + ef);
+    const src = fs.readFileSync(path.join(__dirname, ef), 'utf8');
+    for (const rq of (src.match(/require\('\.\/[^']+'\)/g) || [])) {
+      const rel = rq.slice(9, -2);                                            // './remote'
+      let f = rel.slice(2);
+      if (!fs.existsSync(path.join(__dirname, f)) && fs.existsSync(path.join(__dirname, f + '.js'))) f += '.js';
+      if (fs.existsSync(path.join(__dirname, f))) queue.push(f);
+      else missing.push('مطلوب ' + rel + ' في ' + ef + ' لكن الملف غير موجود');
+    }
+  }
+  T('🛡 حارس التغليف: كل الملفات المحلية (main→preload→remote…) مضمّنة في build.files', missing.length === 0);
+  if (missing.length) console.log('   ⚠ ' + missing.join(' | '));
+})();
+
 console.log('\n═══ النتيجة: ' + pass + ' نجح ✓ | ' + fail + ' فشل ✗ ═══');
 process.exit(fail ? 1 : 0);

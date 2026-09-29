@@ -27,6 +27,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "remote.js",
       "renderer/**/*",
       "assets/**/*",
       "node_modules/**/*",
