@@ -17,6 +17,12 @@ const App = {
       if (b) this.pasteTo(b.dataset.paste, b);
     });
     this.clockTick(); setInterval(() => this.clockTick(), 1000);
+    // 📱 v1.0.8: ريموت الهاتف — استقبال الأوامر + تشغيل الخادم إن كان مفعّلاً + دفع الحالة كل ثانيتين
+    try {
+      if (window.latchi && window.latchi.onRemoteKey) window.latchi.onRemoteKey(cmd => this.remoteApplyKey(cmd));
+      if (localStorage.getItem('remote_on') === '1') this.remoteServerStart(true);
+      setInterval(() => this.remotePush(), 2000);
+    } catch (e) {}
     await new Promise(r => setTimeout(r, 1400)); // سبلاش قصير (سرعة الإقلاع أهم)
     const saved = localStorage.getItem('source_url');
     if (saved) {
@@ -121,6 +127,55 @@ const App = {
   },
 
   // ═══ الشاشات ═══
+  // ═══ 📱 v1.0.8: ريموت الهاتف ═══
+  async remoteServerStart(silent) {
+    try {
+      if (!localStorage.getItem('remote_pin')) localStorage.setItem('remote_pin', String(Math.floor(1000 + Math.random() * 9000)));
+      this._remoteInfo = await window.latchi.remoteStart({ port: 37777, pin: localStorage.getItem('remote_pin') });
+    } catch (e) { this._remoteInfo = { ok: false }; }
+    if (!silent) { this.buildSettings(); this.focusFirst('settings'); }
+  },
+  async remoteServerStop() {
+    try { await window.latchi.remoteStop(); } catch (e) {}
+    this._remoteInfo = null;
+    this.buildSettings(); this.focusFirst('settings');
+  },
+  remotePush() {
+    try {
+      if (!window.latchi || !window.latchi.remoteState) return;
+      const now = (this.screen === 'player' && Player.current) ? (Player.current.name || '')
+        : (this._miniItem ? (this._miniItem.name || '') : '');
+      window.latchi.remoteState({
+        screen: this.screen, nowPlaying: now,
+        volume: (Player.video ? Player.video.volume : 1),
+        muted: !!(Player.video && Player.video.muted)
+      });
+    } catch (e) {}
+  },
+  remoteApplyKey(cmd) {
+    try {
+      if (!cmd) return;
+      if (cmd.key) {
+        // نفس حدث الكيبورد — كل منطق التنقل/المشغل يعمل كما هو (ج40: الكيبورد = الريموت)
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: String(cmd.key), bubbles: true, cancelable: true }));
+        this.remotePush();
+        return;
+      }
+      if (cmd.action === 'volume' && typeof cmd.delta === 'number') {
+        const d = Math.max(-0.2, Math.min(0.2, +cmd.delta));
+        const pv = Player.video;
+        if (pv) { pv.muted = false; pv.volume = Math.min(1, Math.max(0, pv.volume + d)); localStorage.setItem('vol', String(pv.volume)); }
+        const mv = document.getElementById('miniVid');
+        if (mv) mv.volume = Math.min(1, Math.max(0, mv.volume + d));
+        this.remotePush();
+      } else if (cmd.action === 'mute') {
+        const pv = Player.video; if (pv) pv.muted = !pv.muted;
+        const mv = document.getElementById('miniVid'); if (mv) mv.muted = !mv.muted;
+        this.remotePush();
+      }
+    } catch (e) {}
+  },
+
   show(name, resetStack = false) {
     // 🎬 v1.0.7: مغادرة شاشة القائمة (لغير المشغل) = إيقاف المشغل المصغر
     if (this.screen === 'list' && name !== 'list' && name !== 'player') this.miniStop();
@@ -137,6 +192,7 @@ const App = {
     document.getElementById(name).classList.add('active');
     this.screen = name;
     this.onShown(name);
+    this.remotePush();     // 📱 v1.0.8
   },
 
   push(name) {
@@ -806,6 +862,14 @@ const App = {
         <div class="row"><span>تفريغ متابعة المشاهدة</span><button class="p-btn" id="clearCw">تفريغ</button></div>
         <div class="row"><span>تفريغ المفضلة</span><button class="p-btn" id="clearFav">تفريغ</button></div>
       </div>
+      <div class="set-card"><h3>🎮 ريموت الهاتف</h3>
+        <div class="row"><span>خادم التحكم (واي فاي المنزل)</span><button class="p-btn" id="remoteToggle">${localStorage.getItem('remote_on') === '1' ? '⏹ إيقاف' : '▶ تشغيل'}</button></div>
+        <div class="row"><span>الحالة</span><b style="color:${localStorage.getItem('remote_on') === '1' ? '#7CE38B' : '#8A90B8'}">${localStorage.getItem('remote_on') === '1' ? 'يعمل الآن' : 'متوقف'}</b></div>
+        <div class="row"><span>رمز الربط</span><b style="letter-spacing:4px;color:var(--gold)">${esc(localStorage.getItem('remote_pin') || '—')}</b></div>
+        <div class="row"><span>الشبكة</span><b style="font-size:12px">${esc((this._remoteInfo && this._remoteInfo.ips || []).join(' ، ') || '—')}${(this._remoteInfo && this._remoteInfo.port) ? ':' + this._remoteInfo.port : ''}</b></div>
+        <div class="row" style="display:block"><span style="display:block;margin-bottom:8px;color:#8A90B8;font-size:13px">ثبّت تطبيق «LATCHI Remote» على الهاتف، اجعل الهاتف على نفس الواي فاي، واربط برمز الربط أعلاه.</span>
+        <button class="p-btn" id="remoteNewPin">🔄 رمز ربط جديد</button></div>
+      </div>
       <div class="set-card"><h3>🚪 الخروج</h3>
         <button class="gold-btn danger-btn" id="logout" style="width:100%">تسجيل الخروج والعودة للتحقق</button>
       </div>`;
@@ -823,6 +887,17 @@ const App = {
       this.buildSettings(); this.focusFirst('settings');
     };
     document.getElementById('clearFav').onclick = () => { localStorage.removeItem('favs'); this.favs = []; this.buildSettings(); this.focusFirst('settings'); };
+    const rTgl = document.getElementById('remoteToggle');
+    if (rTgl) rTgl.onclick = () => {
+      if (localStorage.getItem('remote_on') === '1') { localStorage.removeItem('remote_on'); this.remoteServerStop(); }
+      else { localStorage.setItem('remote_on', '1'); this.remoteServerStart(false); }
+    };
+    const rPin = document.getElementById('remoteNewPin');
+    if (rPin) rPin.onclick = () => {
+      localStorage.setItem('remote_pin', String(Math.floor(1000 + Math.random() * 9000)));
+      if (localStorage.getItem('remote_on') === '1') this.remoteServerStart(false);
+      else { this.buildSettings(); this.focusFirst('settings'); }
+    };
     document.getElementById('logout').onclick = () => {
       localStorage.removeItem('source_url');
       location.reload();

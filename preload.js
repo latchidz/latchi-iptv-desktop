@@ -13,5 +13,10 @@ contextBridge.exposeInMainWorld('latchi', {
   // 📺 v1.0.2: ملء الشاشة + الخروج
   setFullscreen: (on) => ipcRenderer.invoke('set-fullscreen', on),
   isFullscreen: () => ipcRenderer.invoke('is-fullscreen'),
-  quitApp: () => ipcRenderer.invoke('app-quit')
+  quitApp: () => ipcRenderer.invoke('app-quit'),
+  // 📱 v1.0.8: الريموت
+  remoteStart: (cfg) => ipcRenderer.invoke('remote-start', cfg),
+  remoteStop: () => ipcRenderer.invoke('remote-stop'),
+  remoteState: (st) => ipcRenderer.send('remote-state', st),
+  onRemoteKey: (cb) => ipcRenderer.on('remote-key', (_e, cmd) => cb(cmd))
 });

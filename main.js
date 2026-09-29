@@ -4,6 +4,8 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const crypto = require('crypto');
+// 📱 v1.0.8: خادم الريموت (الهاتف يتحكم في الحاسوب عبر الواي فاي)
+const RemoteServer = require('./remote');
 
 let win = null;
 
@@ -111,6 +113,17 @@ ipcMain.handle('cache-clear', () => {
     return true;
   } catch (err) { return false; }
 });
+
+// ═══ 📱 v1.0.8: وصلات خادم الريموت ═══
+ipcMain.handle('remote-start', (e, cfg) => {
+  try {
+    const r = RemoteServer.start({ port: (cfg && cfg.port) || 37777, pin: (cfg && cfg.pin) || '', getWin: () => win });
+    return { ok: !!r.ok, ips: RemoteServer.lanIps(), port: RemoteServer.port, pin: RemoteServer.pin };
+  } catch (err) { return { ok: false, error: String(err && err.message || err) }; }
+});
+ipcMain.handle('remote-stop', () => { try { RemoteServer.stop(); } catch (e) {} return { ok: true }; });
+ipcMain.on('remote-state', (e, st) => { try { RemoteServer.pushState(st); } catch (err) {} });
+app.on('quit', () => { try { RemoteServer.stop(); } catch (e) {} });
 
 app.whenReady().then(createWindow);
 app.on('window-all-closed', () => app.quit());
