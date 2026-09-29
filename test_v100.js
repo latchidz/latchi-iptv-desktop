@@ -379,6 +379,16 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   T('نافذة أصغر (عمودان): ↓ = +2 تلقائياً', focusedIdx() === 2);
   documentMock.querySelector = prevDocQ;
 
+  console.log('═══ 12) v1.0.5: شبكة الرئيسية المتجاوبة — حارس ضد التداخل ═══');
+  const css = require('fs').readFileSync('renderer/tv.css', 'utf8');
+  T('إصلاح التداخل: min-height:0 على البطاقة', /\.tcard\s*\{[^}]*min-height:\s*0\s*!important/s.test(css));
+  T('أعمدة نسبية متساوية 1fr (لا مقاسات ثابتة)', css.includes('repeat(4, minmax(0, 1fr))'));
+  T('لا min-height:218 قديمة فاعلة على tcard', !/\.tcard\s*\{[^}]*min-height:\s*218/s.test(css));
+  T('مسافات موحدة 24px أفقياً وعمودياً', /gap:\s*24px\s*!important/.test(css));
+  T('توسيط الشبكة + هوامش آمنة', css.includes('align-content: center !important') && css.includes('calc(100% - 80px)'));
+  T('تأثير الماوس: إبراز + حواف مضيئة', /\.tcard:hover\s*\{[^}]*scale\(1\.05\)/s.test(css));
+  T('استجابة النوافذ الصغيرة (عمودان ثم واحد)', css.includes('repeat(2, minmax(0, 1fr))') && /@media \(max-width: 480px\)/.test(css));
+
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('خطأ:', e); process.exit(2); });

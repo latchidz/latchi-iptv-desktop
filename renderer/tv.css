@@ -272,7 +272,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 /* ─── 🏠 بطاقات الرئيسية المصورة ─── */
 .cards { align-content: start !important; padding: 40px 56px 60px !important; }
 .tcard { position: relative; overflow: hidden; padding: 0 !important; text-align: right !important;
-  min-height: 218px; border-radius: 20px; border-color: rgba(34, 40, 79, .9);
+  border-radius: 20px; border-color: rgba(34, 40, 79, .9);
   box-shadow: 0 12px 34px rgba(0, 0, 0, .45);
   transition: transform .22s cubic-bezier(.2,.8,.25,1), border-color .22s, box-shadow .22s; }
 .tcard-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
@@ -408,20 +408,49 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .exit-chip:hover, .exit-chip.focused { border-color: #FF7B7B; color: #FFC4C4;
   box-shadow: 0 0 16px rgba(255, 123, 123, .4); transform: translateY(-1px); }
 
-/* ═══ 🚀 v1.0.2: Royal Grid — مطابقة تلفاز LATCHI 100% ═══
-   البطاقة: 168×98dp، زوايا 26dp (15.5%/26.5%)، صورة خالصة، 4 فوق / 4 تحت */
-.cards { display: grid; grid-template-columns: repeat(4, minmax(158px, 192px)) !important;
-  justify-content: center; align-content: start; gap: 36px 46px !important; padding: 26px 48px 46px !important; }
-.tcard { aspect-ratio: 168 / 98; border-radius: 15.5% / 26.5% !important;
+/* ═══ 🚀 v1.0.5: Royal Grid متجاوبة 100% — يستحيل التداخل مهما كان مقاس النافذة ═══
+   🔧 إصلاح كارثي: كانت قاعدة قديمة تفرض min-height:218px على بطاقة نسبتها 168:98
+      (ارتفاعها الفعلي ~112px) → البطاقة تفيض فوق صفها وتركب على الصف الذي تحته.
+   الحل: min-height:0 + أعمدة نسبية 1fr (كل بطاقة ربع العرض بالضبط) + نسبة ثابتة. */
+.cards { display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;   /* نسب متساوية — لا مقاسات ثابتة */
+  gap: 24px !important;                                          /* مسافات موحدة أفقياً وعمودياً */
+  width: min(920px, calc(100% - 80px)) !important;               /* متمركزة + هوامش آمنة من الجانبين */
+  margin: 0 auto !important;
+  padding: 24px 0 !important;
+  justify-content: center;
+  align-content: center !important;                              /* الشبكة كلها في منتصف الشاشة */
+  justify-items: stretch; }
+.tcard { aspect-ratio: 168 / 98; min-height: 0 !important; max-width: 100%;
+  border-radius: 15.5% / 26.5% !important;
   padding: 0 !important; border: none !important; background: #1A1A30 !important;
-  overflow: hidden; position: relative; cursor: pointer;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, .5); transition: transform .16s, box-shadow .16s; }
+  overflow: hidden; position: relative; cursor: pointer; width: 100%;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .5);
+  transition: transform .18s cubic-bezier(.2,.8,.25,1), box-shadow .18s; }
 .tcard .tcard-img { position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; display: block; border-radius: inherit; }
+  object-fit: cover; display: block; border-radius: inherit;
+  transition: transform .4s cubic-bezier(.2,.8,.25,1); }
 .tcard .tcard-shade, .tcard .tcard-body { display: none !important; }
-.tcard:hover, .tcard.focused { transform: scale(1.07); background: #1A1A30 !important;
-  box-shadow: 0 0 0 4px var(--gold), 0 0 34px rgba(217, 169, 78, .55), 0 16px 40px rgba(0, 0, 0, .6);
-  z-index: 2; }
+
+/* 🖱 v1.0.5: تأثير الماوس — إبراز أمامي + حواف مضيئة كيما فوكوس التلفاز */
+.tcard:hover { transform: scale(1.05) translateY(-4px);
+  box-shadow: 0 0 0 4px var(--gold), 0 0 30px rgba(217, 169, 78, .5), 0 26px 50px rgba(0, 0, 0, .65);
+  z-index: 3; }
+.tcard:hover .tcard-img { transform: scale(1.06); }
+/* الفوكيس (ريموت/أسهم) نفس الإبراز — !important لإسقاط قاعدة v1.0 القديمة */
+.tcard.focused { transform: scale(1.05) translateY(-4px) !important;
+  box-shadow: 0 0 0 4px var(--gold), 0 0 30px rgba(217, 169, 78, .5), 0 26px 50px rgba(0, 0, 0, .65) !important;
+  background: #1A1A30 !important; z-index: 3; }
+
+/* 📱 نوافذ أصغر: عمودان ثم عمود — دوما نسب متساوية بلا تداخل */
+@media (max-width: 900px) {
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: min(540px, calc(100% - 48px)) !important; gap: 20px !important; }
+}
+@media (max-width: 480px) {
+  .cards { grid-template-columns: minmax(0, 1fr) !important;
+    width: min(320px, calc(100% - 40px)) !important; }
+}
 
 /* تركيز أزرار المشغل (ريموت) */
 .p-btn.focused { border-color: var(--gold) !important; box-shadow: var(--focus-glow);
