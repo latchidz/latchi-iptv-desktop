@@ -117,7 +117,7 @@ ipcMain.handle('cache-clear', () => {
 // ═══ 📱 v1.0.8: وصلات خادم الريموت ═══
 ipcMain.handle('remote-start', (e, cfg) => {
   try {
-    const r = RemoteServer.start({ port: (cfg && cfg.port) || 37777, pin: (cfg && cfg.pin) || '', getWin: () => win });
+    const r = RemoteServer.start({ port: (cfg && cfg.port) || 37777, pin: (cfg && cfg.pin) || '', getWin: () => win, appVer: app.getVersion() });
     return { ok: !!r.ok, ips: RemoteServer.lanIps(), port: RemoteServer.port, pin: RemoteServer.pin };
   } catch (err) { return { ok: false, error: String(err && err.message || err) }; }
 });

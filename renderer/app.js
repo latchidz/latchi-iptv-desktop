@@ -157,8 +157,33 @@ const App = {
     try {
       if (!cmd) return;
       if (cmd.key) {
+        const k = String(cmd.key);
+        // ⌨ ج50: كيبورد الريموت — الحرف القابل للطباعة يُدرج مباشرة في الحقل المركّز (البحث...)
+        // (حدث الكيبورد الاصطناعي وحده لا يكتب في الحقول — الإدراج الصريح + حدث input يشغّل البحث فوراً)
+        const ae = (document.activeElement && document.activeElement.tagName) ? document.activeElement : null;
+        const isField = !!(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA') && !ae.readOnly && !ae.disabled);
+        if (isField && k.length === 1) {
+          const st = (ae.selectionStart != null) ? ae.selectionStart : ae.value.length;
+          const en = (ae.selectionEnd != null) ? ae.selectionEnd : st;
+          ae.value = ae.value.slice(0, st) + k + ae.value.slice(en);
+          try { ae.setSelectionRange(st + 1, st + 1); } catch (e) {}
+          ae.dispatchEvent(new Event('input', { bubbles: true }));
+          this.remotePush();
+          return;
+        }
+        if (isField && k === 'Backspace') {
+          const st = (ae.selectionStart != null) ? ae.selectionStart : ae.value.length;
+          const en = (ae.selectionEnd != null) ? ae.selectionEnd : st;
+          if (en > st) { ae.value = ae.value.slice(0, st) + ae.value.slice(en); try { ae.setSelectionRange(st, st); } catch (e) {} }
+          else if (st > 0) { ae.value = ae.value.slice(0, st - 1) + ae.value.slice(st); try { ae.setSelectionRange(st - 1, st - 1); } catch (e) {} }
+          ae.dispatchEvent(new Event('input', { bubbles: true }));
+          this.remotePush();
+          return;
+        }
         // نفس حدث الكيبورد — كل منطق التنقل/المشغل يعمل كما هو (ج40: الكيبورد = الريموت)
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: String(cmd.key), bubbles: true, cancelable: true }));
+        // ج50: يُرسل على العنصر المركّز إن كان حقلاً (كي تعمل مستمعات Enter الخاصة بالحقول) وإلا على document
+        const tgt = isField ? ae : document;
+        tgt.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
         this.remotePush();
         return;
       }
@@ -208,7 +233,7 @@ const App = {
       const el = (document.elementFromPoint ? document.elementFromPoint(this._mx, this._my) : null);
       if (el) {
         // التحويم = فوكيس (ج41) — أقرب عنصر تفاعلي تحت المؤشر
-        const focusable = el.closest ? el.closest('button, [onclick], .acc-card, .tcard, .pcard, [tabindex]:not([tabindex="-1"])') : null;
+        const focusable = el.closest ? el.closest('button, input, textarea, [onclick], .acc-card, .tcard, .pcard, .pcat, .pitem, .chan, .ep, .gd-ep, .vtab, .cat-chip, [tabindex]:not([tabindex="-1"])') : null;
         if (focusable && focusable.focus) { try { focusable.focus(); } catch (e) {} }
         try { el.dispatchEvent(new MouseEvent('mousemove', { clientX: this._mx, clientY: this._my, bubbles: true })); } catch (e) {}
       }
@@ -316,6 +341,7 @@ const App = {
       try { if (window.latchi && window.latchi.cacheClear) window.latchi.cacheClear(); } catch (e3) {}   // كاش القرص كذلك
     } catch (e) {}
     this.show('verify', true);
+    this.hideExitDlg();   // 🛠 ج50: إخفاء نافذة التأكيد بعد الحذف — كانت تبقى معلّقة فوق شاشة الدخول
     const v = document.getElementById('verifyMsg');
     if (v) { v.className = 'verify-msg'; v.textContent = 'تم مسح جميع البيانات — أدخل كوداً أو رابطاً للبدء من جديد'; }
   },
@@ -878,6 +904,274 @@ const App = {
     this.focusFirst('details');
   },
 
+  // ═══ 📺 ج50: دليل القنوات والفئات داخل المشغل (زر OK/Enter) — كيما واجهة القائمة تماماً ═══
+  // ثلاثة أعمدة: الفئات (يمين) | القنوات/الأفلام/المسلسلات (وسط) | التفاصيل والحلقات (يسار — مكان المشغل المصغر)
+  // الحلقة تُفتح مباشرة بملء الشاشة، والقناة تُبدَّل فوراً — والبث يبقى ظاهراً خلف الدليل.
+  guideOpen() { return !!(this._guide && this._guide.root && this._guide.root.classList.contains('on')); },
+  guideToggle() { this.guideOpen() ? this.guideClose() : this.guideOpen2(); },
+  guideOpen2() {
+    if (!this.src) return;
+    if (!this._guide) this._guideBuild();
+    const g = this._guide;
+    g.root.classList.remove('hidden');
+    g.root.classList.add('on');
+    // نفتح النوع المناسب لما يشغَّل الآن
+    const t = (Player.current && Player.current.type) || 'live';
+    const kind = (t === 'live' || t === 'movie' || t === 'series') ? (t === 'movie' ? 'movies' : t) : 'live';
+    this._guideLoadKind(kind);
+  },
+  guideClose() {
+    const g = this._guide; if (!g) return;
+    g.root.classList.add('hidden');
+    g.root.classList.remove('on');
+    try { g.root.querySelectorAll('.focused').forEach(el => el.classList.remove('focused')); } catch (e) {}
+  },
+  _guideBuild() {
+    const mk = (cls, parent, html) => {
+      const d = document.createElement('div');
+      d.className = cls;
+      if (html != null) d.innerHTML = html;
+      parent.appendChild(d);
+      return d;
+    };
+    const root = mk('guide-ov hidden', document.getElementById('player'));
+    const panel = mk('guide-panel', root);
+    const head = mk('guide-head', panel);
+    const title = mk('g-title', head, 'دليل القنوات');
+    const kinds = mk('g-kinds', head);
+    const close = document.createElement('button');
+    close.className = 'g-close'; close.textContent = '✕ إغلاق';
+    head.appendChild(close);
+    const body = mk('guide-body', panel);
+    const cats = mk('g-cats', body);
+    const items = mk('g-items', body);
+    const detail = mk('g-detail', body);
+    mk('g-hint', panel, '↑↓←→ تنقل &nbsp;•&nbsp; Enter اختيار &nbsp;•&nbsp; Esc إغلاق &nbsp;•&nbsp; الأرقام تعمل كالمعتاد');
+    root.onclick = (e) => { if (e && e.target === root) this.guideClose(); };
+    close.onclick = () => this.guideClose();
+    const self = this;
+    const KINDS = [['live', '● بث مباشر'], ['movies', '🎞 أفلام'], ['series', '🎬 مسلسلات']];
+    const kindBtns = {};
+    KINDS.forEach(([k, label]) => {
+      const b = document.createElement('button');
+      b.className = 'g-kind';
+      b.textContent = label;
+      b.onclick = () => self._guideLoadKind(k);
+      kinds.appendChild(b);
+      kindBtns[k] = b;
+    });
+    this._guide = { root, title, kinds: kindBtns, cats, items, detail, kind: null, cat: null, catId: null, list: [], sel: null };
+  },
+  _guideLoadKind(kind) {
+    const g = this._guide; if (!g) return;
+    g.kind = kind; g.cat = 'الكل'; g.catId = null; g.list = []; g.sel = null;
+    Object.keys(g.kinds).forEach(k => g.kinds[k].classList.toggle('active', k === kind));
+    g.title.textContent = kind === 'live' ? 'قائمة القنوات' : kind === 'movies' ? 'الأفلام' : 'المسلسلات';
+    g.cats.innerHTML = '';
+    const mkCat = (label, val, go) => {
+      const c = document.createElement('div');
+      c.className = 'pcat' + ((g.cat === val) ? ' active' : '');
+      c.textContent = label;
+      c.onclick = go;
+      g.cats.appendChild(c);
+      return c;
+    };
+    const isX = this.src && this.src.type === 'xtream';
+    const kindApi = kind === 'movies' ? 'movie' : kind;
+    if (isX) {
+      const cats = LatchiAPI.orderCategories(this.src.categories[kindApi] || []);
+      cats.forEach(cat => mkCat(cat.name, cat.name, () => this._guideLoadCatX(cat)));
+      this._guideLoadCatX(cats[0] || null);
+    } else {
+      const arr = this.src[kind] || [];
+      const groups = [...new Set(arr.map(i => i.group || 'عام'))];
+      const ranked = LatchiAPI.orderCategories(groups.map(x => ({ id: x, name: x }))).map(c => c.name);
+      mkCat('🏷 الكل', 'الكل', () => this._guideM3uFilter('الكل'));
+      ranked.forEach(x => mkCat(x, x, () => this._guideM3uFilter(x)));
+      // فئة المحتوى الجاري تلقائياً
+      const cur = Player.current;
+      const curGrp = cur && (cur.group || 'عام');
+      const curKind = cur ? (cur.type === 'movie' ? 'movies' : cur.type) : null;
+      this._guideM3uFilter((cur && curKind === kind && ranked.includes(curGrp)) ? curGrp : 'الكل');
+    }
+  },
+  _guideM3uFilter(cat) {
+    const g = this._guide; if (!g || !this.src || this.src.type !== 'm3u') return;
+    g.cat = cat;
+    [...g.cats.children].forEach(c => c.classList.toggle('active', c.textContent === cat || (cat === 'الكل' && c.textContent.indexOf('الكل') >= 0)));
+    const arr = this.src[g.kind] || [];
+    const list = (cat === 'الكل') ? arr : arr.filter(i => (i.group || 'عام') === cat);
+    this._guideRenderItems(list);
+  },
+  async _guideLoadCatX(cat) {
+    const g = this._guide; if (!g) return;
+    if (!cat) { this._guideRenderItems([]); return; }
+    g.cat = cat.name; g.catId = cat.id;
+    [...g.cats.children].forEach(c => c.classList.toggle('active', c.textContent === cat.name));
+    g.items.innerHTML = '<div class="load-hint">⏳ جارٍ فتح الفئة...</div>';
+    try {
+      const items = await LatchiAPI.getCategoryItems(g.kind === 'movies' ? 'movie' : g.kind, cat.id, cat.name);
+      if (this.guideOpen() && g.kind && g.catId === cat.id) this._guideRenderItems(items);
+    } catch (e) { if (this.guideOpen()) this._guideRenderItems([]); }
+  },
+  _guideRenderItems(list) {
+    const g = this._guide; if (!g) return;
+    g.list = list || [];
+    g.items.innerHTML = '';
+    if (!g.list.length) { g.items.innerHTML = '<div class="load-hint">لا توجد عناصر في هذه الفئة</div>'; return; }
+    const cur = Player.current;
+    const frag = document.createDocumentFragment();
+    const self = this;
+    g.list.forEach(it => {
+      const d = document.createElement('div');
+      d.className = 'pitem' + ((cur && cur.id === it.id) ? ' sel' : '');
+      d.dataset.id = it.id;
+      const live = it.type === 'live';
+      d.innerHTML = `<img loading="lazy" decoding="async" src="${esc(it.logo || '')}" onerror="this.style.visibility='hidden'">
+        <div class="pi-t"><div class="pi-n">${esc(it.name || '')}</div><div class="pi-g">${live ? '● مباشر' : (it.group ? esc(it.group) : '')}</div></div>
+        ${live ? '<span class="rec-dot"></span>' : '<span class="pi-play">▶</span>'}`;
+      d.onclick = () => self._guidePick(it, d);
+      frag.appendChild(d);
+    });
+    g.items.appendChild(frag);
+    // فوكس على العنصر الجاري (كيما التلفاز)
+    const sel = g.list.findIndex(it => cur && it.id === cur.id);
+    if (sel >= 0) {
+      try {
+        const el = g.items.children[sel];
+        if (el && el.classList) { el.classList.add('focused'); try { el.scrollIntoView({ block: 'center' }); } catch (e) {} }
+      } catch (e) {}
+    }
+    this._guideDetail(cur && (g.list.some(x => x.id === cur.id) ? cur : null));
+  },
+  // اختيار عنصر من عمود الوسط: قناة/فيلم = تشغيل فوري | مسلسل = مواسم وحلقات في عمود التفاصيل
+  _guidePick(it, rowEl) {
+    const g = this._guide; if (!g || !it) return;
+    g.sel = it;
+    [...g.items.children].forEach(c => c.classList && c.classList.toggle('sel', c === rowEl || (c.dataset && c.dataset.id === it.id)));
+    if (it.type === 'series') { this._guideSeries(it); return; }
+    this.guideClose();
+    this.startPlay(it);                       // ملء الشاشة مباشرة (مع استئناف المشاهدة للأفلام)
+  },
+  // تفاصيل المسلسل: المواسم والحلقات في عمود التفاصيل (مكان المشغل المصغر) — كيما openDetails
+  async _guideSeries(it) {
+    const g = this._guide; if (!g) return;
+    const body = g.detail;
+    body.innerHTML = '<div class="load-hint">⏳ تحميل المواسم والحلقات...</div>';
+    let seasons = [];
+    if (it.seriesId && this.src && this.src.type === 'xtream') {
+      try {
+        const d = await LatchiAPI.loadSeriesDetails(it.seriesId);
+        const info = (d && d.info) || {};
+        seasons = Object.entries((d && d.episodes) || {}).map(([sNum, eps]) => ({
+          num: sNum,
+          episodes: Object.values(eps).map(e => ({
+            name: e.title || ('الحلقة ' + e.episode_num), episodeNum: e.episode_num,
+            url: `${LatchiAPI._src.server}/series/${LatchiAPI._src.username}/${LatchiAPI._src.password}/${e.id}.${(e.container_extension || 'mp4')}`,
+            dur: (e.info && e.info.duration) || ''
+          }))
+        })).sort((a, b) => (+a.num) - (+b.num));
+        it.plot = it.plot || info.plot || '';
+      } catch (e) {}
+    }
+    if (!this.guideOpen()) return;
+    const eps = seasons.flatMap(s => s.episodes.map(e => Object.assign({ type: 'movie', logo: it.logo, group: it.name, id: it.id + '_E' + (e.episodeNum || 0) }, e)));
+    body.innerHTML = `
+      <div class="gd-head">${it.logo ? `<img class="gd-poster" src="${esc(it.logo)}" onerror="this.style.display='none'">` : ''}
+        <div><div class="gd-name">${esc(it.name || '')}</div>
+        <div class="gd-sub">🎬 مسلسل ${it.group ? ' · ' + esc(it.group) : ''}</div></div>
+      </div>
+      <div class="gd-desc">${esc((it.plot || '').slice(0, 400) || '')}</div>
+      ${eps.length ? '' : '<button class="gold-btn" id="gdPlay" style="width:100%;margin:6px 0 10px">▶ شاهد الآن بملء الشاشة</button>'}
+      ${seasons.map(s => `
+        <div class="gd-season">🎬 الموسم ${esc(String(s.num))} <span style="color:#8A90B8;font-size:12px">(${s.episodes.length})</span></div>
+        ${s.episodes.map(e => `<div class="gd-ep" data-url="${esc(e.url)}" data-name="${esc(e.name)}">
+          <span class="n">▶ ${esc(String(e.episodeNum || ''))}</span><span class="t">${esc(e.name)}</span><span class="d">${esc(e.dur || '')}</span>
+        </div>`).join('')}`).join('')}`;
+    const pb = document.getElementById('gdPlay');
+    if (pb) pb.onclick = () => { this.guideClose(); this.startPlay(it); };
+    body.querySelectorAll('.gd-ep').forEach((el) => {
+      const url = el.dataset.url, name = el.dataset.name;
+      el.onclick = () => {
+        const epIt = { id: it.id + '_' + name, name: name, url: url, type: 'movie', logo: it.logo, group: it.name };
+        this.guideClose();
+        this.startPlay(epIt);                 // 🎬 الحلقة تفتح مباشرة بملء الشاشة
+      };
+    });
+  },
+  // تفاصيل سريعة (قناة/فيلم) في عمود التفاصيل
+  _guideDetail(it) {
+    const g = this._guide; if (!g) return;
+    const body = g.detail;
+    if (!it) {
+      body.innerHTML = '<div class="mini-empty">👋 اختر من القائمة: القناة تُبدَّل فوراً • المسلسل يفتح مواسمه وحلقاته هنا</div>';
+      return;
+    }
+    const live = it.type === 'live';
+    body.innerHTML = `
+      <div class="gd-head">${it.logo ? `<img class="gd-poster" src="${esc(it.logo)}" onerror="this.style.display='none'">` : ''}
+        <div><div class="gd-name">${esc(it.name || '')}</div>
+        <div class="gd-sub">${live ? '● بث مباشر' : it.type === 'series' ? '🎬 مسلسل' : '🎞 فيلم'} ${it.group ? ' · ' + esc(it.group) : ''}</div></div>
+      </div>
+      <div class="gd-epg hidden" id="gdEpg"></div>
+      <div class="gd-desc" id="gdDesc">${live || it.type === 'series' ? '' : '<span class="mini-desc-wait">…</span>'}</div>
+      <div class="gd-note">${live ? '▶ اختيارها يبدّل القناة فوراً' : it.type === 'series' ? '▶ اختيارها يفتح المواسم والحلقات هنا' : '▶ تُفتح مباشرة بملء الشاشة (مع استئناف المشاهدة)'}</div>`;
+    if (live && this.src && this.src.type === 'xtream') {
+      LatchiAPI.shortEpg(it.id).then(epg => {
+        const e2 = document.getElementById('gdEpg');
+        if (e2 && epg && epg.title) { e2.textContent = '📺 ' + epg.title + (epg.time ? ' · ' + epg.time : ''); e2.classList.remove('hidden'); }
+      }).catch(() => {});
+    }
+    if (it.type === 'movie' && this.src && this.src.type === 'xtream') {
+      LatchiAPI.vodInfo(it.id).then(info => {
+        const d = document.getElementById('gdDesc');
+        if (d) d.textContent = (info && info.plot) || '';
+      }).catch(() => {});
+    }
+  },
+  // تنقل الفوكيس داخل الدليل (هندسي — كيما spatialMove لكن داخل الدليل فقط)
+  guideNav(dx, dy) {
+    const g = this._guide; if (!g || !g.root) return false;
+    let focusables = [];
+    try { focusables = [...g.root.querySelectorAll('.pcat, .pitem, .gd-ep, .g-kind, .g-close, #gdPlay')].filter(el => el.offsetParent); } catch (e) { return false; }
+    if (!focusables.length) return false;
+    let cur = null;
+    try { cur = g.root.querySelector('.focused'); } catch (e) {}
+    if (!cur) { focusables[0].classList.add('focused'); return true; }
+    const cr = cur.getBoundingClientRect();
+    let best = null, bestScore = Infinity;
+    for (const el of focusables) {
+      if (el === cur) continue;
+      const r = el.getBoundingClientRect();
+      const ddx = (r.left + r.width / 2) - (cr.left + cr.width / 2);
+      const ddy = (r.top + r.height / 2) - (cr.top + cr.height / 2);
+      const wrongDir = (dx > 0 && ddx < 10) || (dx < 0 && ddx > -10) || (dy > 0 && ddy < 10) || (dy < 0 && ddy > -10);
+      if (wrongDir) continue;
+      const cross = dx !== 0 ? Math.abs(ddy) : Math.abs(ddx);
+      const main = dx !== 0 ? Math.abs(ddx) : Math.abs(ddy);
+      const score = main + cross * 2.5;
+      if (score < bestScore) { bestScore = score; best = el; }
+    }
+    if (best) {
+      cur.classList.remove('focused');
+      best.classList.add('focused');
+      try { best.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
+      if (best.className && String(best.className).indexOf('pitem') >= 0) {
+        // معاينة حية في عمود التفاصيل أثناء التنقل
+        const it = g.list.find(x => String(x.id) === String((best.dataset && best.dataset.id)));
+        if (it) this._guideDetail(it);
+      }
+      return true;
+    }
+    return false;
+  },
+  guideEnter() {
+    const g = this._guide; if (!g || !g.root) return;
+    let f = null;
+    try { f = g.root.querySelector('.focused'); } catch (e) {}
+    if (f && f.click) f.click();
+  },
+
   // ═══ التشغيل ═══
   startPlay(it) {
     const resume = it._resume || (parseInt((localStorage.getItem('cw_' + it.id) || '{"at":0}').match(/"at":(\d+)/) || [0, 0])[1]);
@@ -1159,6 +1453,19 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (App.screen === 'player') {
+    // 📺 ج50: دليل القنوات مفتوح داخل المشغل → الأسهم وEnter وEsc تخدم الدليل
+    if (App.guideOpen()) {
+      if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'BrowserBack') { App.guideClose(); e.preventDefault(); return; }
+      if (e.key === 'Home' || e.key === 'BrowserHome') { App.guideClose(); App.show('home', true); e.preventDefault(); return; }
+      switch (e.key) {
+        case 'ArrowUp': App.guideNav(0, -1); e.preventDefault(); return;
+        case 'ArrowDown': App.guideNav(0, 1); e.preventDefault(); return;
+        case 'ArrowLeft': App.guideNav(-1, 0); e.preventDefault(); return;
+        case 'ArrowRight': App.guideNav(1, 0); e.preventDefault(); return;
+        case 'Enter': App.guideEnter(); e.preventDefault(); return;
+      }
+      // ما تبقى (أرقام القناة، مسافة، f...) يمر للمشغل كالمعتاد — كيما التلفاز
+    }
     if (e.key === 'Escape' || e.key === 'BrowserBack') { App.back(); }
     else if (e.key === 'Home' || e.key === 'BrowserHome') { App.show('home', true); }
     else Player.onKey(e);

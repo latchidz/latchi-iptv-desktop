@@ -21,6 +21,7 @@ function makeEl(id) {
     click() { el._clicked = (el._clicked || 0) + 1; if (el.onclick) el.onclick({ target: el, currentTarget: el, clientX: 0 }); },
     dispatchEvent(ev) { el._events = el._events || []; el._events.push(ev && ev.type); },
     scrollBy(x, y) { el._scrolled = (el._scrolled || 0) + (y || 0); },
+    setSelectionRange(a, b) { el.selectionStart = a; el.selectionEnd = b; },   // ⌨ ج50: كيما المتصفح
     focus() { el._focused = true; },
     scrollIntoView() {},
     getBoundingClientRect() { return { left: 0, top: 0, right: 100, width: 100, height: 50 }; },
@@ -77,7 +78,10 @@ FakeHls.Events = { ERROR: 'ERROR', MEDIA_ATTACHED: 'MEDIA_ATTACHED', MANIFEST_PA
 FakeHls.ErrorTypes = { NETWORK_ERROR: 'networkError', MEDIA_ERROR: 'mediaError' };
 
 // ─── الـsandbox ───
+// ⌨ ج50: بوليفيل أحداث الكيبورد (المتصفح الحقيقي فيهما — السندبوكس كان بلا أي مُنشئ أحداث)
+class FakeEvent { constructor(type, opts) { this.type = type; if (opts) for (const k in opts) this[k] = opts[k]; } }
 const sandbox = {
+  Event: FakeEvent, KeyboardEvent: FakeEvent,
   console, setTimeout, setInterval, clearTimeout, clearInterval,
   requestAnimationFrame: f => f(),
   localStorage, document: documentMock, navigator: {},
@@ -252,8 +256,16 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   Player.onKey({ key: 'ArrowRight', preventDefault() {} });
   T('مخفية: يمين = صوت+ (0.5→0.55)', Math.abs(Player.video.volume - 0.55) < 0.001);
   Player.uiVisible = false;                                          // محاكاة 3.5ث انقضت من جديد
+  Player.onKey({ key: ' ', preventDefault() {} });
+  T('مخفية: المسافة = تشغيل/إيقاف', Player.video.paused === true);
+  Player.onKey({ key: ' ', preventDefault() {} });
+  // 📺 ج50: Enter داخل المشغل = دليل القنوات والفئات (طلب العميل — كيما التلفاز)
+  Player.playerBtns().forEach(b => b.classList.remove('focused'));
+  Player.uiVisible = false;
   Player.onKey({ key: 'Enter', preventDefault() {} });
-  T('مخفية: Enter = تشغيل/إيقاف', Player.video.paused === true);
+  T('📺 ج50: Enter = يفتح دليل القنوات داخل المشغل', App.guideOpen() === true);
+  App.guideClose();
+  T('الدليل أُغلق نظيفاً', App.guideOpen() === false);
 
   console.log('═══ 9) v1.0.3: ساعة بالثواني + صلاحية + قناة بالرقم + ريموت ═══');
   // الساعة بالثواني
@@ -543,6 +555,98 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   // 3) بطاقة الإعدادات بلا رمز إطلاقاً (فحص على المصدر — عناصر الإعدادات غير مسجلة في الموك)
   const srcApp = fs.readFileSync('renderer/app.js', 'utf8');
   T('بطاقة الريموت: «تلقائي بلا أي رمز» ولا وجود لرمز ربط', srcApp.includes('تلقائي — بلا أي رمز') && !srcApp.includes('رمز الربط') && !srcApp.includes('رمز ربط جديد'));
+
+  // ═══ 📺⌨ ج50: الانتقال الزمني بالأرقام + دليل القنوات + كيبورد الريموت + appVer ═══
+  console.log('═══ 16) ج50: وقت بالأرقام (أفلام/مسلسلات) + دليل OK + كيبورد ═══');
+  App.hideExitDlg();   // حارس: أغلق أي نافذة متبقية من الأقسام السابقة
+  const SR = { id: 'SR1', name: 'مسلسل تجريبي', type: 'series', url: 'http://x/s.mp4', logo: '', group: 'مسلسلات' };
+  const manyL = [L1, L2].concat(Array.from({ length: 10 }, (_, i) => ({ id: 'Z' + i, name: 'ق' + i, type: 'live', url: 'http://x/z' + i, logo: '', group: 'رياضة' })));
+  App.src = { type: 'm3u', live: manyL, movies: [M], series: [SR] };
+  await App.openList('live'); await sleep(30);   // يضبط _zapList = 12 قناة (رقمان يُرسلان فوراً)
+
+  // 1) ⏱️ الانتقال الزمني: فيلم — «1،0،0» = 000100 = دقيقة واحدة (يظهر على الشاشة ثم يقفز)
+  els['video'].duration = 7200; els['video'].currentTime = 0;
+  App.startPlay(M); await sleep(40);
+  Player.onKey({ key: '1', preventDefault() {} });
+  T('الوقت يُكتب على الشاشة أثناء الإدخال', els['pNum'].textContent.includes('00:00:01'));
+  Player.onKey({ key: '0', preventDefault() {} });
+  Player.onKey({ key: '0', preventDefault() {} });
+  T('الصيغة HH:MM:SS مع سهم القفز', els['pNum'].textContent.includes('⏩ 00:01:00'));
+  await sleep(1250);   // مهلة 1.1ث كيما التلفاز
+  T('«100» → قفز للدقيقة 1 تلقائياً', Math.abs(els['video'].currentTime - 60) < 1);
+
+  // 2) ⏱️ 6 أرقام كاملة = قفز فوري بلا انتظار (010500 = ساعة و5 دقائق)
+  els['video'].currentTime = 0;
+  ['0', '1', '0', '5', '0', '0'].forEach(d => Player.onKey({ key: d, preventDefault() {} }));
+  T('«010500» → قفز فوري للساعة 1:05:00', Math.abs(els['video'].currentTime - 3900) < 1);
+
+  // 3) ⏱️ ⌫ يمسح آخر رقم و↵ يؤكد فوراً
+  els['video'].currentTime = 0;
+  Player.onKey({ key: '2', preventDefault() {} });
+  Player.onKey({ key: '0', preventDefault() {} });
+  Player.onKey({ key: 'Backspace', preventDefault() {} });
+  T('⌫ مسح آخر رقم من الوقت', Player._timeBuf === '2');
+  Player.onKey({ key: '0', preventDefault() {} });
+  Player.onKey({ key: '0', preventDefault() {} });   // «200» = 00:02:00
+  Player.onKey({ key: 'Enter', preventDefault() {} });
+  T('↵ أكد الوقت فوراً → الدقيقة 2', Math.abs(els['video'].currentTime - 120) < 1);
+
+  // 4) الأرقام في البث المباشر تبقى قناة بالرقم (لا وقت إطلاقاً)
+  App.startPlay(L1); await sleep(40);
+  Player.onKey({ key: '1', preventDefault() {} });
+  T('البث المباشر: الرقم = قناة (لا وقت)', (Player._numBuf || '') === '1' && !Player._timeBuf);
+  Player._commitNum();
+
+  // 5) 📺 الدليل: بنية الأعمدة الثلاثة + الفئات + العنصر الجاري
+  Player.playerBtns().forEach(b => b.classList.remove('focused'));
+  Player.uiVisible = false;
+  kd({ key: 'Enter' });
+  T('Enter يفتح الدليل (المعالج العام)', App.guideOpen() === true);
+  T('الدليل مبني داخل شاشة المشغل', App._guide && els['player'].children.includes(App._guide.root));
+  T('الفئات في العمود الأيمن', App._guide.cats.children.length >= 2);
+  T('القنوات في العمود الأوسط', App._guide.items.children.length >= 10);
+  T('فوكس تلقائي على القناة الجارية (كيما التلفاز)', App._guide.items.children[0].classList.contains('focused'));
+  T('عمود التفاصيل يعرض القناة الجارية', App._guide.detail._html.includes(L1.name));
+
+  // 6) 📺 اختيار قناة من الدليل = تبديل فوري + إغلاق
+  App._guidePick(App._guide.list[1], App._guide.items.children[1]);
+  T('اختيار قناة يبدّلها فوراً ويغلق الدليل', Player.current.id === 'L2' && !App.guideOpen());
+
+  // 7) 📺 واجهة المسلسلات: الفئات يمين + المسلسلات وسط + المواسم والحلقات مكان المشغل المصغر
+  App.startPlay(L1); await sleep(20);
+  Player.playerBtns().forEach(b => b.classList.remove('focused'));
+  Player.uiVisible = false;
+  kd({ key: 'Enter' });
+  App._guideLoadKind('series');
+  T('تبديل النوع: المسلسلات في العمود الأوسط', App._guide.list.length === 1 && App._guide.list[0].id === 'SR1');
+  App._guidePick(SR, App._guide.items.children[0]);
+  T('اختيار مسلسل = تفاصيله في العمود الثالث (الدليل يبقى مفتوحاً)', App.guideOpen() && App._guide.detail._html.includes('مسلسل تجريبي'));
+  T('زر «شاهد الآن بملء الشاشة» للمسلسل بلا مواسم (m3u)', App._guide.detail._html.includes('gdPlay'));
+  kd({ key: 'Escape' });
+  T('Esc يغلق الدليل', !App.guideOpen());
+
+  // 8) ⌨ كيبورد الريموت: حرف يُدرج في الحقل المركّز + Backspace يمسح + Enter للحقل نفسه
+  documentMock.activeElement = els['searchInput'];
+  els['searchInput'].tagName = 'INPUT';
+  els['searchInput'].value = '';
+  els['searchInput'].selectionStart = 0; els['searchInput'].selectionEnd = 0;
+  App.remoteApplyKey({ key: 'ب' });
+  App.remoteApplyKey({ key: 'ح' });
+  T('حروف الكيبورد تُدرج في الحقل المركّز', els['searchInput'].value === 'بح');
+  T('حدث input انطلق (البحث يعمل فوراً)', (els['searchInput']._events || []).includes('input'));
+  App.remoteApplyKey({ key: 'Backspace' });
+  T('Backspace يمسح من الحقل', els['searchInput'].value === 'ب');
+  App.remoteApplyKey({ key: 'Enter' });
+  T('Enter على حقل يُرسل للحقل نفسه (مستمعاته تعمل)', (els['searchInput']._events || []).filter(x => x === 'keydown').length >= 1);
+  documentMock.activeElement = null;
+
+  // 9) فحوص المصدر: appVer للكشف عن النسخة القديمة + محدد الفأرة الموسع
+  const srcR50 = fs.readFileSync('remote.js', 'utf8');
+  const srcM50 = fs.readFileSync('main.js', 'utf8');
+  T('remote.js يبلّغ appVer في /ping (كشف النسخة القديمة)', srcR50.includes('appVer: self.appVer || \'\''));
+  T('main.js يمرر نسخة التطبيق app.getVersion()', srcM50.includes('appVer: app.getVersion()'));
+  const srcA50 = fs.readFileSync('renderer/app.js', 'utf8');
+  T('الفأرة: التحويم يشمل صفوف القوائم والدليل وحقول الإدخال', srcA50.includes('button, input, textarea, [onclick]') && srcA50.includes('.pcat, .pitem, .chan, .ep, .gd-ep'));
 
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);

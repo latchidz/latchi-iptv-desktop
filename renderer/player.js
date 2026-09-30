@@ -100,7 +100,7 @@ const Player = {
     clearInterval(this._wd); this._wd = 0;
     clearInterval(this._markT); this._markT = 0;
     const _epgEl = document.getElementById('pEpg'); if (_epgEl) { _epgEl.classList.add('hidden'); _epgEl.textContent = ''; }
-    this._numBuf = ''; clearTimeout(this._numT); try { this.hideNumOsd(); } catch (e) {}
+    this._numBuf = ''; this._timeBuf = ''; clearTimeout(this._numT); clearTimeout(this._timeT); try { this.hideNumOsd(); } catch (e) {}
     try { this.hideUi(); } catch (e) {}
     return true;
   },
@@ -219,7 +219,7 @@ const Player = {
   },
   _commitNum() {
     const n = parseInt(this._numBuf || '0', 10);
-    this._numBuf = ''; clearTimeout(this._numT);
+    this._numBuf = ''; this._timeBuf = ''; clearTimeout(this._numT); clearTimeout(this._timeT);
     const list = App._zapList || [];
     if (!n || n > list.length) { this.hideNumOsd(); this.show('القناة ' + n + ' غير متوفرة', 1200); return; }
     this.showNumOsd(String(n));          // الرقم يبقى ظاهراً لحظة الانتقال كيما التلفاز
@@ -238,6 +238,37 @@ const Player = {
   zap(dir) {
     const ok = App.zap(dir);
     if (!ok) this.show('لا توجد قناة ' + (dir > 0 ? 'بعد' : 'قبل') + ' هذه', 900);
+  },
+
+  // ⏱️ ج50: الانتقال الزمني بالأرقام — كيما مشغل التلفاز بالضبط (طلب العميل):
+  // الأرقام تظهر على الشاشة كوقت (HH:MM:SS)، 6 أرقام كاملة = قفز فوري،
+  // أرقام أقل = قفز بعد 1.1ث من آخر رقم. للقراءة من اليمين: ثوانٍ ثم دقائق ثم ساعات.
+  timeNumber(d) {
+    this._timeBuf = (this._timeBuf || '') + d;
+    if (this._timeBuf.length > 6) this._timeBuf = this._timeBuf.slice(-6);
+    clearTimeout(this._timeT);
+    this.showNumOsd('⏩ ' + this.fmtTime6(this._timeBuf));
+    if (this._timeBuf.length >= 6) this._commitTime();
+    else this._timeT = setTimeout(() => this._commitTime(), 1100);
+  },
+  _commitTime() {
+    const raw = this._timeBuf || '';
+    this._timeBuf = '';
+    clearTimeout(this._timeT);
+    if (!raw) { this.hideNumOsd(); return; }
+    const secs = this.parseTime6(raw);
+    const d = this.video.duration || 0;
+    const target = (d > 0) ? Math.min(Math.max(secs, 0), Math.max(0, d - 2)) : secs;
+    try { this.video.currentTime = target; } catch (e) {}
+    this.showNumOsd('⏩ ' + this.fmtTime6(String(raw).padStart(6, '0')));
+  },
+  fmtTime6(raw) {
+    const p = String(raw || '').padStart(6, '0');
+    return p.slice(0, 2) + ':' + p.slice(2, 4) + ':' + p.slice(4, 6);
+  },
+  parseTime6(raw) {
+    const p = String(raw || '').replace(/\D/g, '').padStart(6, '0').slice(-6);
+    return (+p.slice(0, 2)) * 3600 + (+p.slice(2, 4)) * 60 + (+p.slice(4, 6));
   },
 
 
@@ -441,7 +472,7 @@ const Player = {
     if (this.hls) { this.hls.destroy(); this.hls = null; }
     clearInterval(this._markT); this._markT = 0;                      // 💧 v1.0.6
     const _epgEl = document.getElementById('pEpg'); if (_epgEl) { _epgEl.classList.add('hidden'); _epgEl.textContent = ''; }
-    this._numBuf = ''; clearTimeout(this._numT); this.hideNumOsd();   // 🔢 v1.0.3
+    this._numBuf = ''; this._timeBuf = ''; clearTimeout(this._numT); clearTimeout(this._timeT); this.hideNumOsd();   // 🔢 v1.0.3 ⏱️ ج50
     this.video.pause(); this.video.removeAttribute('src'); this.video.load();
     // 📺 v1.0.2: نبقى بملء الشاشة — التطبيق تلفاز (الخروج فقط من نافذة التأكيد)
     const cb = this.hideCb; this.hideCb = null;
@@ -449,7 +480,8 @@ const Player = {
   },
   onKey(e) {
     // 🔢 v1.0.3: أرقام الريموت (1-9) = قناة بالرقم + PageUp/Down = قناة تالية/سابقة — يعملان دائماً كيما التلفاز
-    if (e.key >= '0' && e.key <= '9') { if (this.isLive) this.channelNumber(e.key); e.preventDefault(); return; }
+    // ⏱️ ج50: في الأفلام والمسلسلات الأرقام = انتقال زمني HHMMSS كيما مشغل التلفاز بالضبط (000100 = دقيقة واحدة)
+    if (e.key >= '0' && e.key <= '9') { if (this.isLive) this.channelNumber(e.key); else this.timeNumber(e.key); e.preventDefault(); return; }
     // 🔢 ج48 (لوحة أرقام الريموت): ⌫ يمسح آخر رقم مُدخل — كيما التلفاز
     if (e.key === 'Backspace') {
       if (this.isLive && this._numBuf) {
@@ -459,11 +491,21 @@ const Player = {
           this.showNumOsd(this._numBuf);
           this._numT = setTimeout(() => this._commitNum(), 1400);
         } else this.hideNumOsd();
+      } else if (!this.isLive && this._timeBuf) {
+        // ⏱️ ج50: مسح آخر رقم من الوقت المُدخل
+        this._timeBuf = this._timeBuf.slice(0, -1);
+        clearTimeout(this._timeT);
+        if (this._timeBuf) {
+          this.showNumOsd('⏩ ' + this.fmtTime6(this._timeBuf));
+          this._timeT = setTimeout(() => this._commitTime(), 1100);
+        } else this.hideNumOsd();
       }
       e.preventDefault(); return;
     }
     // ↵ ج48: Enter يؤكد رقم القناة فوراً أثناء الكتابة (باقي السلوك كما هو)
     if (e.key === 'Enter' && this.isLive && this._numBuf) { this._commitNum(); e.preventDefault(); return; }
+    // ↵ ج50: Enter يؤكد الوقت المُدخل فوراً (أفلام/مسلسلات)
+    if (e.key === 'Enter' && !this.isLive && this._timeBuf) { this._commitTime(); e.preventDefault(); return; }
     if (e.key === 'PageUp') { this.flashUi(); this.zap(1); e.preventDefault(); return; }
     if (e.key === 'PageDown') { this.flashUi(); this.zap(-1); e.preventDefault(); return; }
     const wasVisible = this.uiVisible;    // 📺 v1.0.2: احكم على الحالة قبل إيقاظ الواجهة
@@ -477,7 +519,7 @@ const Player = {
         case 'ArrowDown': this.zap(-1); e.preventDefault(); return;
         case 'Enter': {
           const f = this.playerBtns().find(b => b.classList.contains('focused'));
-          if (f) f.click(); else this.toggle();
+          if (f) f.click(); else App.guideToggle();   // 📺 ج50: OK = دليل القنوات والفئات كيما التلفاز
           e.preventDefault(); return;
         }
         case ' ': this.toggle(); e.preventDefault(); return;
@@ -488,7 +530,8 @@ const Player = {
     }
     // 📺 v1.1.2 مثل الريموت: يمين/يسار = صوت (وفي الأفلام: تقديم/ترجيع)، فوق/تحت = قناة تالية/سابقة
     switch (e.key) {
-      case ' ': case 'Enter': this.toggle(); e.preventDefault(); break;
+      case ' ': this.toggle(); e.preventDefault(); break;
+      case 'Enter': if (App.guideOpen()) App.guideClose(); else App.guideToggle(); e.preventDefault(); break;   // 📺 ج50
       case 'ArrowLeft': this.isLive ? this.volume(-.05) : this.seek(-10); e.preventDefault(); break;
       case 'ArrowRight': this.isLive ? this.volume(.05) : this.seek(10); e.preventDefault(); break;
       case 'ArrowUp': this.zap(1); e.preventDefault(); break;

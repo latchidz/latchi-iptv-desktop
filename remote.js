@@ -20,10 +20,11 @@ const RemoteServer = {
 
   running() { return !!this.httpSrv; },
 
-  start({ port, pin, getWin }) {
+  start({ port, pin, getWin, appVer }) {
     if (this.httpSrv) return { ok: true, already: true };
     this.port = port || 37777;
     this.pin = String(pin || '');
+    this.appVer = String(appVer || '');   // 📱 ج50: نسخة تطبيق الحاسوب — يعرضها الريموت (كشف النسخة القديمة)
     this.getWin = getWin;
     const self = this;
 
@@ -37,7 +38,7 @@ const RemoteServer = {
       let ip = req.socket.remoteAddress || '';
       if (ip) self.clients = Math.max(self.clients, 0) + 0;   // (عدّاد تقريبي — يُحدَّث بالأوامر)
       if (req.method === 'GET' && req.url.startsWith('/ping')) {
-        return send(200, { ok: true, app: 'LATCHI_REMOTE', name: os.hostname(), pin: !!self.pin, ver: '1.0.8' });
+        return send(200, { ok: true, app: 'LATCHI_REMOTE', name: os.hostname(), pin: !!self.pin, ver: '1.0.8', appVer: self.appVer || '' });
       }
       // ما تبقى يتطلب PIN إن كان مفعّلاً
       if (self.pin) {
