@@ -450,6 +450,20 @@ const Player = {
   onKey(e) {
     // 🔢 v1.0.3: أرقام الريموت (1-9) = قناة بالرقم + PageUp/Down = قناة تالية/سابقة — يعملان دائماً كيما التلفاز
     if (e.key >= '0' && e.key <= '9') { if (this.isLive) this.channelNumber(e.key); e.preventDefault(); return; }
+    // 🔢 ج48 (لوحة أرقام الريموت): ⌫ يمسح آخر رقم مُدخل — كيما التلفاز
+    if (e.key === 'Backspace') {
+      if (this.isLive && this._numBuf) {
+        this._numBuf = this._numBuf.slice(0, -1);
+        clearTimeout(this._numT);
+        if (this._numBuf) {
+          this.showNumOsd(this._numBuf);
+          this._numT = setTimeout(() => this._commitNum(), 1400);
+        } else this.hideNumOsd();
+      }
+      e.preventDefault(); return;
+    }
+    // ↵ ج48: Enter يؤكد رقم القناة فوراً أثناء الكتابة (باقي السلوك كما هو)
+    if (e.key === 'Enter' && this.isLive && this._numBuf) { this._commitNum(); e.preventDefault(); return; }
     if (e.key === 'PageUp') { this.flashUi(); this.zap(1); e.preventDefault(); return; }
     if (e.key === 'PageDown') { this.flashUi(); this.zap(-1); e.preventDefault(); return; }
     const wasVisible = this.uiVisible;    // 📺 v1.0.2: احكم على الحالة قبل إيقاظ الواجهة

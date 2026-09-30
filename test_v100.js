@@ -18,7 +18,9 @@ function makeEl(id) {
     appendChild(c) { if (c && c._fragment) el.children.push(...c.children); else el.children.push(c); return c; },
     closest(sel) { return (el._closestSelf && el.className && sel.includes(el.className.split(' ')[0])) ? el : null; },
     querySelector() { return null; }, querySelectorAll() { return []; },
-    click() { if (el.onclick) el.onclick({ target: el, currentTarget: el, clientX: 0 }); },
+    click() { el._clicked = (el._clicked || 0) + 1; if (el.onclick) el.onclick({ target: el, currentTarget: el, clientX: 0 }); },
+    dispatchEvent(ev) { el._events = el._events || []; el._events.push(ev && ev.type); },
+    scrollBy(x, y) { el._scrolled = (el._scrolled || 0) + (y || 0); },
     focus() { el._focused = true; },
     scrollIntoView() {},
     getBoundingClientRect() { return { left: 0, top: 0, right: 100, width: 100, height: 50 }; },
@@ -51,6 +53,7 @@ const documentMock = {
   _listeners: {},
   getElementById: id => els[id] || null,
   createElement: () => makeEl('dyn'),
+  elementFromPoint: (x, y) => (global.__mouseTarget || null),
   createDocumentFragment: () => { const f = makeEl('frag'); f._fragment = true; return f; },
   querySelector: () => null, querySelectorAll: () => [],
   addEventListener(ev, f) { (this._listeners[ev] = this._listeners[ev] || []).push(f); },
@@ -297,6 +300,33 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   Player.onKey({ key: '2', preventDefault() {} });
   T('«12» ينتقل فوراً (14 قناة)', Player.current && Player.current.id === 'X7');
   // PageUp/PageDown = قناة تالية/سابقة
+  // 🔢 ج48: ⌫ يمسح الرقم — ثم ↵ يؤكد فوراً (قائمة 14 قناة: رقمان يُرسلان فوراً)
+  Player.onKey({ key: '1', preventDefault() {} });
+  Player.onKey({ key: 'Backspace', preventDefault() {} });
+  T('⌫ مسح الرقم — المخزن فارغ والOSD مخفي', (Player._numBuf || '') === '' && !els['pNum'].classList.contains('on'));
+  Player.onKey({ key: '2', preventDefault() {} });
+  Player.onKey({ key: 'Enter', preventDefault() {} });
+  T('↵ أكد فوراً — القناة 2 (L2) شغالة', Player.current && Player.current.id === L2.id);
+  Player.onKey({ key: 'Backspace', preventDefault() {} });
+  T('⌫ على مخزن فارغ = بلا أخطاء', (Player._numBuf || '') === '');
+  // 🖱 ج48: لوحة اللمس — حركة + نقر + تمرير حقيقي (المركز الافتراضي 640×360)
+  const padEl = makeEl('padBtn'); padEl.className = 'pcard'; padEl._closestSelf = true; let padClicks = 0;
+  padEl.onclick = () => { padClicks++; };
+  const scrollHost = makeEl('scrollHost'); scrollHost.scrollHeight = 900; scrollHost.clientHeight = 300;
+  global.__mouseTarget = padEl;
+  App.remoteApplyKey({ action: 'mouse', dx: 20, dy: 10 });
+  T('تحريك المؤشر: 640+34 و360+17', App._mx === 674 && App._my === 377);
+  T('التحويم يفوكس العنصر تحت المؤشر (ج41)', padEl._focused === true);
+  App.remoteApplyKey({ action: 'mouse', click: true });
+  T('نقر لوحة اللمس ينقر العنصر فعلاً', padClicks === 1);
+  global.__mouseTarget = scrollHost;
+  App.remoteApplyKey({ action: 'mouse', wheel: 1 });
+  T('تمرير حقيقي للحاوية القابلة للتمرير', scrollHost._scrolled === 140);
+  global.__mouseTarget = null;
+  // إعادة الحالة الأصلية: «12» تُرسل فوراً → X7
+  Player.onKey({ key: '1', preventDefault() {} });
+  Player.onKey({ key: '2', preventDefault() {} });
+  T('«12» تنتقل فوراً — الحالة الأصلية', Player.current && Player.current.id === 'X7');
   Player.onKey({ key: 'PageUp', preventDefault() {} });
   T('PageUp = القناة التالية', Player.current.id === 'X8');
   Player.onKey({ key: 'PageDown', preventDefault() {} });

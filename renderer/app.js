@@ -173,6 +173,58 @@ const App = {
         const pv = Player.video; if (pv) pv.muted = !pv.muted;
         const mv = document.getElementById('miniVid'); if (mv) mv.muted = !mv.muted;
         this.remotePush();
+      } else if (cmd.action === 'mouse') {
+        // 🖱 ج48 (لوحة اللمس في الريموت): تحريك/نقر/تمرير حقيقي داخل التطبيق
+        this._remoteMouse(cmd);
+      }
+    } catch (e) {}
+  },
+
+  // ═══ 🖱 ج48: مؤشر افتراضي من لوحة لمس الهاتف — حركة + نقر + تمرير حقيقي ═══
+  _mouseEnsure() {
+    if (!this._mcur) {
+      const d = document.createElement('div');
+      d.id = 'remoteCursor';
+      if (document.body && document.body.appendChild) document.body.appendChild(d);
+      this._mcur = d;
+      this._mx = Math.round((window.innerWidth || 1280) / 2);
+      this._my = Math.round((window.innerHeight || 720) / 2);
+    }
+    return this._mcur;
+  },
+  _remoteMouse(cmd) {
+    try {
+      this._mouseEnsure();
+      if (typeof cmd.dx === 'number' || typeof cmd.dy === 'number') {
+        const sp = 1.7;                                   // حساسية لوحة اللمس
+        this._mx = Math.min((window.innerWidth || 1280) - 1, Math.max(0, this._mx + Math.round((cmd.dx || 0) * sp)));
+        this._my = Math.min((window.innerHeight || 720) - 1, Math.max(0, this._my + Math.round((cmd.dy || 0) * sp)));
+      }
+      // أظهر حلقة المؤشر ثم أخفها بعد ثبات قصير
+      const c = this._mcur;
+      try { c.style.left = this._mx + 'px'; c.style.top = this._my + 'px'; c.classList.add('on'); } catch (e) {}
+      clearTimeout(this._mcurT);
+      this._mcurT = setTimeout(() => { try { c.classList.remove('on'); } catch (e) {} }, 1600);
+      const el = (document.elementFromPoint ? document.elementFromPoint(this._mx, this._my) : null);
+      if (el) {
+        // التحويم = فوكيس (ج41) — أقرب عنصر تفاعلي تحت المؤشر
+        const focusable = el.closest ? el.closest('button, [onclick], .acc-card, .tcard, .pcard, [tabindex]:not([tabindex="-1"])') : null;
+        if (focusable && focusable.focus) { try { focusable.focus(); } catch (e) {} }
+        try { el.dispatchEvent(new MouseEvent('mousemove', { clientX: this._mx, clientY: this._my, bubbles: true })); } catch (e) {}
+      }
+      if (cmd.click && el) {
+        try { el.dispatchEvent(new MouseEvent('mousedown', { clientX: this._mx, clientY: this._my, bubbles: true })); } catch (e) {}
+        try { el.dispatchEvent(new MouseEvent('mouseup', { clientX: this._mx, clientY: this._my, bubbles: true })); } catch (e) {}
+        if (el.click) { try { el.click(); } catch (e) {} }
+        this.remotePush();
+      }
+      if (cmd.wheel && el) {
+        // تمرير حقيقي لأقرب حاوية قابلة للتمرير تحت المؤشر
+        let n = el;
+        while (n && n !== document.body) {
+          if (n.scrollHeight > n.clientHeight + 4) { try { n.scrollBy(0, cmd.wheel * 140); } catch (e) {} break; }
+          n = n.parentElement;
+        }
       }
     } catch (e) {}
   },
