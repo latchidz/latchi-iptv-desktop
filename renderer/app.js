@@ -20,7 +20,8 @@ const App = {
     // 📱 v1.0.8: ريموت الهاتف — استقبال الأوامر + تشغيل الخادم إن كان مفعّلاً + دفع الحالة كل ثانيتين
     try {
       if (window.latchi && window.latchi.onRemoteKey) window.latchi.onRemoteKey(cmd => this.remoteApplyKey(cmd));
-      if (localStorage.getItem('remote_on') === '1') this.remoteServerStart(true);
+      // 🎮 (طلب العميل): الخادم يعمل تلقائياً منذ الإقلاع — بلا رمز — يُعطَّل فقط من الإعدادات
+      if (localStorage.getItem('remote_on') !== '0') this.remoteServerStart(true);
       setInterval(() => this.remotePush(), 2000);
     } catch (e) {}
     await new Promise(r => setTimeout(r, 1400)); // سبلاش قصير (سرعة الإقلاع أهم)
@@ -130,8 +131,8 @@ const App = {
   // ═══ 📱 v1.0.8: ريموت الهاتف ═══
   async remoteServerStart(silent) {
     try {
-      if (!localStorage.getItem('remote_pin')) localStorage.setItem('remote_pin', String(Math.floor(1000 + Math.random() * 9000)));
-      this._remoteInfo = await window.latchi.remoteStart({ port: 37777, pin: localStorage.getItem('remote_pin') });
+      // 🎮 (طلب العميل): بلا رمز إطلاقاً — أي هاتف على نفس الواي فاي ينقر الحاسوب فيتصل مباشرة
+      this._remoteInfo = await window.latchi.remoteStart({ port: 37777, pin: '' });
     } catch (e) { this._remoteInfo = { ok: false }; }
     if (!silent) { this.buildSettings(); this.focusFirst('settings'); }
   },
@@ -886,10 +887,9 @@ const App = {
       <div class="set-card"><h3>🎮 ريموت الهاتف</h3>
         <div class="row"><span>خادم التحكم (واي فاي المنزل)</span><button class="p-btn" id="remoteToggle">${localStorage.getItem('remote_on') === '1' ? '⏹ إيقاف' : '▶ تشغيل'}</button></div>
         <div class="row"><span>الحالة</span><b style="color:${localStorage.getItem('remote_on') === '1' ? '#7CE38B' : '#8A90B8'}">${localStorage.getItem('remote_on') === '1' ? 'يعمل الآن' : 'متوقف'}</b></div>
-        <div class="row"><span>رمز الربط</span><b style="letter-spacing:4px;color:var(--gold)">${esc(localStorage.getItem('remote_pin') || '—')}</b></div>
+        <div class="row"><span>الاتصال</span><b style="color:#7CE38B">✓ تلقائي — بلا أي رمز</b></div>
         <div class="row"><span>الشبكة</span><b style="font-size:12px">${esc((this._remoteInfo && this._remoteInfo.ips || []).join(' ، ') || '—')}${(this._remoteInfo && this._remoteInfo.port) ? ':' + this._remoteInfo.port : ''}</b></div>
-        <div class="row" style="display:block"><span style="display:block;margin-bottom:8px;color:#8A90B8;font-size:13px">ثبّت تطبيق «LATCHI Remote» على الهاتف، اجعل الهاتف على نفس الواي فاي، واربط برمز الربط أعلاه.</span>
-        <button class="p-btn" id="remoteNewPin">🔄 رمز ربط جديد</button></div>
+        <div class="row" style="display:block"><span style="display:block;margin-bottom:8px;color:#8A90B8;font-size:13px">ثبّت تطبيق «LATCHI Remote» على الهاتف واجعله على نفس الواي فاي — سيظهر هذا الحاسوب في قائمة الهاتف، انقر عليه للتحكم مباشرة.</span></div>
       </div>
       <div class="set-card"><h3>🚪 الخروج</h3>
         <button class="gold-btn danger-btn" id="logout" style="width:100%">تسجيل الخروج والعودة للتحقق</button>
@@ -910,14 +910,8 @@ const App = {
     document.getElementById('clearFav').onclick = () => { localStorage.removeItem('favs'); this.favs = []; this.buildSettings(); this.focusFirst('settings'); };
     const rTgl = document.getElementById('remoteToggle');
     if (rTgl) rTgl.onclick = () => {
-      if (localStorage.getItem('remote_on') === '1') { localStorage.removeItem('remote_on'); this.remoteServerStop(); }
+      if (localStorage.getItem('remote_on') !== '0') { localStorage.setItem('remote_on', '0'); this.remoteServerStop(); }
       else { localStorage.setItem('remote_on', '1'); this.remoteServerStart(false); }
-    };
-    const rPin = document.getElementById('remoteNewPin');
-    if (rPin) rPin.onclick = () => {
-      localStorage.setItem('remote_pin', String(Math.floor(1000 + Math.random() * 9000)));
-      if (localStorage.getItem('remote_on') === '1') this.remoteServerStart(false);
-      else { this.buildSettings(); this.focusFirst('settings'); }
     };
     document.getElementById('logout').onclick = () => {
       localStorage.removeItem('source_url');

@@ -78,7 +78,7 @@ const sandbox = {
   console, setTimeout, setInterval, clearTimeout, clearInterval,
   requestAnimationFrame: f => f(),
   localStorage, document: documentMock, navigator: {},
-  Hls: FakeHls, latchi: { readClipboard: async () => clipText }
+  Hls: FakeHls, latchi: { readClipboard: async () => clipText, remoteStart: async (cfg) => ({ ok: true, port: cfg.port, pin: cfg.pin, ips: ['192.168.1.5'] }), remoteStop: async () => ({ ok: true }) }
 };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
@@ -498,6 +498,21 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   T('زر حذف خاص بكل بطاقة', (accHtml.match(/data-acc-del/g) || []).length === 2);
   T('تلميح الفتح على البطاقة', accHtml.includes('اضغط للفتح مباشرة'));
   T('نص منطقة الخطر: الحسابات فقط دون إعادة ضبط التطبيق', accHtml.includes('حذف جميع الحسابات') && !accHtml.includes('إعادة ضبط المصنع') && accHtml.includes('لا يُغلق'));
+
+  // ═══ 🎮 ج47: الريموت التلقائي بلا رمز ═══
+  // 1) الخادم يعمل تلقائياً منذ الإقلاع إلا إذا عُطّل صراحة من الإعدادات
+  Object.keys(store).forEach(k => delete store[k]);
+  await App.boot(); await sleep(40);
+  T('الخادم يبدأ تلقائياً عند أول تشغيل (بلا تفعيل يدوي)', App._remoteInfo && App._remoteInfo.ok === true);
+  T('الخادم بلا رمز — ping يبلّغ pin:false', App._remoteInfo && String(App._remoteInfo.pin || '') === '');
+  // 2) بعد الإيقاف اليدوي يبقى متوقفاً
+  localStorage.setItem('remote_on', '0'); localStorage.removeItem('x-backup');
+  App._remoteInfo = null;
+  await App.boot(); await sleep(40);
+  T('إيقاف يدوي = لا يعود للتشغيل التلقائي', !App._remoteInfo);
+  // 3) بطاقة الإعدادات بلا رمز إطلاقاً (فحص على المصدر — عناصر الإعدادات غير مسجلة في الموك)
+  const srcApp = fs.readFileSync('renderer/app.js', 'utf8');
+  T('بطاقة الريموت: «تلقائي بلا أي رمز» ولا وجود لرمز ربط', srcApp.includes('تلقائي — بلا أي رمز') && !srcApp.includes('رمز الربط') && !srcApp.includes('رمز ربط جديد'));
 
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);
   process.exit(fail ? 1 : 0);
