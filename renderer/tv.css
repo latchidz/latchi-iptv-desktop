@@ -680,3 +680,23 @@ video#miniVid.fs-from-mini { position: absolute; inset: 0; width: 100%; height: 
 
 .spinner { animation: spin 1s linear infinite; color: var(--gold); }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══ ج53: لوحة المسلسل — العمود الثالث بقسم المسلسلات: بوستر + مواسم مرقمة + حلقات الموسم المحدد ═══ */
+.sp-head { display: flex; gap: 14px; align-items: flex-start; }
+.sp-poster { width: 96px; min-height: 132px; object-fit: cover; border-radius: 12px; border: 2px solid var(--line); background: #04060F; flex: 0 0 auto; }
+.sp-meta { min-width: 0; }
+.sp-name { font-size: 17.5px; font-weight: bold; line-height: 1.35; }
+.sp-sub { color: var(--muted); font-size: 12.5px; margin-top: 5px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sp-loading { color: var(--muted); font-size: 13px; margin-top: 14px; }
+.sp-desc { color: #B9BFD8; font-size: 12.5px; line-height: 1.65; margin-top: 12px; max-height: 92px; overflow: hidden; }
+.sp-seasons-lbl { margin-top: 12px; color: var(--gold); font-weight: bold; font-size: 14px; }
+.sp-seasons { display: flex; flex-direction: column; gap: 7px; margin-top: 8px; }
+.sp-season { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px;
+  background: var(--panel); border: 2px solid var(--line); color: #DDE2F2; font-weight: bold; font-size: 14px;
+  cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.sp-season:hover { border-color: var(--gold2); }
+.sp-season.focused { border-color: var(--gold); box-shadow: var(--focus-glow); }
+.sp-season.active { border-color: var(--gold); background: rgba(217, 169, 78, .12); color: var(--gold); }
+.sp-cnt { color: #8A90B8; font-size: 12px; font-weight: normal; }
+.sp-season-title { margin-top: 16px; color: var(--gold); font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 7px; }
+.sp-eps { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }

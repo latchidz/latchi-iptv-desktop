@@ -38,18 +38,17 @@ function createWindow() {
   });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   win.setMenuBarVisibility(false);
-}
-
-// معرّف جهاز ثابت (لنظام التحقق — نفس فلسفة أندرويد)
-// v1.0.2: F11 = تبديل ملء الشاشة (احتياط للخروج من وضع التلفاز)
-try {
+  // v1.0.2: F11 = تبديل ملء الشاشة (احتياط للخروج من وضع التلفاز)
+  // ج53 إصلاح: كان خارج createWindow — يُنفَّذ قبل وجود النافذة (win=null) فيرمي خطأً صامتاً ولا يعمل
   win.webContents.on('before-input-event', (e, input) => {
     if (input && input.key === 'F11' && input.type === 'keyDown') {
       win.setFullScreen(!win.isFullScreen());
       e.preventDefault();
     }
   });
-} catch (err) {}
+}
+
+// معرّف جهاز ثابت (لنظام التحقق — نفس فلسفة أندرويد)
 
 // v1.0.2: التحكم في ملء الشاشة عبر IPC (المشغل/الرندرر)
 ipcMain.handle('set-fullscreen', (e, on) => { if (win) win.setFullScreen(!!on); });

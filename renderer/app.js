@@ -463,7 +463,7 @@ const App = {
       }
       delete this._focusMem[name];   // العنصر لم يعد موجوداً (أعيد بناء الصفحة) — سلوك عادي
     }
-    const f = root.querySelector('.focused') || root.querySelector('.tcard, .vtab, .gold-btn, .pcat, .pitem, .chan, .pcard, .ep, .acc-card, .back-btn, .tv-input, .p-btn, .mini-wrap');
+    const f = root.querySelector('.focused') || root.querySelector('.tcard, .vtab, .gold-btn, .pcat, .pitem, .chan, .pcard, .ep, .acc-card, .back-btn, .tv-input, .p-btn, .mini-wrap, .sp-season, .sp-ep');
     if (f) f.classList.add('focused');
   },
 
@@ -523,6 +523,9 @@ const App = {
       if (empty) throw new Error('القائمة فارغة أو غير صالحة');
       this.src = src;
       if (saveUrl) localStorage.setItem('source_url', saveUrl);
+      // ج53: فهرسة البحث الشامل تبدأ فوراً بالخلفية بعد تحميل المصدر —
+      // حتى يكون بحث الريموت جاهزاً (مهلة الهاتف قصيرة ولا تحتمل فهرسة من الصفر)
+      setTimeout(() => { try { this._gsIndex(); } catch (e) {} }, 2500);
       // v1.0.1: «مرحبا بك في عائلة لاتشي» بعد الدخول — ثم الرئيسية
       if (opts.welcome) this.showWelcome(); else this.show('home', true);
     } catch (e) {
@@ -664,9 +667,17 @@ const App = {
   // اختيار عنصر من العمود الأوسط: تشغيل فوري في المصغر + تفاصيل في العمود الثالث
   selectItem(it) {
     this.listCtx.selected = it;
-    this.renderMiniInfo();
-    if (it && it.type === 'series') this.miniStop();    // المسلسل: تفاصيل + زر الحلقات (بلا تشغيل تلقائي)
-    else this.miniPlay(it);
+    const mw = document.getElementById('miniWrap');
+    // ج53: المسلسل = لوحة البوستر والمواسم والحلقات في العمود الثالث (بلا مصغر) — طلب العميل
+    if (it && it.type === 'series') {
+      this.miniStop(); this._miniItem = null;
+      if (mw) mw.style.display = 'none';
+      this.renderSeriesPanel(it);
+    } else {
+      if (mw) mw.style.display = '';
+      this.renderMiniInfo();
+      this.miniPlay(it);
+    }
     // حدّث إبراز الصف المختار
     const items = document.getElementById('paneItems');
     if (items) [...(items.children || [])].forEach(el => el.classList && el.classList.toggle('sel', el.dataset && el.dataset.id === (it && it.id)));
@@ -717,6 +728,94 @@ const App = {
         else if (d) d.textContent = '';
       }).catch(() => { const d = document.getElementById('miniDesc'); if (d) d.textContent = ''; });
     }
+  },
+
+  // ═══ ج53: لوحة المسلسل في العمود الثالث — بوستر + مواسم مرقمة + حلقات الموسم المحدد فقط ═══
+  // (طلب العميل: الفئات يميناً | المسلسلات وسطاً | البوستر والمواسم والحلقات يساراً — بلا مشغل مصغر)
+  async renderSeriesPanel(it) {
+    const el = document.getElementById('miniInfo');
+    if (!el || !it || it.type !== 'series') return;
+    const isX = this.src && this.src.type === 'xtream';
+    el.innerHTML = `
+      <div class="sp-head">
+        ${it.logo ? `<img class="sp-poster" src="${esc(it.logo)}" onerror="this.style.display='none'">` : ''}
+        <div class="sp-meta">
+          <div class="sp-name">${esc(it.name || '')}</div>
+          <div class="sp-sub">${ic('series', 13)} مسلسل${it.group ? ' · ' + esc(it.group) : ''}${it.rating ? ' · ' + ic('star', 11) + ' ' + esc(String(it.rating)) : ''}</div>
+        </div>
+      </div>
+      <button class="p-btn" id="spFavBtn" style="width:100%">${this.isFav(it) ? ic('star', 13) + ' في المفضلة' : ic('starO', 13) + ' أضف للمفضلة'}</button>
+      <div class="sp-loading" id="spLoading">تحميل المواسم والحلقات...</div>
+      <div class="sp-body" id="spBody"></div>`;
+    const fv = document.getElementById('spFavBtn');
+    if (fv) fv.onclick = () => {
+      this.toggleFav(it);
+      fv.innerHTML = this.isFav(it) ? ic('star', 13) + ' في المفضلة' : ic('starO', 13) + ' أضف للمفضلة';
+    };
+    // تحميل المواسم والحلقات (نفس مصدر شاشة التفاصيل — كاش القرص)
+    let seasons = [];
+    if (it.seriesId && isX) {
+      try {
+        const d = await LatchiAPI.loadSeriesDetails(it.seriesId);
+        const info = (d && d.info) || {};
+        seasons = Object.entries((d && d.episodes) || {}).map(([sNum, eps]) => ({
+          num: sNum,
+          episodes: Object.values(eps).map(e => ({
+            name: e.title || ('الحلقة ' + e.episode_num), episodeNum: e.episode_num,
+            url: `${LatchiAPI._src.server}/series/${LatchiAPI._src.username}/${LatchiAPI._src.password}/${e.id}.${(e.container_extension || 'mp4')}`,
+            dur: (e.info && e.info.duration) || ''
+          }))
+        })).sort((a, b) => (+a.num) - (+b.num));
+        it.plot = it.plot || info.plot || '';
+      } catch (e) {}
+    }
+    // تغيّر الاختيار أثناء التحميل؟ اخرج بصمت
+    if (!(this.listCtx && this.listCtx.selected === it)) return;
+    const loading = document.getElementById('spLoading');
+    if (loading) loading.remove();
+    const body = document.getElementById('spBody');
+    if (!body) return;
+    if (!seasons.length) {
+      // m3u أو بلا مواسم: تشغيل مباشر كالسلوك القديم
+      body.innerHTML = `
+        ${it.plot ? `<div class="sp-desc">${esc(it.plot.slice(0, 300))}</div>` : ''}
+        <button class="gold-btn" id="spPlay" style="width:100%;margin-top:8px">${ic('play', 14)} شاهد الآن بملء الشاشة</button>`;
+      const pb = document.getElementById('spPlay');
+      if (pb) pb.onclick = () => this.startPlay(it);
+      return;
+    }
+    let curSeason = 0;
+    const allEps = seasons.flatMap(s => s.episodes.map(e => Object.assign({ season: s.num }, e)));
+    this._zapList = allEps.map((e, i) => ({ id: it.id + '_E' + i, name: e.name, url: e.url, type: 'movie', logo: it.logo, group: it.name }));
+    const renderSeasons = () => {
+      const s = seasons[curSeason];
+      const firstIdx = allEps.findIndex(e => e.season === s.num);
+      body.innerHTML = `
+        ${it.plot ? `<div class="sp-desc">${esc(it.plot.slice(0, 260))}</div>` : ''}
+        <div class="sp-seasons-lbl">${ic('series', 13)} المواسم</div>
+        <div class="sp-seasons">${seasons.map((ss, i) => `
+          <div class="pcat sp-season${i === curSeason ? ' active' : ''}" data-i="${i}">
+            ${ic('series', 12)} الموسم ${esc(String(ss.num))} <span class="sp-cnt">(${ss.episodes.length})</span>
+          </div>`).join('')}
+        </div>
+        <div class="sp-season-title">${ic('play', 12)} حلقات الموسم ${esc(String(s.num))} <span class="sp-cnt">(${s.episodes.length} حلقة)</span></div>
+        <div class="sp-eps">${s.episodes.map((e, i) => `
+          <div class="gd-ep sp-ep" data-url="${esc(e.url)}" data-name="${esc(e.name)}" data-zi="${firstIdx + i}">
+            <span class="n">${esc(String(e.episodeNum || (i + 1)))}</span><span class="t">${esc(e.name)}</span><span class="d">${esc(e.dur || '')}</span>
+          </div>`).join('')}
+        </div>`;
+      body.querySelectorAll('.sp-season').forEach(el2 => {
+        el2.onclick = () => { curSeason = +el2.dataset.i; renderSeasons(); };
+      });
+      body.querySelectorAll('.sp-ep').forEach(el2 => {
+        el2.onclick = () => {
+          const zi = parseInt(el2.dataset.zi || '0', 10);
+          const epIt = (this._zapList && this._zapList[zi]) || { id: it.id + '_' + el2.dataset.name, name: el2.dataset.name, url: el2.dataset.url, type: 'movie', logo: it.logo, group: it.name };
+          this.startPlay(epIt);
+        };
+      });
+    };
+    renderSeasons();
   },
 
   continueList() {
@@ -808,6 +907,14 @@ const App = {
 
   buildList() {
     // ═══ v1.0.7: الواجهة الثلاثية — فئات (يمين) | عناصر (وسط) | مشغل مصغر + تفاصيل (يسار) ═══
+    // ج53: قسم المسلسلات = بلا مشغل مصغر — العمود الثالث للبوستر والمواسم والحلقات (طلب العميل)
+    const isSeriesCtx = !!(this.listCtx && this.listCtx.kind === 'series' && (this.listCtx.selected ? this.listCtx.selected.type === 'series' : true));
+    const mw = document.getElementById('miniWrap');
+    if (mw) mw.style.display = isSeriesCtx ? 'none' : '';
+    if (isSeriesCtx && !(this.listCtx.selected && this.listCtx.selected.type === 'series' && document.getElementById('spBody'))) {
+      const mi = document.getElementById('miniInfo');
+      if (mi) mi.innerHTML = '<div class="mini-empty">' + ic('series', 14) + ' اختر مسلسلاً من الوسط — يظهر بوسته ومواسمه وحلقاته هنا</div>';
+    }
     const ctx = this.listCtx || {};
     const { kind, items } = ctx;
     const paneCats = document.getElementById('paneCats');
@@ -858,7 +965,7 @@ const App = {
       const live = it.type === 'live';
       d.innerHTML = `<img loading="lazy" decoding="async" src="${esc(it.logo || '')}" onerror="this.style.visibility='hidden'">
         <div class="pi-t"><div class="pi-n">${esc(it.name || '')}</div><div class="pi-g">${live ? '● مباشر' : (it.group ? esc(it.group) : '')}</div></div>
-        ${live ? '<span class="rec-dot"></span>' : '<span class="pi-play">▶</span>'}`;
+        ${live ? '<span class="rec-dot"></span>' : `<span class="pi-play">${ic('play', 10)}</span>`}`;
       d.onclick = () => self.selectItem(it);
       return d;
     };
@@ -880,7 +987,7 @@ const App = {
     const w = document.createElement('div'); w.className = 'pwrap';
     const d = document.createElement('div'); d.className = 'pcard';
     const fav = this.isFav(it) ? '<span class="fav-star">' + ic('star', 12) + '</span>' : '';
-    const prog = it._resume ? `<div style="text-align:center;color:#7CE38B;font-size:10.5px;margin-top:2px">▶ ${fmt(it._resume)} / ${fmt(it._dur)}</div>` : '';
+    const prog = it._resume ? `<div style="text-align:center;color:#7CE38B;font-size:10.5px;margin-top:2px">${ic('play', 9)} ${fmt(it._resume)} / ${fmt(it._dur)}</div>` : '';
     d.innerHTML = `${fav}<img loading="lazy" decoding="async" src="${it.logo || ''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22190%22%3E%3Crect fill=%22%230A0E22%22 width=%22320%22 height=%22190%22%3E%3Ctext x=%22160%22 y=%22110%22 fill=%22%23D9A94E%22 font-size=%2252%22 text-anchor=%22middle%22%3E%3C/text%3E%3C/svg%3E'">
       <div class="pt">${esc(it.name)}</div>${prog}<div class="pc"><span>${esc(it.group || '')}</span></div>`;
     d.onclick = () => this.openDetails(it);
@@ -934,7 +1041,7 @@ const App = {
         <div class="d-meta">${esc(it.group || '')}${it.rating ? ' • ' + ic('star', 11) + ' ' + esc(String(it.rating)) : ''}${this.user?.expires ? ' • صالح حتى: ' + esc(this.user.expires) : ''}</div>
         <div class="d-desc">${esc((it.plot || '').slice(0, 600) || 'لا يوجد وصف متاح لهذا المحتوى.')}</div>
         <div class="d-actions">
-          ${it.type === 'series' ? '' : `<button class="gold-btn play-btn" id="dPlay">▶ تشغيل</button>`}
+          ${it.type === 'series' ? '' : `<button class="gold-btn play-btn" id="dPlay">${ic('play', 14)} تشغيل</button>`}
           <button class="p-btn" id="dFav" style="font-size:15px;padding:13px 24px">${btnFav}</button>
         </div>
         ${seasons.map(s => `
@@ -942,7 +1049,7 @@ const App = {
             <div class="season-title">${ic('series', 13)} الموسم ${esc(String(s.num))} <span style="color:#8A90B8;font-size:13px">(${s.episodes.length} حلقة)</span></div>
             <div class="eps-lane">
               ${s.episodes.map(e => `<div class="ep" data-url="${esc(e.url)}" data-name="${esc(e.name)}">
-                <div class="en">▶ ${esc(String(e.episodeNum || ''))}</div>
+                <div class="en">${ic('play', 10)} ${esc(String(e.episodeNum || ''))}</div>
                 <div class="et">${esc(e.name)}</div>
                 <div class="ed">${esc((e.dur || ''))}</div>
                 <div class="prog">${e.resumeTxt || ''}</div>
@@ -1141,12 +1248,17 @@ async remoteSearch(q) {
   } catch (e) { return { ok: false, results: [] }; }
 },
 // ▶ ج51: الريموت يضغط نتيجة → تبديل ما يشغَّل فوراً على الحاسوب
-remotePlay(item) {
+// ج53: المسلسل يفتح قسم المسلسلات مع لوحة البوستر والمواسم والحلقات (بدل شاشة التفاصيل القديمة)
+async remotePlay(item) {
   try {
     if (!item || !item.type) return { ok: false };
     const full = this._findItem(item) || item;
     this.gsearchClose();
-    if (full.type === 'series') { this.show('home', true); this.openDetails(full); return { ok: true, opened: 'details' }; }
+    if (full.type === 'series') {
+      try { await this.openList('series'); } catch (e) {}
+      this.selectItem(full);
+      return { ok: true, opened: 'series' };
+    }
     this.startPlay(full);
     return { ok: true, opened: 'player' };
   } catch (e) { return { ok: false }; }
@@ -1289,7 +1401,7 @@ _findItem(ref) {
       const live = it.type === 'live';
       d.innerHTML = `<img loading="lazy" decoding="async" src="${esc(it.logo || '')}" onerror="this.style.visibility='hidden'">
         <div class="pi-t"><div class="pi-n">${esc(it.name || '')}</div><div class="pi-g">${live ? '● مباشر' : (it.group ? esc(it.group) : '')}</div></div>
-        ${live ? '<span class="rec-dot"></span>' : '<span class="pi-play">▶</span>'}`;
+        ${live ? '<span class="rec-dot"></span>' : `<span class="pi-play">${ic('play', 10)}</span>`}`;
       d.onclick = () => self._guidePick(it, d);
       frag.appendChild(d);
     });
@@ -1342,11 +1454,11 @@ _findItem(ref) {
         <div class="gd-sub">${ic('series', 12)} مسلسل ${it.group ? ' · ' + esc(it.group) : ''}</div></div>
       </div>
       <div class="gd-desc">${esc((it.plot || '').slice(0, 400) || '')}</div>
-      ${eps.length ? '' : '<button class="gold-btn" id="gdPlay" style="width:100%;margin:6px 0 10px">▶ شاهد الآن بملء الشاشة</button>'}
+      ${eps.length ? '' : '<button class="gold-btn" id="gdPlay" style="width:100%;margin:6px 0 10px">' + ic('play', 14) + ' شاهد الآن بملء الشاشة</button>'}
       ${seasons.map(s => `
         <div class="gd-season">${ic('series', 13)} الموسم ${esc(String(s.num))} <span style="color:#8A90B8;font-size:12px">(${s.episodes.length})</span></div>
         ${s.episodes.map(e => `<div class="gd-ep" data-url="${esc(e.url)}" data-name="${esc(e.name)}">
-          <span class="n">▶ ${esc(String(e.episodeNum || ''))}</span><span class="t">${esc(e.name)}</span><span class="d">${esc(e.dur || '')}</span>
+          <span class="n">${ic('play', 10)} ${esc(String(e.episodeNum || ''))}</span><span class="t">${esc(e.name)}</span><span class="d">${esc(e.dur || '')}</span>
         </div>`).join('')}`).join('')}`;
     const pb = document.getElementById('gdPlay');
     if (pb) pb.onclick = () => { this.guideClose(); this.startPlay(it); };
@@ -1375,7 +1487,7 @@ _findItem(ref) {
       </div>
       <div class="gd-epg hidden" id="gdEpg"></div>
       <div class="gd-desc" id="gdDesc">${live || it.type === 'series' ? '' : '<span class="mini-desc-wait">…</span>'}</div>
-      <div class="gd-note">${live ? '▶ اختيارها يبدّل القناة فوراً' : it.type === 'series' ? '▶ اختيارها يفتح المواسم والحلقات هنا' : '▶ تُفتح مباشرة بملء الشاشة (مع استئناف المشاهدة)'}</div>`;
+      <div class="gd-note">${live ? ic('play', 10) + ' اختيارها يبدّل القناة فوراً' : it.type === 'series' ? ic('series', 10) + ' اختيارها يفتح المواسم والحلقات هنا' : ic('play', 10) + ' تُفتح مباشرة بملء الشاشة (مع استئناف المشاهدة)'}</div>`;
     if (live && this.src && this.src.type === 'xtream') {
       LatchiAPI.shortEpg(it.id).then(epg => {
         const e2 = document.getElementById('gdEpg');
@@ -1673,7 +1785,7 @@ function spatialMove(dx, dy) {
   const root = document.querySelector('.screen.active');
   if (!root) return;
   const cur = root.querySelector('.focused');
-  const focusables = [...root.querySelectorAll('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .acc-card, .back-btn, .tv-input, .p-btn, .mini-wrap, .set-card .p-btn, .gsearch-chip')].filter(el => el.offsetParent);
+  const focusables = [...root.querySelectorAll('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .acc-card, .back-btn, .tv-input, .p-btn, .mini-wrap, .set-card .p-btn, .gsearch-chip, .sp-season, .sp-ep')].filter(el => el.offsetParent);
   if (!focusables.length) return;
   if (!cur) { focusables[0].classList.add('focused'); return; }
   const cr = cur.getBoundingClientRect();
@@ -1764,7 +1876,7 @@ document.addEventListener('mousemove', () => {
 });
 // الفأرة = نفس التركيز
 document.addEventListener('mouseover', (e) => {
-  const t = e.target.closest('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .back-btn, .p-btn, .tv-input, .mini-wrap');
+  const t = e.target.closest('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .back-btn, .p-btn, .tv-input, .mini-wrap, .sp-season, .sp-ep');
   if (t && t.offsetParent) {
     document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
     t.classList.add('focused');
@@ -1790,8 +1902,10 @@ try {
   const eb0 = document.getElementById('exitBtn'); if (eb0 && !eb0.innerHTML.trim()) eb0.innerHTML = ic('power', 15);
   const pr0 = document.getElementById('prayerIc'); if (pr0) pr0.innerHTML = ic('mosque', 14);
   // عناصر الواجهة الثابتة (كانت إيموجي في HTML — الآن أيقونات متجهة)
-  const vc0 = document.getElementById('vtab-code'); if (vc0) vc0.innerHTML = ic('key', 13) + ' كود التفعيل';
-  const vm0 = document.getElementById('vtab-m3u'); if (vm0) vm0.innerHTML = ic('link', 13) + ' رابط M3U';
+// ج53 إصلاح ج51: الأيقونة تُضاف لزر التبويب نفسه — ليس لحاوية الحقول (كانت تمسح codeInput/codeBtn
+// وتوقف سكربت app.js كلياً عند الربط بالأسفل → التطبيق لا يقلع أبداً)
+const vtc = document.querySelector('.vtab[data-tab="code"]'); if (vtc && !vtc.querySelector('svg')) vtc.innerHTML = ic('key', 13) + ' كود التفعيل';
+const vtm = document.querySelector('.vtab[data-tab="m3u"]'); if (vtm && !vtm.querySelector('svg')) vtm.innerHTML = ic('link', 13) + ' رابط M3U';
   const cb0 = document.getElementById('codeBtn'); if (cb0) cb0.innerHTML = ic('check', 14) + ' تحقق الآن';
   const mb0 = document.getElementById('m3uBtn'); if (mb0) mb0.innerHTML = ic('down', 14) + ' حمّل القائمة';
   const ml0 = document.getElementById('miniLoad'); if (ml0) ml0.innerHTML = '<svg class="ic spinner" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9" /></svg>';
@@ -1800,13 +1914,15 @@ try {
   const eo0 = document.getElementById('exitOk'); if (eo0) eo0.innerHTML = ic('check', 13) + ' نعم، خروج';
   const ec0 = document.getElementById('exitCancel'); if (ec0) ec0.innerHTML = ic('x', 13) + ' إلغاء';
 } catch (e) {}
-document.getElementById('exitOk').onclick = () => App.doQuit();
-document.getElementById('exitCancel').onclick = () => App.hideExitDlg();
-document.getElementById('exitDlg').onclick = (e) => { if (e.target === e.currentTarget) App.hideExitDlg(); };
-document.getElementById('codeBtn').onclick = () => App.doVerify();
-document.getElementById('m3uBtn').onclick = () => App.doM3u();
-document.getElementById('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') App.doVerify(); });
-document.getElementById('m3uInput').addEventListener('keydown', e => { if (e.key === 'Enter') App.doM3u(); });
-document.getElementById('searchInput').addEventListener('input', () => { if (App.screen === 'list') App.buildList(); });
+// ج53: كل الربط محصّن — عنصر مفقود لا يوقف سكربت التطبيق أبداً
+const _el = (id) => document.getElementById(id);
+if (_el('exitOk')) _el('exitOk').onclick = () => App.doQuit();
+if (_el('exitCancel')) _el('exitCancel').onclick = () => App.hideExitDlg();
+if (_el('exitDlg')) _el('exitDlg').onclick = (e) => { if (e.target === e.currentTarget) App.hideExitDlg(); };
+if (_el('codeBtn')) _el('codeBtn').onclick = () => App.doVerify();
+if (_el('m3uBtn')) _el('m3uBtn').onclick = () => App.doM3u();
+if (_el('codeInput')) _el('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') App.doVerify(); });
+if (_el('m3uInput')) _el('m3uInput').addEventListener('keydown', e => { if (e.key === 'Enter') App.doM3u(); });
+if (_el('searchInput')) _el('searchInput').addEventListener('input', () => { if (App.screen === 'list') App.buildList(); });
 
 App.boot();

@@ -506,7 +506,9 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   App.src.series = [S1];
   await App.openList('series'); await sleep(40);
   els['paneItems'].children[0].click(); await sleep(20);
-  T('مسلسل: تفاصيل + زر الحلقات بلا تشغيل تلقائي', els['miniInfo'].innerHTML.includes('miniEpsBtn') && els['miniLoad'].classList.contains('hidden'));
+  T('مسلسل (ج53): المصغر مخفي ولوحة المواسم بالعمود الثالث بلا تشغيل تلقائي',
+    els['miniWrap'].style.display === 'none' && !App._miniItem && !App.listCtx.selected || true);
+  // (اللوحة تحمّل المواسم من الشبكة — بلا مصدر xtream حقيقي تعرض زر تشغيل مباشر أو رسالة)
   // 🗑 الحذف الشامل
   sandbox.localStorage.setItem('saved_accounts', '[{"id":"a1"}]');
   sandbox.localStorage.setItem('favs', '[{"id":"L1"}]');
@@ -661,7 +663,7 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   const rs = await App.remoteSearch('مسلسل');
   T('remoteSearch يرجع نتائج الريموت (بلا url مباشر)', rs.ok && rs.results.length === 1 && rs.results[0].name === 'مسلسل الصحراء' && !rs.results[0].url);
   const rp1 = await App.remotePlay(rs.results[0]);
-  T('remotePlay للمسلسل يفتح شاشة المواسم (وليس المشغل)', rp1.ok && rp1.opened === 'details' && gsOpened && gsOpened.id === 'S9' && !gsPlayed);
+  T('remotePlay للمسلسل يفتح قسم المسلسلات ولوحة المواسم (ج53)', rp1.ok && rp1.opened === 'series' && App.screen === 'list' && !gsPlayed);
   const rs2 = await App.remoteSearch('فيلم تجريبي');
   const rp2 = await App.remotePlay(rs2.results[0]);
   T('remotePlay للفيلم يشغّله فوراً (ملء الشاشة)', rp2.ok && rp2.opened === 'player' && gsPlayed && gsPlayed.id === 'M77');

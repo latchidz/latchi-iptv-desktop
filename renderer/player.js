@@ -60,7 +60,8 @@ const Player = {
   takeOver(item) {
     if (this._miniFs) this.exitMiniFs();
     const miniVid = document.getElementById('miniVid');
-    if (!miniVid) { this.play(item); return; }        // احتياط: مسار عادي
+    // ج53: حماية — لو لم يُهيأ المشغل لأي سبب، سلك المسار العادي بدل الانفجار (شاشة سوداء + صوت)
+    if (!miniVid || !this._origVideoAvailable()) { this.play(item); return; }
     this._origVideo = this.video;
     this._miniFs = true;
     try { this._miniSlot = miniVid.parentNode || null; } catch (e) { this._miniSlot = null; }
@@ -70,6 +71,12 @@ const Player = {
     } catch (e) {}
     try { this._origVideo.style.display = 'none'; } catch (e) {}
     miniVid.classList.add('fs-from-mini');
+    // ج53 إصلاح الشاشة السوداء: نقل عنصر فيديو حي بين الحاويات قد يعلّق طبقة الرسم على بعض
+    // أجهزة ويندوز/التعريفات (صوت بلا صورة) — تجديد طبقة العرض بلا أي مساس بالمصدر أو البث
+    try {
+      miniVid.style.display = 'none';
+      requestAnimationFrame(() => { try { miniVid.style.display = ''; } catch (e) {} });
+    } catch (e) {}
     this.video = miniVid;                             // كل أزرار المشغل تعمل على نفس البث الجاري
     this._bindVideoEvents(miniVid);
     // تهيئة واجهة المشغل حول البث الجاري — دون أي لمس للمصدر
@@ -92,6 +99,11 @@ const Player = {
     this._startWatchdog();
     this.loadEpg(item);
     this._startMark();
+  },
+
+  // ج53: هل عنصر الفيديو الأصلي جاهز؟ (init اشتغل) — يمنع الانفجار إذا لم يُهيأ المشغل
+  _origVideoAvailable() {
+    return !!(this.video && document.getElementById('video'));
   },
 
   // إنهاء التكبير السلس: نفس العنصر يعود لمكانه في المصغر — البث لم يتوقف لحظة
