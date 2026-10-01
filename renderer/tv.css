@@ -1,4 +1,4 @@
-/* ═══ 🎨 LATCHI IPTV Desktop — ثيم التلفاز (كحلي داكن + ذهبي) ═══ */
+/* ═══ LATCHI IPTV Desktop — ثيم التلفاز (كحلي داكن + ذهبي) ═══ */
 @font-face { font-family: 'LatchiArabic'; src: url('../assets/fonts/latchi_arabic_regular.ttf'); }
 @font-face { font-family: 'LatchiArabic'; src: url('../assets/fonts/latchi_arabic_bold.ttf'); font-weight: bold; }
 
@@ -28,7 +28,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ═══ التحقق ═══ */
-#verify { background: var(--bg); overflow-y: auto; }   /* 🛠 v1.1.3: تمرير بالفأرة/الأسهم */
+#verify { background: var(--bg); overflow-y: auto; }   /* v1.1.3: تمرير بالفأرة/الأسهم */
 .verify-bg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
 .verify-panel { position: relative; margin: 7vh auto 56px;
   width: min(520px, 92%); background: rgba(14, 20, 48, .92); border: 2px solid var(--gold2);
@@ -69,7 +69,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 
 /* ═══ الرئيسية ═══ */
 .cards { display: grid; grid-template-columns: repeat(auto-fit, 190px); gap: 26px; align-content: start;
-  height: calc(100% - 76px); overflow-y: auto;   /* 🛠 v1.1.3: تمرير بالفأرة */
+  height: calc(100% - 76px); overflow-y: auto;   /* v1.1.3: تمرير بالفأرة */
   padding: 60px 60px; justify-content: center; align-content: center; height: calc(100% - 76px); }
 .tcard { background: linear-gradient(160deg, var(--panel), var(--bg2)); border: 2px solid var(--line);
   border-radius: 20px; padding: 30px 16px 24px; text-align: center; cursor: pointer;
@@ -90,7 +90,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .list-body { height: calc(100% - 76px - 57px); overflow-y: auto; padding: 22px 34px 40px; }
 
 /* شبكة البوسترات (نفس أندرويد: عمودية 2:3 — 6 بالصف) */
-/* 🎬 v1.0.4: شبكة البوسترات الملكية — أفقية 3×2 كيما صفحة تلفاز
+/* v1.0.4: شبكة البوسترات الملكية — أفقية 3×2 كيما صفحة تلفاز
    (3 بالصف أفقيّاً، صفّان ظاهران عموديّاً، ↑↓ ينقل بثلاثة دائماً بلا أخطاء) */
 .poster-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px 30px;
   max-width: 1230px; margin: 0 auto; }
@@ -129,7 +129,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .d-desc { color: #C9CEE8; font-size: 15.5px; line-height: 1.95; max-width: 760px; margin-bottom: 28px; }
 .d-actions { display: flex; gap: 16px; flex-wrap: wrap; }
 .play-btn { font-size: 18px; padding: 16px 46px; }
-/* 🛠 v1.1.3: المواسم ممرات أفقية كيما التلفاز — بطاقات حلقات صغيرة جانبية */
+/* v1.1.3: المواسم ممرات أفقية كيما التلفاز — بطاقات حلقات صغيرة جانبية */
 .seasons { margin-top: 26px; }
 .season-title { font-size: 19px; font-weight: bold; color: var(--gold); margin: 22px 0 12px; }
 .eps-lane { display: grid; grid-auto-flow: column; grid-auto-columns: 208px; gap: 12px;
@@ -144,7 +144,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 
 /* ═══ الإعدادات ═══ */
 .settings-body { padding: 44px 60px; max-width: 780px;
-  height: calc(100% - 76px); overflow-y: auto; }   /* 🛠 v1.1.3: تمرير بالفأرة */
+  height: calc(100% - 76px); overflow-y: auto; }   /* v1.1.3: تمرير بالفأرة */
 .set-card { background: var(--panel); border: 2px solid var(--line); border-radius: 16px;
   padding: 22px 26px; margin-bottom: 18px; }
 .set-card h3 { color: var(--gold); font-size: 17px; margin-bottom: 12px; }
@@ -211,7 +211,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   line-height: 1.6;
 }
 
-/* ═══ 👤 مركز الحسابات ═══ */
+/* ═══ مركز الحسابات ═══ */
 .acc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; background: var(--panel); }
 .acc-row.focused { border-color: var(--gold2); box-shadow: var(--focus-glow); }
@@ -224,14 +224,14 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .acc-empty { color: var(--muted); text-align: center; padding: 16px; border: 1px dashed var(--line); border-radius: 12px; }
 
 /* ═══════════════════════════════════════════════════════════════
-   🎨 v1.0 — الطبقة العصرية النهائية (ديزاين احترافي + فن التلفاز)
+   v1.0 — الطبقة العصرية النهائية (ديزاين احترافي + فن التلفاز)
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── دخول الشاشات بحركة ناعمة ─── */
 .screen.active { animation: screenIn .38s cubic-bezier(.2, .8, .25, 1); }
 @keyframes screenIn { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
 
-/* ─── 🎬 السبلاش الجديد (فن التلفاز الرسمي) ─── */
+/* ─── السبلاش الجديد (فن التلفاز الرسمي) ─── */
 #splash { background: #000; }
 #splash .splash-bg { animation: splashZoom 9s ease-out forwards; }
 @keyframes splashZoom { from { transform: scale(1.08); } to { transform: scale(1); } }
@@ -250,7 +250,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .splash-loading { gap: 12px; align-items: center; }
 .splash-hint { color: #C9CEE8; font-size: 13.5px; letter-spacing: 1px; }
 
-/* ─── 🌌 خلفيات الرئيسية المتغيرة ─── */
+/* ─── خلفيات الرئيسية المتغيرة ─── */
 #homeBgs { position: absolute; inset: 0; overflow: hidden; background: var(--bg); }
 #homeBgs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
   opacity: 0; filter: brightness(.38) saturate(1.12);
@@ -269,7 +269,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   background: linear-gradient(135deg, #FFE9A8, var(--gold2));
   border-radius: 20px; padding: 4px 13px; box-shadow: 0 2px 10px rgba(217,169,78,.35); }
 
-/* ─── 🏠 بطاقات الرئيسية المصورة ─── */
+/* ─── بطاقات الرئيسية المصورة ─── */
 .cards { align-content: start !important; padding: 40px 56px 60px !important; }
 .tcard { position: relative; overflow: hidden; padding: 0 !important; text-align: right !important;
   border-radius: 20px; border-color: rgba(34, 40, 79, .9);
@@ -289,7 +289,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   border-color: var(--gold) !important; background: var(--panel) !important;
   box-shadow: var(--focus-glow), 0 22px 52px rgba(0,0,0,.6) !important; }
 
-/* ─── 📋 زر اللصق ─── */
+/* ─── زر اللصق ─── */
 .input-row { display: flex; gap: 10px; align-items: stretch; }
 .input-row .tv-input { flex: 1; text-align: right; }
 .paste-btn { flex: 0 0 56px; display: flex; align-items: center; justify-content: center;
@@ -325,7 +325,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .ok-txt { color: #7CE38B; font-weight: 700; }
 .bad-txt { color: #FF7B7B; font-weight: 700; }
 
-/* ─── 🏷️ شارة الصلاحية الملونة ─── */
+/* ─── شارة الصلاحية الملونة ─── */
 .badge-exp { display: inline-block; font-size: 11.5px; font-weight: bold; border-radius: 16px;
   padding: 3px 11px; margin-right: 8px; vertical-align: middle; }
 .badge-exp.green { color: #7CE38B; background: rgba(124,227,139,.12); border: 1px solid rgba(124,227,139,.45); }
@@ -333,14 +333,14 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .badge-exp.red { color: #FF7B7B; background: rgba(255,123,123,.13); border: 1px solid rgba(255,123,123,.5); }
 .badge-exp.gray { color: #9AA0C5; background: rgba(154,160,197,.1); border: 1px solid rgba(154,160,197,.4); }
 
-/* ─── ⭐ القوائم المختلطة (مفضلة/متابعة): قنوات صفوف + بوسترات معاً ─── */
+/* ─── القوائم المختلطة (مفضلة/متابعة): قنوات صفوف + بوسترات معاً ─── */
 .poster-grid.mixed-list .chan { grid-column: 1 / -1; max-width: 760px; }
 
 /* ─── حركات البوستر/القناة/الحلقة بالفأرة ─── */
 .pcard:hover { transform: translateY(-5px); border-color: var(--gold2) !important;
   box-shadow: 0 14px 34px rgba(0,0,0,.5), 0 0 20px rgba(217,169,78,.16); }
 .pwrap:hover .pcard { border-color: var(--gold2); }
-/* 🎯 v1.0.4: حلقة التركيز خارج البوستر — البوستر نفسه لا يتغير */
+/* v1.0.4: حلقة التركيز خارج البوستر — البوستر نفسه لا يتغير */
 .pcard.focused { border-color: var(--line) !important;
   outline: 4px solid var(--gold); outline-offset: 7px; border-radius: 16px;
   transform: scale(1.04);
@@ -367,7 +367,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, var(--gold2), #8A6B28); }
 
 
-/* ═══ 👋⏳ v1.0.1: شاشة الترحيب + غطاء «جاري التحقق من الاشتراك» ═══ */
+/* ═══ v1.0.1: شاشة الترحيب + غطاء «جاري التحقق من الاشتراك» ═══ */
 #welcome { background: #000; }
 .welcome-bg { width: 100%; height: 100%; object-fit: cover;
   animation: welcomeIn 2.6s cubic-bezier(.25, .7, .3, 1) both; }
@@ -382,7 +382,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .checking-ov img { width: 100%; height: 100%; object-fit: cover; animation: checkIn .45s ease-out; }
 @keyframes checkIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* ═══ ⏻🎛 v1.0.2: وضع التلفاز الكامل — خروج + شبكة + ريموت المشغل ═══ */
+/* ═══ v1.0.2: وضع التلفاز الكامل — خروج + شبكة + ريموت المشغل ═══ */
 
 /* نافذة تأكيد الخروج */
 .exit-dlg { position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center;
@@ -408,8 +408,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .exit-chip:hover, .exit-chip.focused { border-color: #FF7B7B; color: #FFC4C4;
   box-shadow: 0 0 16px rgba(255, 123, 123, .4); transform: translateY(-1px); }
 
-/* ═══ 🚀 v1.0.5: Royal Grid متجاوبة 100% — يستحيل التداخل مهما كان مقاس النافذة ═══
-   🔧 إصلاح كارثي: كانت قاعدة قديمة تفرض min-height:218px على بطاقة نسبتها 168:98
+/* ═══ v1.0.5: Royal Grid متجاوبة 100% — يستحيل التداخل مهما كان مقاس النافذة ═══
+   إصلاح كارثي: كانت قاعدة قديمة تفرض min-height:218px على بطاقة نسبتها 168:98
       (ارتفاعها الفعلي ~112px) → البطاقة تفيض فوق صفها وتركب على الصف الذي تحته.
    الحل: min-height:0 + أعمدة نسبية 1fr (كل بطاقة ربع العرض بالضبط) + نسبة ثابتة. */
 .cards { display: grid;
@@ -432,7 +432,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   transition: transform .4s cubic-bezier(.2,.8,.25,1); }
 .tcard .tcard-shade, .tcard .tcard-body { display: none !important; }
 
-/* 🖱 v1.0.5: تأثير الماوس — إبراز أمامي + حواف مضيئة كيما فوكوس التلفاز */
+/* v1.0.5: تأثير الماوس — إبراز أمامي + حواف مضيئة كيما فوكوس التلفاز */
 .tcard:hover { transform: scale(1.05) translateY(-4px);
   box-shadow: 0 0 0 4px var(--gold), 0 0 30px rgba(217, 169, 78, .5), 0 26px 50px rgba(0, 0, 0, .65);
   z-index: 3; }
@@ -442,7 +442,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   box-shadow: 0 0 0 4px var(--gold), 0 0 30px rgba(217, 169, 78, .5), 0 26px 50px rgba(0, 0, 0, .65) !important;
   background: #1A1A30 !important; z-index: 3; }
 
-/* 📱 نوافذ أصغر: عمودان ثم عمود — دوما نسب متساوية بلا تداخل */
+/* نوافذ أصغر: عمودان ثم عمود — دوما نسب متساوية بلا تداخل */
 @media (max-width: 900px) {
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     width: min(540px, calc(100% - 48px)) !important; gap: 20px !important; }
@@ -459,7 +459,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 /* إخفاء مؤشر الفأرة في المشغل (روح التلفاز) */
 body.no-cursor, body.no-cursor * { cursor: none !important; }
 
-/* ═══ 📺 v1.0.3: هيدر التلفاز — ساعة بالثواني وسط + سطر الصلاحية تحتها ═══ */
+/* ═══ v1.0.3: هيدر التلفاز — ساعة بالثواني وسط + سطر الصلاحية تحتها ═══ */
 .tv-header { position: relative; }
 .hdr-clock { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   text-align: center; line-height: 1.25; pointer-events: none; }
@@ -470,7 +470,7 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
 .exp-line.red { color: #FF7B7B; text-shadow: 0 0 10px rgba(255, 123, 123, .4); }
 .exp-line.gray { color: var(--muted); }
 
-/* 🔢 v1.0.3: OSD رقم القناة (أرقام الريموت) — أعلى يسار الشاشة كيما التلفاز */
+/* v1.0.3: OSD رقم القناة (أرقام الريموت) — أعلى يسار الشاشة كيما التلفاز */
 .p-num { position: absolute; top: 20px; left: 26px; z-index: 30;
   background: rgba(8, 13, 31, .88); border: 2px solid var(--gold); border-radius: 14px;
   color: var(--gold); font-size: 30px; font-weight: bold; padding: 6px 20px;
@@ -478,7 +478,7 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
   box-shadow: 0 0 22px rgba(217, 169, 78, .35), 0 8px 20px rgba(0, 0, 0, .5); }
 .p-num.on { display: block; animation: exitPop .15s ease; }
 
-/* ═══ 🕌 v1.0.6: شريحة مواقيت الصلاة في الهيدر (مثل تلفاز/هاتف LATCHI) ═══ */
+/* ═══ v1.0.6: شريحة مواقيت الصلاة في الهيدر (مثل تلفاز/هاتف LATCHI) ═══ */
 .prayer-chip { display: flex; align-items: center; gap: 7px; background: rgba(16, 24, 56, .72);
   border: 1px solid var(--line); border-radius: 20px; padding: 5px 14px;
   font-size: 13px; font-weight: bold; cursor: default; transition: all .18s; }
@@ -486,12 +486,12 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
 .prayer-chip:hover { border-color: var(--gold); box-shadow: 0 0 14px rgba(217, 169, 78, .35); transform: translateY(-1px); }
 @media (max-width: 1150px) { .prayer-chip span[id="prayerTxt"] { display: none; } .prayer-chip { padding: 5px 10px; } }
 
-/* 📺 v1.0.6: سطر البرنامج الحالي (EPG) في شريط معلومات المشغل */
+/* v1.0.6: سطر البرنامج الحالي (EPG) في شريط معلومات المشغل */
 .p-epg { padding: 2px 6px 0; font-size: 14.5px; font-weight: bold; color: #E8ECFF;
   text-shadow: 0 1px 8px #000, 0 0 18px rgba(0, 0, 0, .6); overflow: hidden;
   white-space: nowrap; text-overflow: ellipsis; }
 
-/* ═══ 💧 v1.0.6: العلامة المائية العائمة — LATCHI DZ + الجودة ═══
+/* ═══ v1.0.6: العلامة المائية العائمة — LATCHI DZ + الجودة ═══
    تنتقل بين الزاويتين السفليتين كل 15 ثانية (حماية من احتراق الشاشة) */
 .p-mark { position: absolute; bottom: 22px; left: 36px; z-index: 15; text-align: center;
   pointer-events: none; opacity: .85; direction: ltr;
@@ -502,7 +502,7 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
 .pm-q { font-size: 10.5px; font-weight: bold; color: var(--goldsoft); letter-spacing: 1.2px;
   text-shadow: 0 1px 3px #000; margin-top: 1px; }
 
-/* ═══ 🎬 v1.0.7: الواجهة الأسطورية ثلاثية الأعمدة — فئات | عناصر | مشغل مصغر ═══ */
+/* ═══ v1.0.7: الواجهة الأسطورية ثلاثية الأعمدة — فئات | عناصر | مشغل مصغر ═══ */
 .pane3 { display: flex; height: calc(100% - 76px); overflow: hidden; }
 .pane { overflow-y: auto; }
 .pane-cats { flex: 0 0 20%; background: rgba(8, 13, 31, .72); border-inline-end: 1px solid var(--line); padding: 14px 10px; }
@@ -560,14 +560,14 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
 .mini-btns { display: flex; gap: 10px; }
 .mini-btns .p-btn { flex: 1; }
 
-/* ⚠️ زر الحذف الشامل (منطقة الخطر) */
+/* زر الحذف الشامل (منطقة الخطر) */
 .danger-btn { width: 100%; padding: 13px; font-family: inherit; font-size: 14.5px; font-weight: bold;
   color: #FFC4C4; background: rgba(90, 20, 24, .55); border: 2px solid #B34A4A; border-radius: 13px;
   cursor: pointer; transition: all .16s; }
 .danger-btn:hover, .danger-btn.focused { background: rgba(140, 26, 30, .8); border-color: #FF7B7B;
   color: #fff; box-shadow: 0 0 18px rgba(255, 123, 123, .35); transform: translateY(-1px); }
 
-/* ═══ 🗂 v1.0: بطاقات الحسابات — فتح مباشر بالنقر ═══ */
+/* ═══ v1.0: بطاقات الحسابات — فتح مباشر بالنقر ═══ */
 .acc-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 .acc-card { position: relative; background: var(--panel); border: 2px solid var(--line); border-radius: 16px;
   padding: 16px 14px 12px; cursor: pointer; text-align: center; transition: all .15s; outline: none; }
@@ -577,7 +577,7 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
 .acc-card .acc-open { display: block; font-size: 11.5px; color: var(--goldsoft); margin-top: 9px; opacity: 0; transition: opacity .15s; }
 .acc-card:hover { border-color: var(--gold2); transform: translateY(-2px); }
 .acc-card:hover .acc-open, .acc-card.focused .acc-open { opacity: 1; }
-/* 🟡 فوكيس أصفر خارج البطاقة (حلقة بفجوة — ج39 دائماً) */
+/* فوكيس أصفر خارج البطاقة (حلقة بفجوة — ج39 دائماً) */
 .acc-card.focused { border-color: var(--gold2); transform: translateY(-2px);
   outline: 3px solid var(--gold); outline-offset: 4px; box-shadow: 0 0 16px rgba(217, 169, 78, .22); }
 .acc-card.acc-active { background: linear-gradient(160deg, #262F62, #182048); border-color: var(--gold2); }
@@ -589,10 +589,10 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
 .acc-card:hover .acc-del, .acc-card.focused .acc-del { opacity: 1; }
 .acc-card .acc-del:hover { background: rgba(140, 26, 30, .85); color: #fff; }
 
-/* ═══ 🎬 v1.0.0: عنصر المصغر مستضافاً في شاشة المشغل (تكبير سلس بلا إعادة تحميل) ═══ */
+/* ═══ v1.0.0: عنصر المصغر مستضافاً في شاشة المشغل (تكبير سلس بلا إعادة تحميل) ═══ */
 video#miniVid.fs-from-mini { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; object-fit: contain; }
 
-/* ═══ 🖱 ج48: مؤشر لوحة اللمس من الريموت — حلقة ذهبية عائمة ═══ */
+/* ═══ ج48: مؤشر لوحة اللمس من الريموت — حلقة ذهبية عائمة ═══ */
 #remoteCursor { position: fixed; width: 22px; height: 22px; margin: -11px 0 0 -11px;
   border: 2.5px solid var(--gold); border-radius: 50%; pointer-events: none; z-index: 99999;
   opacity: 0; transition: opacity .25s;
@@ -601,7 +601,7 @@ video#miniVid.fs-from-mini { position: absolute; inset: 0; width: 100%; height: 
 #remoteCursor::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px;
   margin: -2px 0 0 -2px; border-radius: 50%; background: var(--gold); }
 
-/* ═══ 📺 ج50: دليل القنوات داخل المشغل (زر OK) — ثلاثة أعمدة كيما واجهة القائمة ═══ */
+/* ═══ ج50: دليل القنوات داخل المشغل (زر OK) — ثلاثة أعمدة كيما واجهة القائمة ═══ */
 .guide-ov { position: absolute; inset: 0; z-index: 60; background: rgba(4, 7, 18, .82);
   display: flex; align-items: center; justify-content: center; animation: guideIn .18s ease; }
 .guide-ov.hidden { display: none; }
@@ -645,3 +645,38 @@ video#miniVid.fs-from-mini { position: absolute; inset: 0; width: 100%; height: 
 .gd-ep .n { min-width: 44px; text-align: center; font-weight: bold; color: var(--goldsoft); font-size: 12.5px; }
 .gd-ep .t { flex: 1; font-size: 13px; font-weight: bold; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .gd-ep .d { font-size: 11px; color: var(--muted); }
+
+
+/* ═══ ج51: أيقونات متجهة موحدة (Material) — بلا أي إيموجي في الواجهة ═══ */
+.ic { display: inline-block; vertical-align: -3px; flex: 0 0 auto; }
+.ic-btn .ic { vertical-align: middle; }
+
+/* ═══ ج51: البحث الشامل — زر الشريط + الواجهة ═══ */
+.gsearch-chip { background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px; width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; color: var(--gold); }
+.gsearch-chip:hover, .gsearch-chip.focused { border-color: var(--gold); box-shadow: var(--focus-glow); }
+.gsearch-ov { position: absolute; inset: 0; z-index: 70; background: rgba(4, 7, 18, .88);
+  display: flex; align-items: flex-start; justify-content: center; animation: guideIn .18s ease; }
+.gsearch-ov.hidden { display: none; }
+.gsearch-panel { width: min(94vw, 900px); max-height: 92%; margin-top: 4vh; background: rgba(10, 15, 38, .98);
+  border: 1px solid var(--line); border-radius: 18px; display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .65); }
+.gsearch-bar { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.gsearch-bar .gl { color: var(--gold); }
+.gsearch-input { flex: 1; background: var(--panel); border: 2px solid var(--line); border-radius: 12px; color: #fff;
+  font-family: inherit; font-size: 16px; padding: 10px 14px; outline: none; }
+.gsearch-input:focus { border-color: var(--gold); box-shadow: var(--focus-glow); }
+.gsearch-input::placeholder { color: var(--muted); }
+.gsearch-close { background: transparent; border: 2px solid var(--line); color: var(--muted); border-radius: 12px;
+  padding: 8px 14px; cursor: pointer; font-family: inherit; font-size: 12.5px; }
+.gsearch-close:hover { color: #FF5B5B; border-color: #FF5B5B; }
+.gsearch-close.focused { border-color: var(--gold); box-shadow: var(--focus-glow); color: #fff; }
+.gsearch-body { overflow-y: auto; padding: 12px 14px 20px; min-height: 120px; }
+.gsearch-sec { font-weight: bold; font-size: 13.5px; color: var(--gold); margin: 12px 4px 8px; display: flex; align-items: center; gap: 7px; }
+.gsearch-body .pitem { cursor: pointer; }
+.gsearch-body .pitem.focused { border-color: var(--gold); box-shadow: var(--focus-glow); }
+.gsearch-hint { text-align: center; color: var(--muted); font-size: 12.5px; padding: 26px 10px; }
+.gsearch-prog { text-align: center; color: var(--gold); font-size: 13px; padding: 30px 10px; }
+
+.spinner { animation: spin 1s linear infinite; color: var(--gold); }
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -7,10 +7,10 @@
 </head>
 <body>
 
-<!-- ═══ ⏳ v1.0.1: غطاء «جاري التحقق من الاشتراك» — فن التلفاز بالإطار الذهبي ═══ -->
+<!-- ═══ v1.0.1: غطاء «جاري التحقق من الاشتراك» — فن التلفاز بالإطار الذهبي ═══ -->
 <div id="checkingOv" class="checking-ov hidden"><img src="../assets/checking_tv.webp" alt=""></div>
 
-<!-- ═══ 🎬 السبلاش ═══ -->
+<!-- ═══ السبلاش ═══ -->
 <div id="splash" class="screen active">
   <img class="splash-bg" src="../assets/splash_owner_tv.webp" alt="">
   <div class="splash-veil"></div>
@@ -19,21 +19,21 @@
   <div class="splash-loading"><div class="spinner"></div><div class="splash-hint">جارٍ التشغيل…</div></div>
 </div>
 
-<!-- ═══ 🔑 شاشة التحقق ═══ -->
+<!-- ═══ شاشة التحقق ═══ -->
 <div id="verify" class="screen">
   <img class="verify-bg" src="../assets/update_art.webp" alt="">
   <div class="verify-panel">
     <div class="verify-logo">IPTV <span>LATCHI DZ</span></div>
     <div class="verify-tabs">
-      <button class="vtab active" data-tab="code">🔑 كود التفعيل</button>
-      <button class="vtab" data-tab="m3u">🔗 رابط M3U</button>
+      <button class="vtab active" data-tab="code">كود التفعيل</button>
+      <button class="vtab" data-tab="m3u">رابط M3U</button>
     </div>
     <div id="vtab-code" class="vbody">
       <div class="input-row">
         <input id="codeInput" class="tv-input" type="text" placeholder="أدخل كود التفعيل هنا" autocomplete="off" spellcheck="false">
         <button class="paste-btn" data-paste="codeInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
       </div>
-      <button id="codeBtn" class="gold-btn">✓ تحقق الآن</button>
+      <button id="codeBtn" class="gold-btn">تحقق الآن</button>
     </div>
     <div id="vtab-m3u" class="vbody hidden">
       <div class="input-row">
@@ -41,13 +41,13 @@
         <button class="paste-btn" data-paste="m3uInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
       </div>
       <input id="m3uExpInput" class="tv-input" type="date" title="تاريخ انتهاء صلاحية الرابط (اختياري)" style="margin-top:8px">
-      <button id="m3uBtn" class="gold-btn">⬇ حمّل القائمة</button>
+      <button id="m3uBtn" class="gold-btn">حمّل القائمة</button>
     </div>
     <div id="verifyMsg" class="verify-msg"></div>
   </div>
 </div>
 
-<!-- ═══ 🏠 الرئيسية ═══ -->
+<!-- ═══ الرئيسية ═══ -->
 <div id="home" class="screen">
   <div id="homeBgs"></div>
   <header class="tv-header glass">
@@ -57,36 +57,37 @@
       <div class="clock" id="clock"></div>
       <div class="exp-line" id="expLine"></div>
     </div>
-    <div class="prayer-chip hidden" id="prayerChip" title="مواقيت الصلاة"><span class="pr-ic">🕌</span><span id="prayerTxt">—</span></div>
-    <div class="user-chip" id="userChip">👤</div>
-    <div class="exit-chip" id="exitBtn" title="خروج من التطبيق">⏻</div>
+    <div class="prayer-chip hidden" id="prayerChip" title="مواقيت الصلاة"><span class="pr-ic" id="prayerIc"></span><span id="prayerTxt">—</span></div>
+    <button class="gsearch-chip" id="globalSearchBtn" title="بحث شامل — قنوات وأفلام ومسلسلات"></button>
+    <div class="user-chip" id="userChip"></div>
+    <div class="exit-chip" id="exitBtn" title="خروج من التطبيق"></div>
   </header>
   <div class="cards" id="cards"></div>
 </div>
 
-<!-- ═══ 📺 القوائم (بث/أفلام/مسلسلات) ═══ -->
+<!-- ═══ القوائم (بث/أفلام/مسلسلات) ═══ -->
 <div id="list" class="screen">
   <header class="tv-header">
     <div class="back-btn nav-back">← رجوع</div>
     <div class="logo">LATCHI <span>IPTV</span></div>
-    <input id="searchInput" class="search-input" type="text" placeholder="🔍 بحث...">
+    <input id="searchInput" class="search-input" type="text" placeholder="بحث...">
   </header>
-  <!-- ═══ 🎬 v1.0.7: الواجهة الأسطورية ثلاثية الأعمدة — فئات | عناصر | مشغل مصغر ═══ -->
+  <!-- ═══ v1.0.7: الواجهة الأسطورية ثلاثية الأعمدة — فئات | عناصر | مشغل مصغر ═══ -->
   <div class="pane3" id="pane3">
     <aside class="pane pane-cats" id="paneCats"></aside>
     <div class="pane pane-items" id="paneItems"></div>
     <div class="pane pane-detail" id="paneDetail">
       <div class="mini-wrap" id="miniWrap" title="انقر للانتقال إلى ملء الشاشة">
         <video id="miniVid" autoplay playsinline></video>
-        <div class="mini-load hidden" id="miniLoad">⏳</div>
-        <div class="mini-fs">⛶ ملء الشاشة</div>
+        <div class="mini-load hidden" id="miniLoad"></div>
+        <div class="mini-fs">ملء الشاشة</div>
       </div>
       <div class="mini-info" id="miniInfo"></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ 🎬 التفاصيل ═══ -->
+<!-- ═══ التفاصيل ═══ -->
 <div id="details" class="screen">
   <header class="tv-header">
     <div class="back-btn nav-back">← رجوع</div>
@@ -95,7 +96,7 @@
   <div class="details-body" id="detailsBody"></div>
 </div>
 
-<!-- ═══ ⚙️ الإعدادات ═══ -->
+<!-- ═══ الإعدادات ═══ -->
 <div id="settings" class="screen">
   <header class="tv-header">
     <div class="back-btn nav-back">← رجوع</div>
@@ -104,7 +105,7 @@
   <div class="settings-body" id="settingsBody"></div>
 </div>
 
-<!-- ═══ 👤 مركز الحسابات (مثل الهاتف: كود أو M3U مباشر + تبديل) ═══ -->
+<!-- ═══ مركز الحسابات (مثل الهاتف: كود أو M3U مباشر + تبديل) ═══ -->
 <div id="accounts" class="screen">
   <header class="tv-header">
     <div class="back-btn nav-back">← رجوع</div>
@@ -113,12 +114,12 @@
   <div class="settings-body" id="accountsBody"></div>
 </div>
 
-<!-- ═══ 👋 v1.0.1: شاشة الترحيب «مرحبا بك في عائلة لاتشي» ═══ -->
+<!-- ═══ v1.0.1: شاشة الترحيب «مرحبا بك في عائلة لاتشي» ═══ -->
 <div id="welcome" class="screen">
   <img class="welcome-bg" src="../assets/welcome_tv.webp" alt="">
 </div>
 
-<!-- ═══ ▶️ المشغل ═══ -->
+<!-- ═══ ▶المشغل ═══ -->
 <div id="player" class="screen">
   <video id="video" autoplay></video>
   <div class="player-ui" id="playerUi">
@@ -132,13 +133,13 @@
       <div class="p-seek-track"><div class="p-seek-fill" id="pSeekFill"></div></div>
     </div>
     <div class="p-controls">
-      <button class="p-btn" id="pPlay">⏸</button>
-      <button class="p-btn" id="pRew">⏪ -10ث</button>
-      <button class="p-btn" id="pFwd">⏩ +10ث</button>
-      <button class="p-btn" id="pVol">🔊</button>
-      <button class="p-btn" id="pFull">⛶ ملء الشاشة</button>
-      <button class="p-btn" id="pFav">☆ مفضلة</button>
-      <button class="p-btn p-exit" id="pExit">✕ خروج</button>
+      <button class="p-btn" id="pPlay"></button>
+      <button class="p-btn" id="pRew"></button>
+      <button class="p-btn" id="pFwd"></button>
+      <button class="p-btn" id="pVol"></button>
+      <button class="p-btn" id="pFull"></button>
+      <button class="p-btn" id="pFav"></button>
+      <button class="p-btn p-exit" id="pExit"></button>
     </div>
     <div class="p-hint">↑↓ قناة • ←→ أزرار المشغل عند ظهورها (صوت/تقديم عند اختفائها) • أرقام 1-9: قناة بالرقم كيما التلفاز • Enter تأكيد • Esc رجوع</div>
     <div id="pNum" class="p-num"></div>
@@ -147,14 +148,14 @@
   <div class="p-center-msg hidden" id="pCenter"></div>
 </div>
 
-<!-- ═══ ⏻ v1.0.2: نافذة تأكيد الخروج (كيما التلفاز — أسهم + Enter) ═══ -->
+<!-- ═══ v1.0.2: نافذة تأكيد الخروج (كيما التلفاز — أسهم + Enter) ═══ -->
 <div id="exitDlg" class="exit-dlg hidden">
   <div class="exit-panel">
-    <div class="exit-ic">⏻</div>
+    <div class="exit-ic" id="exitIc"></div>
     <div class="exit-q">هل تريد الخروج من التطبيق؟</div>
     <div class="exit-btns">
-      <button class="p-btn exit-ok" id="exitOk">✓ نعم، خروج</button>
-      <button class="p-btn" id="exitCancel">✗ إلغاء</button>
+      <button class="p-btn exit-ok" id="exitOk"></button>
+      <button class="p-btn" id="exitCancel"></button>
     </div>
   </div>
 </div>

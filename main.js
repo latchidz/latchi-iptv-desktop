@@ -1,15 +1,15 @@
-// 🖥️ LATCHI IPTV Desktop — العملية الرئيسية
+// LATCHI IPTV Desktop — العملية الرئيسية
 const { app, BrowserWindow, ipcMain, shell, clipboard } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const crypto = require('crypto');
-// 📱 v1.0.8: خادم الريموت (الهاتف يتحكم في الحاسوب عبر الواي فاي)
+// v1.0.8: خادم الريموت (الهاتف يتحكم في الحاسوب عبر الواي فاي)
 const RemoteServer = require('./remote');
 
 let win = null;
 
-// 📀 مجلد الكاش الدائم (يحفظ الفئات والعناصر على القرص — لا تحميل متكرر)
+// مجلد الكاش الدائم (يحفظ الفئات والعناصر على القرص — لا تحميل متكرر)
 const cacheDir = () => {
   const dir = path.join(app.getPath('userData'), 'cache');
   try { fs.mkdirSync(dir, { recursive: true }); } catch (e) {}
@@ -21,8 +21,8 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1280,
     height: 720,
-    maximize: true,   // 🛠 v1.1.3: النافذة تأخذ مقاس الشاشة كاملاً (طلب العميل)
-    fullscreen: true, // 📺 v1.0.2: التطبيق يشتغل بملء الشاشة كيما التلفاز (طلب العميل)
+    maximize: true,   // v1.1.3: النافذة تأخذ مقاس الشاشة كاملاً (طلب العميل)
+    fullscreen: true, // v1.0.2: التطبيق يشتغل بملء الشاشة كيما التلفاز (طلب العميل)
     minWidth: 960,
     minHeight: 600,
     backgroundColor: '#060913',
@@ -40,8 +40,8 @@ function createWindow() {
   win.setMenuBarVisibility(false);
 }
 
-// 🆔 معرّف جهاز ثابت (لنظام التحقق — نفس فلسفة أندرويد)
-// ⌨️ v1.0.2: F11 = تبديل ملء الشاشة (احتياط للخروج من وضع التلفاز)
+// معرّف جهاز ثابت (لنظام التحقق — نفس فلسفة أندرويد)
+// v1.0.2: F11 = تبديل ملء الشاشة (احتياط للخروج من وضع التلفاز)
 try {
   win.webContents.on('before-input-event', (e, input) => {
     if (input && input.key === 'F11' && input.type === 'keyDown') {
@@ -51,13 +51,13 @@ try {
   });
 } catch (err) {}
 
-// 📺 v1.0.2: التحكم في ملء الشاشة عبر IPC (المشغل/الرندرر)
+// v1.0.2: التحكم في ملء الشاشة عبر IPC (المشغل/الرندرر)
 ipcMain.handle('set-fullscreen', (e, on) => { if (win) win.setFullScreen(!!on); });
 ipcMain.handle('is-fullscreen', () => !!(win && win.isFullScreen()));
-// ⏻ v1.0.2: خروج نظيف من نافذة التأكيد «هل تريد الخروج من التطبيق؟»
+// v1.0.2: خروج نظيف من نافذة التأكيد «هل تريد الخروج من التطبيق؟»
 ipcMain.handle('app-quit', () => app.quit());
 
-// 📋 v1.0: قراءة الحافظة — زر اللصق بلا Ctrl+V
+// v1.0: قراءة الحافظة — زر اللصق بلا Ctrl+V
 ipcMain.handle('clipboard-read', () => {
   try { return clipboard.readText() || ''; } catch { return ''; }
 });
@@ -83,7 +83,7 @@ ipcMain.handle('open-external', (e, url) => {
   if (typeof url === 'string' && /^https?:\/\//.test(url)) shell.openExternal(url);
 });
 
-// ═══ 💾 كاش القرص الدائم (الفئة تُحمَّل مرة واحدة وتبقى محفوظة) ═══
+// ═══ كاش القرص الدائم (الفئة تُحمَّل مرة واحدة وتبقى محفوظة) ═══
 ipcMain.handle('cache-get', (e, key) => {
   try {
     const f = cacheFile(key);
@@ -114,7 +114,7 @@ ipcMain.handle('cache-clear', () => {
   } catch (err) { return false; }
 });
 
-// ═══ 📱 v1.0.8: وصلات خادم الريموت ═══
+// ═══ v1.0.8: وصلات خادم الريموت ═══
 ipcMain.handle('remote-start', (e, cfg) => {
   try {
     const r = RemoteServer.start({ port: (cfg && cfg.port) || 37777, pin: (cfg && cfg.pin) || '', getWin: () => win, appVer: app.getVersion() });

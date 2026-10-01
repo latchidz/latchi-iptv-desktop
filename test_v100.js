@@ -111,7 +111,7 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   Player.fav();
   T('أُضيف للمفضلة (this.favs)', App.isFav(M));
   T('حُفظ في localStorage', JSON.parse(store['favs']).length === 1);
-  T('الزر تحول إلى ★', els['pFav'].textContent.includes('★'));
+  T('الزر تحول إلى أيقونة نجمة SVG', (els['pFav']._html || '').includes('data-ic="star"'));
   Player.fav();
   T('الضغط ثانية يزيله', !App.isFav(M) && App.favs.length === 0);
   Player.fav();                       // أعده للسيناريو 2
@@ -296,7 +296,7 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   await App.openList('live');
   App.startPlay(L1); await sleep(40);
   Player.onKey({ key: '3', preventDefault() {} });
-  T('الرقم يظهر في OSD', els['pNum'].classList.contains('on') && els['pNum'].textContent === '3');
+  T('الرقم يظهر في OSD', els['pNum'].classList.contains('on') && (els['pNum']._html || '') === '3');
   Player._commitNum();
   T('الانتقال للقناة رقم 3', Player.current && Player.current.id === M.id);
   Player.onKey({ key: '9', preventDefault() {} });
@@ -434,7 +434,7 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   App.src = { type: 'xtream', categories: { live: [], movie: [], series: [] }, account: { user_info: { username: 'iskander_pro' } } };
   App.user = { name: 'x' };
   App.show('home', true);
-  T('اسم المستخدم من الخادم في الهيدر', els['userChip'].textContent.includes('iskander_pro'));
+  T('اسم المستخدم من الخادم في الهيدر (أيقونة SVG + اسم)', (els['userChip']._html || '').includes('iskander_pro') && (els['userChip']._html || '').includes('svg'));
 
   // 🕌 مواقيت الصلاة: fetch وهمي (ipapi → aladhan) بنفس منطق أندرويد
   sandbox.atob = s => Buffer.from(s, 'base64').toString('utf8');
@@ -467,7 +467,7 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   App.src = { type: 'xtream', categories: { live: [], movie: [], series: [] }, live: [], movies: [], series: [] };
   els['video'].videoWidth = 1920; els['video'].videoHeight = 1080;
   App.startPlay(L1); await sleep(60);
-  T('EPG: عنوان البرنامج الحالي في شريط المعلومات', !els['pEpg'].classList.contains('hidden') && els['pEpg'].textContent.includes('مباراة ودية'));
+  T('EPG: عنوان البرنامج الحالي في شريط المعلومات', !els['pEpg'].classList.contains('hidden') && (els['pEpg']._html || '').includes('مباراة ودية'));
   T('العلامة المائية: LATCHI DZ + جودة FHD', els['pMark'] && els['pmQ'].textContent === 'FHD' && Player._markT);
   T('العلامة تتحرك بين الزاويتين (toggle)', (() => { els['pMark'].classList.toggle('swap'); const on = els['pMark'].classList.contains('swap'); els['pMark'].classList.toggle('swap'); return on; })());
   els['video'].videoWidth = 3840; els['video'].videoHeight = 2160;
@@ -568,10 +568,10 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   els['video'].duration = 7200; els['video'].currentTime = 0;
   App.startPlay(M); await sleep(40);
   Player.onKey({ key: '1', preventDefault() {} });
-  T('الوقت يُكتب على الشاشة أثناء الإدخال', els['pNum'].textContent.includes('00:00:01'));
+  T('الوقت يُكتب على الشاشة أثناء الإدخال', (els['pNum']._html || '').includes('00:00:01'));
   Player.onKey({ key: '0', preventDefault() {} });
   Player.onKey({ key: '0', preventDefault() {} });
-  T('الصيغة HH:MM:SS مع سهم القفز', els['pNum'].textContent.includes('⏩ 00:01:00'));
+  T('الصيغة HH:MM:SS مع أيقونة سهم SVG', (els['pNum']._html || '').includes('data-ic="chevR"') && (els['pNum']._html || '').includes('00:01:00'));
   await sleep(1250);   // مهلة 1.1ث كيما التلفاز
   T('«100» → قفز للدقيقة 1 تلقائياً', Math.abs(els['video'].currentTime - 60) < 1);
 
@@ -640,12 +640,60 @@ const App = vm.runInContext('App', sandbox), Player = vm.runInContext('Player', 
   T('Enter على حقل يُرسل للحقل نفسه (مستمعاته تعمل)', (els['searchInput']._events || []).filter(x => x === 'keydown').length >= 1);
   documentMock.activeElement = null;
 
+  const EMO_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{2049}\u{203C}]/u;
+  const srcR51 = fs.readFileSync('remote.js', 'utf8');
+  const srcA50 = fs.readFileSync('renderer/app.js', 'utf8');
+  // ═══ 15) ج51: البحث الشامل (زر الشريط + نتائج مصنفة + تشغيل فوري) ═══
+  console.log('═══ 15) ج51: البحث الشامل (داخلي + ريموت) ═══');
+  const S51 = { id: 'S9', name: 'مسلسل الصحراء', type: 'series', url: 'http://x/s.mp4', logo: '', group: 'دراما', seasons: [{ num: 1, episodes: [{ ep: 1, title: 'الحلقة 1', url: 'http://x/s1e1.mp4' }] }] };
+  App.src = { type: 'm3u', live: [L1, L2], movies: [M, M2], series: [S51] };
+  let gsPlayed = null, gsOpened = null;
+  const oldSP51 = App.startPlay, oldOD51 = App.openDetails;
+  App.startPlay = function (it) { gsPlayed = it; return oldSP51.call(this, it); };
+  App.openDetails = function (it) { gsOpened = it; };
+
+  const gs1 = await App.globalSearch('فيلم');
+  T('globalSearch يجد الأفلام (m3u)', Array.isArray(gs1) && gs1.some(r => r.id === 'M77' && r.type === 'movie'));
+  const gs2 = await App.globalSearch('قناة');
+  T('globalSearch يجد القنوات (مصنفة live)', gs2.length === 2 && gs2.every(r => r.type === 'live'));
+  T('globalSearch يقص/يتجاهل الفراغات والاستعلام الفارغ', (await App.globalSearch('  ')).length === 0);
+
+  const rs = await App.remoteSearch('مسلسل');
+  T('remoteSearch يرجع نتائج الريموت (بلا url مباشر)', rs.ok && rs.results.length === 1 && rs.results[0].name === 'مسلسل الصحراء' && !rs.results[0].url);
+  const rp1 = await App.remotePlay(rs.results[0]);
+  T('remotePlay للمسلسل يفتح شاشة المواسم (وليس المشغل)', rp1.ok && rp1.opened === 'details' && gsOpened && gsOpened.id === 'S9' && !gsPlayed);
+  const rs2 = await App.remoteSearch('فيلم تجريبي');
+  const rp2 = await App.remotePlay(rs2.results[0]);
+  T('remotePlay للفيلم يشغّله فوراً (ملء الشاشة)', rp2.ok && rp2.opened === 'player' && gsPlayed && gsPlayed.id === 'M77');
+
+  App.gsearchOpen2();
+  T('نافذة البحث الشامل تُبنى وتفتح', App.gsearchOpen() && App._gs.root.classList.contains('on'));
+  T('زر الشريط مربوط بالبحث (المصدر)', srcA50.includes("gsBtn.onclick = () => App.gsearchToggle()"));
+  App._gs.input.value = 'قناة';
+  App._gs.input.fire('input');
+  await sleep(420);   // debounce 260ms
+  T('الكتابة تعرض نتائجاً مصنفة (صفوف pitem)', (App._gs.body._html || '').includes('pitem') && (App._gs.body._html || '').includes('gsearch-sec'));
+  T('تصنيف الأقسام بلا أي إيموجي (أيقونات SVG)', (App._gs.body._html || '').includes('svg') && !EMO_RE.test(App._gs.body._html || ''));
+  T('الحقل مربوط بكيبورد الأسهم/Enter/Esc (ريموت + كيبورد)', (App._gs.input._h['keydown'] || []).length >= 1 && srcA50.includes("self._gsNav(e.key === 'ArrowDown' ? 1 : -1)"));
+  App._gsNav(1);   // لا يرمي خطأ حتى بلا صفوف
+  App.gsearchClose();
+  T('الإغلاق يخفي النافذة', !App.gsearchOpen() && App._gs.root.classList.contains('hidden'));
+  App.startPlay = oldSP51; App.openDetails = oldOD51;
+
+  // ═══ 16) ج51: صفر إيموجي في كل تطبيق الحاسوب (أيقونات متجهة فقط) ═══
+  console.log('═══ 16) ج51: صفر إيموجي بكل ملفات الحاسوب ═══');
+  for (const f of ['renderer/app.js', 'renderer/player.js', 'renderer/index.html', 'renderer/tv.css', 'main.js', 'remote.js', 'preload.js']) {
+    T('بلا إيموجي: ' + f, !EMO_RE.test(fs.readFileSync(f, 'utf8')));
+  }
+  T('remote.js يعرّف نفسه LATCHI PC من نوع pc', srcR51.includes("name: 'LATCHI PC', type: 'pc'") && srcR51.includes("ver: '1.0.9'"));
+  T('remote.js يقدم /search?q للريموت (عبر exec قابل للحقن)', srcR51.includes('/search') && srcR51.includes('remoteSearch') && srcR51.includes('this.exec = exec ||'));
+  T('remote.js يقدم POST /play للريموت', srcR51.includes('/play') && srcR51.includes('remotePlay'));
+
   // 9) فحوص المصدر: appVer للكشف عن النسخة القديمة + محدد الفأرة الموسع
   const srcR50 = fs.readFileSync('remote.js', 'utf8');
   const srcM50 = fs.readFileSync('main.js', 'utf8');
   T('remote.js يبلّغ appVer في /ping (كشف النسخة القديمة)', srcR50.includes('appVer: self.appVer || \'\''));
   T('main.js يمرر نسخة التطبيق app.getVersion()', srcM50.includes('appVer: app.getVersion()'));
-  const srcA50 = fs.readFileSync('renderer/app.js', 'utf8');
   T('الفأرة: التحويم يشمل صفوف القوائم والدليل وحقول الإدخال', srcA50.includes('button, input, textarea, [onclick]') && srcA50.includes('.pcat, .pitem, .chan, .ep, .gd-ep'));
 
   console.log(`\n═══ ${pass} نجح ✓ | ${fail} فشل ✗ ═══`);

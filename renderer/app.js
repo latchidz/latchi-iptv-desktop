@@ -1,4 +1,53 @@
-// ═══ 🧠 LATCHI IPTV Desktop v1.1 — العقل التطبيقي (تحميل كسوي + كاش دائم) ═══
+// ═══ LATCHI IPTV Desktop v1.1 — العقل التطبيقي (تحميل كسوي + كاش دائم) ═══
+
+// ═══ ج51: أيقونات متجهة موحدة (Material Design) — بلا أي إيموجي في الواجهة إطلاقاً ═══
+const SVGI = {
+  search: 'M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
+  live: 'M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zM9 10v8l7-4z',
+  movie: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z',
+  series: 'M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12V7l5.5 3.5L12 14z',
+  star: 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z',
+  starO: 'M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z',
+  user: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
+  mosque: 'M12 4c-1.2 0-2.3.6-3 1.5L7.1 4.6c-.5-.2-1.1.2-1.1.8V8H4v11h16V8h-2V5.4c0-.6-.6-1-1.1-.8L15 5.5C14.3 4.6 13.2 4 12 4zm-4 13H7v-4h1v4zm3 0h-1v-4h1v4zm3 0h-1v-4h1v4zm3 0h-1v-4h1v4z',
+  power: 'M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z',
+  play: 'M8 5v14l11-7z',
+  trash: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
+  chevL: 'M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z',
+  chevR: 'M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z',
+  clock: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm.5 11H11V7h1.5v4.5l3.9 2.3-.75 1.25-4.15-2.55z',
+  tv: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z',
+  pc: 'M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z',
+  home: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
+  gear: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+  key: 'M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
+  phone: 'M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 20h-4v-1h4v1zm3.25-3H6.75V4h10.5v14z',
+  link: 'M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z',
+  down: 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z',
+  warn: 'M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z',
+  check: 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z',
+  x: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+  doc: 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+  cal: 'M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z',
+  calk: 'M22 3h-4l-4 5-2-2.5L6 3H2l7 9-7 9h4l4.5-6L13 17.5 18 21h4l-7-9 7-9z',
+  copy: 'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z',
+  save: 'M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z',
+  wifi: 'M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z',
+  wave: 'M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z',
+  lock: 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z',
+  folder: 'M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z',
+  tag: 'M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z',
+  dots: 'M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z',
+  back: 'M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z',
+  refresh: 'M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-8 8s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z',
+  add: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
+  full: 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z',
+  mute: 'M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z'
+};
+function ic(n, sz) {
+  return '<svg class="ic" data-ic="' + n + '" width="' + (sz || 16) + '" height="' + (sz || 16) + '" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="' + (SVGI[n] || '') + '"/></svg>';
+}
+
 const App = {
   src: null,          // xtream: { type, categories, lazy } | m3u: { type, live[], movies[], series[] }
   user: null,         // { name, expires, code }
@@ -11,16 +60,16 @@ const App = {
   async boot() {
     Player.init();
     Player.hideCb = () => App.back();
-    // 📋 v1.0: زر اللصق المباشر (مفوَّض — يغطي كل الحقول حتى المولّدة ديناميكياً)
+    // v1.0: زر اللصق المباشر (مفوَّض — يغطي كل الحقول حتى المولّدة ديناميكياً)
     document.addEventListener('click', e => {
       const b = e.target && e.target.closest ? e.target.closest('.paste-btn[data-paste]') : null;
       if (b) this.pasteTo(b.dataset.paste, b);
     });
     this.clockTick(); setInterval(() => this.clockTick(), 1000);
-    // 📱 v1.0.8: ريموت الهاتف — استقبال الأوامر + تشغيل الخادم إن كان مفعّلاً + دفع الحالة كل ثانيتين
+    // v1.0.8: ريموت الهاتف — استقبال الأوامر + تشغيل الخادم إن كان مفعّلاً + دفع الحالة كل ثانيتين
     try {
       if (window.latchi && window.latchi.onRemoteKey) window.latchi.onRemoteKey(cmd => this.remoteApplyKey(cmd));
-      // 🎮 (طلب العميل): الخادم يعمل تلقائياً منذ الإقلاع — بلا رمز — يُعطَّل فقط من الإعدادات
+      // (طلب العميل): الخادم يعمل تلقائياً منذ الإقلاع — بلا رمز — يُعطَّل فقط من الإعدادات
       if (localStorage.getItem('remote_on') !== '0') this.remoteServerStart(true);
       setInterval(() => this.remotePush(), 2000);
     } catch (e) {}
@@ -28,8 +77,8 @@ const App = {
     const saved = localStorage.getItem('source_url');
     if (saved) {
       this.show('verify', true);
-      document.getElementById('verifyMsg').textContent = '⏳ استئناف الحساب المحفوظ...';
-      this.showChecking();                    // ⏳ v1.0.1: فن «جاري التحقق» أثناء الاستئناف
+      document.getElementById('verifyMsg').textContent = 'استئناف الحساب المحفوظ...';
+      this.showChecking();                    // v1.0.1: فن «جاري التحقق» أثناء الاستئناف
       try {
         await this.loadSource(saved, true, null, { welcome: true });
         this.hideChecking();
@@ -41,13 +90,13 @@ const App = {
 
   clockTick() {
     const el = document.getElementById('clock');
-    // ⏱ v1.0.3: الساعة تمشي بالثواني كيما التلفاز
+    // v1.0.3: الساعة تمشي بالثواني كيما التلفاز
     if (el) el.textContent = new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     this.expTick();
-    this.updatePrayerChip();     // 🕌 v1.0.6: الصلاة القادمة (حساب محلي خفيف من الكاش)
+    this.updatePrayerChip();     // v1.0.6: الصلاة القادمة (حساب محلي خفيف من الكاش)
   },
 
-  // ═══ 🕌 v1.0.6: مواقيت الصلاة بالموقع الجغرافي (نفس منطق تلفاز/هاتف أندرويد) ═══
+  // ═══ v1.0.6: مواقيت الصلاة بالموقع الجغرافي (نفس منطق تلفاز/هاتف أندرويد) ═══
   // ipapi.co (IP) → api.aladhan.com (method=3) — كاش يومي كامل: صفر بطء على الواجهة
   async initPrayer() {
     if (this._prayerBusy) return;
@@ -97,11 +146,11 @@ const App = {
     }
     if (!next) next = { name: 'الفجر', time: (c.timings.Fajr || '').slice(0, 5) };   // بعد العشاء → فجر الغد
     txt.textContent = next.name + ' ' + next.time;
-    chip.title = '🕌 مواقيت الصلاة — ' + (c.region || '') + (best < Infinity ? ' · الصلاة القادمة بعد ' + best + ' دقيقة' : '');
+    chip.title = 'مواقيت الصلاة — ' + (c.region || '') + (best < Infinity ? ' · الصلاة القادمة بعد ' + best + ' دقيقة' : '');
     chip.classList.remove('hidden');
   },
 
-  // 📅 v1.0.3: سطر تاريخ انتهاء الصلاحية تحت الساعة — الحقيقي من الكود، أو المُدخل يدوياً مع رابط M3U
+  // v1.0.3: سطر تاريخ انتهاء الصلاحية تحت الساعة — الحقيقي من الكود، أو المُدخل يدوياً مع رابط M3U
   expTick() {
     const el = document.getElementById('expLine');
     if (!el) return;
@@ -122,16 +171,16 @@ const App = {
     if (!ts) return { text: 'غير محددة المدة', cls: 'gray' };
     const dstr = new Date(ts).toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' });
     const days = Math.ceil((ts - Date.now()) / 86400000);
-    if (days < 0) return { text: '⛔ منتهية — ' + dstr, cls: 'red' };
-    if (days <= 7) return { text: '⏳ تنتهي ' + dstr + ' · باقي ' + days + ' يوم', cls: 'orange' };
-    return { text: '📅 تنتهي ' + dstr + ' · باقي ' + days + ' يوم', cls: 'green' };
+    if (days < 0) return { text: 'منتهية — ' + dstr, cls: 'red' };
+    if (days <= 7) return { text: 'تنتهي ' + dstr + ' · باقي ' + days + ' يوم', cls: 'orange' };
+    return { text: 'تنتهي ' + dstr + ' · باقي ' + days + ' يوم', cls: 'green' };
   },
 
   // ═══ الشاشات ═══
-  // ═══ 📱 v1.0.8: ريموت الهاتف ═══
+  // ═══ v1.0.8: ريموت الهاتف ═══
   async remoteServerStart(silent) {
     try {
-      // 🎮 (طلب العميل): بلا رمز إطلاقاً — أي هاتف على نفس الواي فاي ينقر الحاسوب فيتصل مباشرة
+      // (طلب العميل): بلا رمز إطلاقاً — أي هاتف على نفس الواي فاي ينقر الحاسوب فيتصل مباشرة
       this._remoteInfo = await window.latchi.remoteStart({ port: 37777, pin: '' });
     } catch (e) { this._remoteInfo = { ok: false }; }
     if (!silent) { this.buildSettings(); this.focusFirst('settings'); }
@@ -158,7 +207,7 @@ const App = {
       if (!cmd) return;
       if (cmd.key) {
         const k = String(cmd.key);
-        // ⌨ ج50: كيبورد الريموت — الحرف القابل للطباعة يُدرج مباشرة في الحقل المركّز (البحث...)
+        // ج50: كيبورد الريموت — الحرف القابل للطباعة يُدرج مباشرة في الحقل المركّز (البحث...)
         // (حدث الكيبورد الاصطناعي وحده لا يكتب في الحقول — الإدراج الصريح + حدث input يشغّل البحث فوراً)
         const ae = (document.activeElement && document.activeElement.tagName) ? document.activeElement : null;
         const isField = !!(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA') && !ae.readOnly && !ae.disabled);
@@ -199,13 +248,22 @@ const App = {
         const mv = document.getElementById('miniVid'); if (mv) mv.muted = !mv.muted;
         this.remotePush();
       } else if (cmd.action === 'mouse') {
-        // 🖱 ج48 (لوحة اللمس في الريموت): تحريك/نقر/تمرير حقيقي داخل التطبيق
+        // ج48 (لوحة اللمس في الريموت): تحريك/نقر/تمرير حقيقي داخل التطبيق
         this._remoteMouse(cmd);
+      } else if (cmd.action === 'search') {
+        // ج51: الريموت يطلب فتح البحث الشامل على الحاسوب
+        this.show('player', true);
+        this.gsearchOpen2();
+        this.remotePush();
+      } else if (cmd.action === 'play' && cmd.item) {
+        // ج51: الريموت شغّل نتيجة بحث — تبديل فوري لما يعرضه الحاسوب
+        this.remotePlay(cmd.item);
+        this.remotePush();
       }
     } catch (e) {}
   },
 
-  // ═══ 🖱 ج48: مؤشر افتراضي من لوحة لمس الهاتف — حركة + نقر + تمرير حقيقي ═══
+  // ═══ ج48: مؤشر افتراضي من لوحة لمس الهاتف — حركة + نقر + تمرير حقيقي ═══
   _mouseEnsure() {
     if (!this._mcur) {
       const d = document.createElement('div');
@@ -255,14 +313,14 @@ const App = {
   },
 
   show(name, resetStack = false) {
-    // 🎬 v1.0.7: مغادرة شاشة القائمة (لغير المشغل) = إيقاف المشغل المصغر
+    // v1.0.7: مغادرة شاشة القائمة (لغير المشغل) = إيقاف المشغل المصغر
     if (this.screen === 'list' && name !== 'list' && name !== 'player') this.miniStop();
-    // 🎬 v1.0.0: مغادرة شاشة المشغل (لغيرها) أثناء التكبير السلس = أعد العنصر لمكانه بهدوء
+    // v1.0.0: مغادرة شاشة المشغل (لغيرها) أثناء التكبير السلس = أعد العنصر لمكانه بهدوء
     if (this.screen === 'player' && name !== 'player' && typeof Player !== 'undefined' && Player._miniFs) {
       try { Player.exitMiniFs(); } catch (e) {}
       this._miniFsReturn = false;
     }
-    // 🎯 v1.0.4: احفظ موضع الفوكيز عند مغادرة الشاشة — الرجوع من التفاصيل يرجعك لنفس البوستر بالضبط
+    // v1.0.4: احفظ موضع الفوكيز عند مغادرة الشاشة — الرجوع من التفاصيل يرجعك لنفس البوستر بالضبط
     if (this.screen && this.screen !== name) {
       try {
         const le = document.getElementById(this.screen);
@@ -275,7 +333,7 @@ const App = {
     document.getElementById(name).classList.add('active');
     this.screen = name;
     this.onShown(name);
-    this.remotePush();     // 📱 v1.0.8
+    this.remotePush();     // v1.0.8
   },
 
   push(name) {
@@ -283,13 +341,13 @@ const App = {
     this.show(name);
   },
   back() {
-    // 🛠 v1.1.1: كان close() يستدعي back() الذي يستدعي close() → انفجار المكدس والشاشة تعلق
+    // v1.1.1: كان close() يستدعي back() الذي يستدعي close() → انفجار المكدس والشاشة تعلق
     if (this.screen === 'player') {
       Player.hideCb = null;              // أوقف الاستدعاء العكسي قبل التنظيف
       Player.close();
       const prev = this.navStack.pop();
       if (prev) this.show(prev); else this.show('home', true);
-      // 🎬 v1.0.0: خروج ملء الشاشة → عودة للواجهة المقسمة.
+      // v1.0.0: خروج ملء الشاشة → عودة للواجهة المقسمة.
       // من التكبير السلس: البث نفسه مستمر في المصغر (لا إعادة تحميل إطلاقاً) —
       // غير ذلك: المصغر يستأنف نفس العنصر (سلوك v1.0.7).
       if (prev === 'list' && this._miniItem && this.listCtx && !this.listCtx.loading) {
@@ -302,25 +360,25 @@ const App = {
     if (prev) this.show(prev); else this.show('home', true);
   },
 
-  // ═══ ⏳ v1.0.1: غطاء «جاري التحقق من الاشتراك» ═══
+  // ═══ v1.0.1: غطاء «جاري التحقق من الاشتراك» ═══
   showChecking() { const o = document.getElementById('checkingOv'); if (o) o.classList.remove('hidden'); },
   hideChecking() { const o = document.getElementById('checkingOv'); if (o) o.classList.add('hidden'); },
 
-  // ═══ 👋 v1.0.1: شاشة الترحيب «مرحبا بك في عائلة لاتشي» بعد كل دخول ناجح ═══
+  // ═══ v1.0.1: شاشة الترحيب «مرحبا بك في عائلة لاتشي» بعد كل دخول ناجح ═══
   showWelcome() {
     clearTimeout(this._welcomeTimer);
     this.show('welcome', true);
     this._welcomeTimer = setTimeout(() => { if (this.screen === 'welcome') this.show('home', true); }, 2600);
   },
 
-  // ═══ 🗑 v1.0.7: حذف جميع الحسابات — إعادة ضبط المصنع (تأكيد بالأسهم كيما الخروج) ═══
+  // ═══ v1.0.7: حذف جميع الحسابات — إعادة ضبط المصنع (تأكيد بالأسهم كيما الخروج) ═══
   showWipeDlg() {
     const d = document.getElementById('exitDlg');
     if (!d) return;
     // نعيد استعمال نافذة التأكيد بنص الحذف
     const q = d.querySelector('.exit-q'), ok = document.getElementById('exitOk');
-    if (q) q.textContent = '⚠️ حذف جميع الحسابات والمفضلة نهائياً؟';
-    if (ok) { ok.classList.add('exit-ok'); ok.textContent = '🗑 نعم، احذف كل شيء'; }
+    if (q) q.textContent = 'حذف جميع الحسابات والمفضلة نهائياً؟';
+    if (ok) { ok.classList.add('exit-ok'); ok.textContent = 'نعم، احذف كل شيء'; }
     this._exitAction = 'wipe';
     this.showExitDlg();
   },
@@ -341,12 +399,12 @@ const App = {
       try { if (window.latchi && window.latchi.cacheClear) window.latchi.cacheClear(); } catch (e3) {}   // كاش القرص كذلك
     } catch (e) {}
     this.show('verify', true);
-    this.hideExitDlg();   // 🛠 ج50: إخفاء نافذة التأكيد بعد الحذف — كانت تبقى معلّقة فوق شاشة الدخول
+    this.hideExitDlg();   // ج50: إخفاء نافذة التأكيد بعد الحذف — كانت تبقى معلّقة فوق شاشة الدخول
     const v = document.getElementById('verifyMsg');
     if (v) { v.className = 'verify-msg'; v.textContent = 'تم مسح جميع البيانات — أدخل كوداً أو رابطاً للبدء من جديد'; }
   },
 
-  // ═══ ⏻ v1.0.2: نافذة تأكيد الخروج «كيما التلفاز» — أسهم + Enter ═══
+  // ═══ v1.0.2: نافذة تأكيد الخروج «كيما التلفاز» — أسهم + Enter ═══
   exitDlgOpen() { const d = document.getElementById('exitDlg'); return !!(d && !d.classList.contains('hidden')); },
   showExitDlg() {
     const d = document.getElementById('exitDlg');
@@ -361,7 +419,7 @@ const App = {
       d.classList.add('hidden');
       const q = d.querySelector('.exit-q'), ok = document.getElementById('exitOk');
       if (q) q.textContent = 'هل تريد الخروج من التطبيق؟';
-      if (ok) ok.textContent = '✓ نعم، خروج';
+      if (ok) ok.textContent = 'نعم، خروج';
       this._exitAction = null;
     }
   },
@@ -393,7 +451,7 @@ const App = {
   focusFirst(name) {
     const root = document.getElementById(name);
     document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
-    // 🎯 v1.0.4: الرجوع لشاشة سابقة؟ الفوكيز يرجع لنفس العنصر المحفوظ (إن كان ما يزال في الصفحة)
+    // v1.0.4: الرجوع لشاشة سابقة؟ الفوكيز يرجع لنفس العنصر المحفوظ (إن كان ما يزال في الصفحة)
     const mem = (this._focusMem || {})[name];
     if (mem) {
       let alive = false;
@@ -413,39 +471,39 @@ const App = {
   async applyCode(code, msgEl) {
     msgEl.className = 'verify-msg';
     if (!code) { msgEl.textContent = 'أدخل الكود أولاً'; msgEl.classList.add('err'); return false; }
-    msgEl.textContent = '⏳ جارٍ التحقق...';
-    this.showChecking();                      // ⏳ v1.0.1
+    msgEl.textContent = 'جارٍ التحقق...';
+    this.showChecking();                      // v1.0.1
     try {
       const deviceId = await window.latchi.deviceId();
       const res = await LatchiAPI.verifyCode(code, deviceId);
-      if (!res.ok) { msgEl.textContent = '✗ ' + res.message; msgEl.classList.add('err'); return false; }
-      if (!res.url) { msgEl.textContent = '✗ لا توجد قائمة مرتبطة بهذا الكود'; msgEl.classList.add('err'); return false; }
-      msgEl.textContent = '✓ ' + res.name + ' — فتح القائمة...';
+      if (!res.ok) { msgEl.textContent =  res.message; msgEl.classList.add('err'); return false; }
+      if (!res.url) { msgEl.textContent = 'لا توجد قائمة مرتبطة بهذا الكود'; msgEl.classList.add('err'); return false; }
+      msgEl.textContent = res.name + ' — فتح القائمة...';
       msgEl.classList.add('ok');
       this.user = { name: res.name, expires: res.expires, code };
       this.rememberAccount('code', res.name + ' (' + code + ')', res.url);
       await this.loadSource(res.url, false, res.url, { welcome: true });
       return true;
     } catch (e) {
-      msgEl.textContent = '✗ خطأ في الاتصال: ' + e.message; msgEl.classList.add('err'); return false;
+      msgEl.textContent = 'خطأ في الاتصال: ' + e.message; msgEl.classList.add('err'); return false;
     } finally { this.hideChecking(); }
   },
 
   async applyM3u(url, msgEl, expDate) {
     msgEl.className = 'verify-msg';
     if (!/^https?:\/\//.test(url)) { msgEl.textContent = 'أدخل رابط M3U صحيحاً يبدأ بـ http'; msgEl.classList.add('err'); return false; }
-    msgEl.textContent = '⏳ تحميل القائمة (المرة الأولى فقط — ثم تبقى محفوظة)...';
-    // 📅 v1.0.3: تاريخ الصلاحية المُدخل يدوياً مع الرابط (يظهر تحت الساعة وفي مركز الحسابات)
+    msgEl.textContent = 'تحميل القائمة (المرة الأولى فقط — ثم تبقى محفوظة)...';
+    // v1.0.3: تاريخ الصلاحية المُدخل يدوياً مع الرابط (يظهر تحت الساعة وفي مركز الحسابات)
     const expTxt = expDate ? new Date(expDate + 'T12:00:00').toLocaleDateString('ar-DZ', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
     this.user = { name: 'M3U مباشر', expires: expTxt, code: '', expDate: expDate || '' };
-    this.showChecking();                      // ⏳ v1.0.1
+    this.showChecking();                      // v1.0.1
     try {
       await this.loadSource(url, false, url, { welcome: true });
       let host = url; try { host = new URL(url).hostname; } catch (e) {}
       this.rememberAccount('m3u', 'M3U — ' + host, url, expDate || '');
       return true;
     } catch (e) {
-      msgEl.textContent = '✗ ' + e.message; msgEl.classList.add('err'); return false;
+      msgEl.textContent =  e.message; msgEl.classList.add('err'); return false;
     } finally { this.hideChecking(); }
   },
 
@@ -465,7 +523,7 @@ const App = {
       if (empty) throw new Error('القائمة فارغة أو غير صالحة');
       this.src = src;
       if (saveUrl) localStorage.setItem('source_url', saveUrl);
-      // 👋 v1.0.1: «مرحبا بك في عائلة لاتشي» بعد الدخول — ثم الرئيسية
+      // v1.0.1: «مرحبا بك في عائلة لاتشي» بعد الدخول — ثم الرئيسية
       if (opts.welcome) this.showWelcome(); else this.show('home', true);
     } catch (e) {
       if (!silent) throw e;
@@ -476,17 +534,17 @@ const App = {
 
   // ═══ الرئيسية ═══
   buildHome() {
-    // 👤 v1.0.6: اسم المستخدم الحقيقي من الخادم في الهيدر
+    // v1.0.6: اسم المستخدم الحقيقي من الخادم في الهيدر
     const uc = document.getElementById('userChip');
     if (uc) {
       const un = (this.src && this.src.account && this.src.account.user_info && this.src.account.user_info.username)
         || (this.user && this.user.name) || '';
-      uc.textContent = un ? '👤 ' + un : '👤';
+      uc.innerHTML = un ? (ic('user', 15) + ' ' + un) : ic('user', 15);
       uc.title = un || '';
     }
     const s = this.src ? LatchiAPI.stats(this.src) : { live: 0, movies: 0, series: 0, unit: 'فئة' };
     const u = s.unit || '';
-    // 🚀 v1.0.2: Royal Grid — نفس ترتيب تلفاز LATCHI (4 فوق / 4 تحت)
+    // v1.0.2: Royal Grid — نفس ترتيب تلفاز LATCHI (4 فوق / 4 تحت)
     const cards = [
       { img: 'tv_card_live', t: 'البث المباشر', c: s.live + ' ' + (u || 'قناة'), go: () => this.openList('live') },
       { img: 'tv_card_films', t: 'الأفلام', c: s.movies + ' ' + (u || 'فيلم'), go: () => this.openList('movies') },
@@ -502,7 +560,7 @@ const App = {
     cards.forEach(c => {
       const d = document.createElement('div');
       d.className = 'tcard';
-      // 📺 v1.0.2: صورة خالصة 100% كتلفاز LATCHI (الفن يحمل الأيقونة والعنوان) — بلا أي طبقة نص
+      // v1.0.2: صورة خالصة 100% كتلفاز LATCHI (الفن يحمل الأيقونة والعنوان) — بلا أي طبقة نص
       d.title = `${c.t} — ${c.c}`;
       d.innerHTML = `<img class="tcard-img" src="../assets/${c.img}.webp" alt="${c.t}" onerror="this.style.display='none'">`;
       d.onclick = () => c.go();
@@ -510,7 +568,7 @@ const App = {
     });
   },
 
-  // ═══ 🌌 v1.0: خلفيات الرئيسية المتغيرة (فن التلفاز — 10 خلفيات، تبديل ناعم كل 25ث) ═══
+  // ═══ v1.0: خلفيات الرئيسية المتغيرة (فن التلفاز — 10 خلفيات، تبديل ناعم كل 25ث) ═══
   startHomeBgs() {
     const host = document.getElementById('homeBgs');
     if (!host) return;
@@ -533,7 +591,7 @@ const App = {
     }, 25000);
   },
 
-  // ═══ 📋 v1.0: اللصق من الحافظة بضغطة زر (بلا Ctrl+V) ═══
+  // ═══ v1.0: اللصق من الحافظة بضغطة زر (بلا Ctrl+V) ═══
   async pasteTo(inputId, btn) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -552,7 +610,7 @@ const App = {
     }
   },
 
-  // ═══ 🎬 v1.0.7: المشغل المصغر (العمود الثالث) — يشتغل فور اختيار العنصر ═══
+  // ═══ v1.0.7: المشغل المصغر (العمود الثالث) — يشتغل فور اختيار العنصر ═══
   miniPlay(item) {
     const v = document.getElementById('miniVid');
     if (!v) return;
@@ -586,7 +644,7 @@ const App = {
     const ld = document.getElementById('miniLoad');
     if (ld) ld.classList.add('hidden');
   },
-  // 🎬 v1.0.0 (طلب العميل): التكبير من المصغر = نفس البث يستمر مباشرة — بلا أي إعادة تحميل.
+  // v1.0.0 (طلب العميل): التكبير من المصغر = نفس البث يستمر مباشرة — بلا أي إعادة تحميل.
   // ننقل نفس عنصر الفيديو إلى شاشة المشغل (البث لم يتوقف) وكل أزرار المشغل تعمل عليه.
   miniFull() {
     const it = this._miniItem;
@@ -617,7 +675,7 @@ const App = {
     const el = document.getElementById('miniInfo');
     if (!el) return;
     const it = this.listCtx && this.listCtx.selected;
-    if (!it) { el.innerHTML = '<div class="mini-empty">👋 اختر قناة أو فيلماً من القائمة ليعمل هنا فوراً</div>'; return; }
+    if (!it) { el.innerHTML = '<div class="mini-empty">اختر قناة أو فيلماً من القائمة ليعمل هنا فوراً</div>'; return; }
     const isX = this.src && this.src.type === 'xtream';
     const live = it.type === 'live', movie = it.type === 'movie', series = it.type === 'series';
     const poster = it.logo ? `<img class="mini-poster" src="${esc(it.logo)}" onerror="this.style.display='none'">` : '';
@@ -625,15 +683,15 @@ const App = {
       <div class="mini-head">${poster}
         <div class="mini-meta">
           <div class="mini-name">${esc(it.name || '')}</div>
-          <div class="mini-sub">${live ? '● بث مباشر' : series ? '🎬 مسلسل' : '🎞 فيلم'} ${it.group ? ' · ' + esc(it.group) : ''}</div>
+          <div class="mini-sub">${live ? '● بث مباشر' : series ? ic('series', 13) + ' مسلسل' : ic('movie', 13) + ' فيلم'} ${it.group ? ' · ' + esc(it.group) : ''}</div>
           <div class="mini-epg hidden" id="miniEpg"></div>
         </div>
       </div>
-      ${series ? '<button class="gold-btn" id="miniEpsBtn" style="width:100%">🎬 عرض المواسم والحلقات</button>' : ''}
+      ${series ? '<button class="gold-btn" id="miniEpsBtn" style="width:100%">' + ic('series', 14) + ' عرض المواسم والحلقات</button>' : ''}
       <div class="mini-desc" id="miniDesc">${live || series ? '' : '<span class="mini-desc-wait">…</span>'}</div>
       <div class="mini-btns">
-        ${!series ? '<button class="p-btn mini-go" id="miniGoBtn">⛶ شاهد بملء الشاشة</button>' : ''}
-        <button class="p-btn" id="miniFavBtn">${this.isFav(it) ? '★ في المفضلة' : '☆ أضف للمفضلة'}</button>
+        ${!series ? '<button class="p-btn mini-go" id="miniGoBtn">' + ic('play', 13) + ' شاهد بملء الشاشة</button>' : ''}
+        <button class="p-btn" id="miniFavBtn">${this.isFav(it) ? ic('star', 13) + ' في المفضلة' : ic('starO', 13) + ' أضف للمفضلة'}</button>
       </div>`;
     const go = document.getElementById('miniGoBtn');
     if (go) go.onclick = () => this.miniFull();
@@ -646,7 +704,7 @@ const App = {
       LatchiAPI.shortEpg(it.id).then(epg => {
         const e2 = document.getElementById('miniEpg');
         if (e2 && epg && epg.title && this.listCtx && this.listCtx.selected === it) {
-          e2.textContent = '📺 ' + epg.title + (epg.time ? ' · ' + epg.time : '');
+          e2.innerHTML = ic('tv', 12) + ' ' + esc(epg.title) + (epg.time ? ' · ' + esc(epg.time) : '');
           e2.classList.remove('hidden');
         }
       }).catch(() => {});
@@ -749,7 +807,7 @@ const App = {
   },
 
   buildList() {
-    // ═══ 🎬 v1.0.7: الواجهة الثلاثية — فئات (يمين) | عناصر (وسط) | مشغل مصغر + تفاصيل (يسار) ═══
+    // ═══ v1.0.7: الواجهة الثلاثية — فئات (يمين) | عناصر (وسط) | مشغل مصغر + تفاصيل (يسار) ═══
     const ctx = this.listCtx || {};
     const { kind, items } = ctx;
     const paneCats = document.getElementById('paneCats');
@@ -770,20 +828,20 @@ const App = {
     } else if (this.src && this.src.type === 'm3u' && Array.isArray(items)) {
       const groups = [...new Set(items.map(i => i.group || 'عام'))];
       const ranked = LatchiAPI.orderCategories(groups.map(g => ({ id: g, name: g }))).map(c => c.name);
-      mkCat('🏷 الكل', 'الكل', () => { this.listCtx.cat = 'الكل'; this.buildList(); });
+      mkCat(ic('tag', 12) + ' الكل', 'الكل', () => { this.listCtx.cat = 'الكل'; this.buildList(); });
       ranked.forEach(g => mkCat(g, g, () => { this.listCtx.cat = g; this.buildList(); }));
     } else {
-      mkCat('🏷 ' + (ctx.title || 'القائمة'), 'الكل', null);
+      mkCat(ic('tag', 12) + ' ' + (ctx.title || 'القائمة'), 'الكل', null);
     }
     // ── العمود 2: العناصر (40%) ──
     const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
     let shown = Array.isArray(items) ? items.filter(i =>
       (ctx.cat === 'الكل' || !ctx.cat || (i.group || 'عام') === ctx.cat) &&
       (!q || (i.name || '').toLowerCase().includes(q))) : [];
-    this._zapList = shown;   // 📺 قائمة التنقل بالريموت داخل المشغل
+    this._zapList = shown;   // قائمة التنقل بالريموت داخل المشغل
     paneItems.innerHTML = '';
     if (ctx.loading) {
-      paneItems.innerHTML = '<div class="load-hint">⏳ جارٍ فتح الفئة... <span class="hint-sub">(المرة الأولى فقط — بعدها تبقى محفوظة)</span></div>';
+      paneItems.innerHTML = '<div class="load-hint">جارٍ فتح الفئة... <span class="hint-sub">(المرة الأولى فقط — بعدها تبقى محفوظة)</span></div>';
       this.focusFirst('list');
       return;
     }
@@ -804,7 +862,7 @@ const App = {
       d.onclick = () => self.selectItem(it);
       return d;
     };
-    // 🎯 رسم على دفعات (حماية الحاسوب الضعيف مهما طالت القائمة)
+    // رسم على دفعات (حماية الحاسوب الضعيف مهما طالت القائمة)
     const BATCH = 60;
     (function renderChunk(i) {
       const end = Math.min(i + BATCH, shown.length);
@@ -821,9 +879,9 @@ const App = {
   posterCard(it) {
     const w = document.createElement('div'); w.className = 'pwrap';
     const d = document.createElement('div'); d.className = 'pcard';
-    const fav = this.isFav(it) ? '<span class="fav-star">★</span>' : '';
+    const fav = this.isFav(it) ? '<span class="fav-star">' + ic('star', 12) + '</span>' : '';
     const prog = it._resume ? `<div style="text-align:center;color:#7CE38B;font-size:10.5px;margin-top:2px">▶ ${fmt(it._resume)} / ${fmt(it._dur)}</div>` : '';
-    d.innerHTML = `${fav}<img loading="lazy" decoding="async" src="${it.logo || ''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22190%22%3E%3Crect fill=%22%230A0E22%22 width=%22320%22 height=%22190%22%3E%3Ctext x=%22160%22 y=%22110%22 fill=%22%23D9A94E%22 font-size=%2252%22 text-anchor=%22middle%22%3E🎬%3C/text%3E%3C/svg%3E'">
+    d.innerHTML = `${fav}<img loading="lazy" decoding="async" src="${it.logo || ''}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22190%22%3E%3Crect fill=%22%230A0E22%22 width=%22320%22 height=%22190%22%3E%3Ctext x=%22160%22 y=%22110%22 fill=%22%23D9A94E%22 font-size=%2252%22 text-anchor=%22middle%22%3E%3C/text%3E%3C/svg%3E'">
       <div class="pt">${esc(it.name)}</div>${prog}<div class="pc"><span>${esc(it.group || '')}</span></div>`;
     d.onclick = () => this.openDetails(it);
     w.appendChild(d);
@@ -836,7 +894,7 @@ const App = {
     const live = it.type === 'live';
     d.innerHTML = `<img loading="lazy" decoding="async" src="${it.logo || ''}" onerror="this.style.visibility='hidden'">
       <div><div class="n">${esc(it.name)}</div><div class="g">${esc(it.group || '')}</div></div>
-      <div class="now">${live ? '<span class="rec-dot">●</span> مباشر' : '🎬'}</div>`;
+      <div class="now">${live ? '<span class="rec-dot">●</span> مباشر' : ic('movie', 13)}</div>`;
     d.onclick = () => {
       if (it.type === 'series') this.openDetails(it);
       else this.startPlay(it);
@@ -847,7 +905,7 @@ const App = {
   // ═══ التفاصيل ═══
   async openDetails(it) {
     const body = document.getElementById('detailsBody');
-    body.innerHTML = '<div class="load-hint">⏳ تحميل التفاصيل...</div>';
+    body.innerHTML = '<div class="load-hint">تحميل التفاصيل...</div>';
     this.push('details');
     let seasons = [];
     if (it.type === 'series' && it.seriesId) {
@@ -865,15 +923,15 @@ const App = {
         it.plot = it.plot || info.plot || '';
       } catch (e) {}
     }
-    const btnFav = this.isFav(it) ? '★ في المفضلة' : '☆ إضافة للمفضلة';
-    // 📺 v1.1.2: قائمة التنقل بين الحلقات بالريموت — نفس معرفات النقر حرفياً (حفظ متابعة المشاهدة)
+    const btnFav = this.isFav(it) ? ic('star', 13) + ' في المفضلة' : ic('starO', 13) + ' إضافة للمفضلة';
+    // v1.1.2: قائمة التنقل بين الحلقات بالريموت — نفس معرفات النقر حرفياً (حفظ متابعة المشاهدة)
     if (it.type === 'series') this._zapList = seasons.flatMap(s => s.episodes)
       .map((e, i) => ({ id: 'S' + it.seriesId + '_' + i, name: e.name, url: e.url, type: 'movie', logo: it.logo, group: it.name }));
     body.innerHTML = `
       <div class="d-poster"><img src="${it.logo || ''}" onerror="this.style.display='none'"></div>
       <div class="d-info">
         <div class="d-title">${esc(it.name)}</div>
-        <div class="d-meta">${esc(it.group || '')}${it.rating ? ' • ⭐ ' + esc(String(it.rating)) : ''}${this.user?.expires ? ' • صالح حتى: ' + esc(this.user.expires) : ''}</div>
+        <div class="d-meta">${esc(it.group || '')}${it.rating ? ' • ' + ic('star', 11) + ' ' + esc(String(it.rating)) : ''}${this.user?.expires ? ' • صالح حتى: ' + esc(this.user.expires) : ''}</div>
         <div class="d-desc">${esc((it.plot || '').slice(0, 600) || 'لا يوجد وصف متاح لهذا المحتوى.')}</div>
         <div class="d-actions">
           ${it.type === 'series' ? '' : `<button class="gold-btn play-btn" id="dPlay">▶ تشغيل</button>`}
@@ -881,7 +939,7 @@ const App = {
         </div>
         ${seasons.map(s => `
           <div class="seasons">
-            <div class="season-title">🎬 الموسم ${esc(String(s.num))} <span style="color:#8A90B8;font-size:13px">(${s.episodes.length} حلقة)</span></div>
+            <div class="season-title">${ic('series', 13)} الموسم ${esc(String(s.num))} <span style="color:#8A90B8;font-size:13px">(${s.episodes.length} حلقة)</span></div>
             <div class="eps-lane">
               ${s.episodes.map(e => `<div class="ep" data-url="${esc(e.url)}" data-name="${esc(e.name)}">
                 <div class="en">▶ ${esc(String(e.episodeNum || ''))}</div>
@@ -896,7 +954,7 @@ const App = {
     if (play) play.onclick = () => this.startPlay(it);
     document.getElementById('dFav').onclick = () => {
       this.toggleFav(it);
-      document.getElementById('dFav').textContent = this.isFav(it) ? '★ في المفضلة' : '☆ إضافة للمفضلة';
+      document.getElementById('dFav').innerHTML = this.isFav(it) ? ic('star', 13) + ' في المفضلة' : ic('starO', 13) + ' إضافة للمفضلة';
     };
     body.querySelectorAll('.ep').forEach((el, i) => {
       el.onclick = () => this.startPlay(this._zapList ? this._zapList[i] : { id: 'S' + it.seriesId + '_' + i, name: el.dataset.name, url: el.dataset.url, type: 'movie', logo: it.logo, group: it.name });
@@ -904,7 +962,209 @@ const App = {
     this.focusFirst('details');
   },
 
-  // ═══ 📺 ج50: دليل القنوات والفئات داخل المشغل (زر OK/Enter) — كيما واجهة القائمة تماماً ═══
+  // ═══ ج51: البحث الشامل — قنوات وأفلام ومسلسلات في كل المحتوى دفعة واحدة ═══
+// زر في الشريط العلوي + متاح للريموت (remoteSearch/remotePlay) — النتيجة تشتغل فوراً بملء الشاشة.
+gsearchOpen() { return !!(this._gs && this._gs.root && this._gs.root.classList.contains('on')); },
+gsearchToggle() { this.gsearchOpen() ? this.gsearchClose() : this.gsearchOpen2(); },
+gsearchOpen2() {
+  if (!this.src) return;
+  if (!this._gs) this._gsBuild();
+  const g = this._gs;
+  g.root.classList.remove('hidden');
+  g.root.classList.add('on');
+  g.input.value = '';
+  g.body.innerHTML = '<div class="gsearch-hint">اكتب اسم قناة أو فيلم أو مسلسل — النتائج من كل المحتوى</div>';
+  try { g.input.focus(); } catch (e) {}
+},
+gsearchClose() {
+  const g = this._gs; if (!g) return;
+  g.root.classList.add('hidden');
+  g.root.classList.remove('on');
+  clearTimeout(g.debounce);
+  try { g.input.blur(); } catch (e) {}
+  try { g.root.querySelectorAll('.focused').forEach(el => el.classList.remove('focused')); } catch (e) {}
+},
+_gsBuild() {
+  const mk = (cls, parent, html) => {
+    const d = document.createElement('div');
+    d.className = cls;
+    if (html != null) d.innerHTML = html;
+    parent.appendChild(d);
+    return d;
+  };
+  const root = mk('gsearch-ov hidden', document.getElementById('player'));   // كيما دليل ج50: داخل شاشة المشغل
+  const panel = mk('gsearch-panel', root);
+  const bar = mk('gsearch-bar', panel);
+  const gl = mk('gl', bar, ic('search', 22));
+  const input = document.createElement('input');
+  input.className = 'gsearch-input';
+  input.placeholder = 'بحث شامل — قناة، فيلم، مسلسل…';
+  input.type = 'text';
+  input.autocomplete = 'off';
+  bar.appendChild(input);
+  const close = document.createElement('button');
+  close.className = 'gsearch-close ic-btn';
+  close.innerHTML = ic('x', 14) + ' إغلاق';
+  bar.appendChild(close);
+  const body = mk('gsearch-body', panel);
+  const self = this;
+  const g = { root, panel, input, body, close, debounce: null, lastQ: '' };
+  root.onclick = (e) => { if (e && e.target === root) self.gsearchClose(); };
+  close.onclick = () => self.gsearchClose();
+  input.addEventListener('input', () => {
+    clearTimeout(g.debounce);
+    const q = (input.value || '').trim();
+    if (!q) { body.innerHTML = '<div class="gsearch-hint">اكتب اسم قناة أو فيلم أو مسلسل — النتائج من كل المحتوى</div>'; return; }
+    g.debounce = setTimeout(async () => {
+      if (q.length >= 2) {
+        const res = await self.globalSearch(q);
+        if ((input.value || '').trim() !== q) return;   // تغيّر الاستعلام أثناء البحث
+        self._gsRender(res, q);
+      }
+    }, 260);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { self.gsearchClose(); e.preventDefault(); return; }
+    if (e.key === 'Enter') {
+      const f = body.querySelector('.focused') || (body.querySelector('.pitem'));
+      if (f && f.click) f.click();
+      e.preventDefault();
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      self._gsNav(e.key === 'ArrowDown' ? 1 : -1);
+      e.preventDefault();
+    }
+  });
+  this._gs = g;
+},
+_gsNav(dir) {
+  const g = this._gs; if (!g) return;
+  let rows = [];
+  try { rows = [...g.body.querySelectorAll('.pitem')].filter(el => el.offsetParent); } catch (e) { return; }
+  if (!rows.length) return;
+  let idx = rows.findIndex(r => r.classList.contains('focused'));
+  rows.forEach(r => r.classList.remove('focused'));
+  idx = (idx + dir + rows.length) % rows.length;
+  rows[idx].classList.add('focused');
+  try { rows[idx].scrollIntoView({ block: 'nearest' }); } catch (e) {}
+},
+async globalSearch(q, opts) {
+  q = String(q || '').trim().toLowerCase();
+  if (!q) return [];
+  const out = [];
+  const push = (arr, type) => {
+    for (const it of (arr || [])) {
+      const n = String(it.name || '').toLowerCase();
+      if (n.includes(q)) out.push({ id: it.id, name: it.name, type: it.type || type, group: it.group || '', logo: it.logo || '', url: it.url || '', seriesId: it.seriesId || '' });
+      if (out.length >= 120) return;
+    }
+  };
+  if (this.src.type === 'm3u') {
+    push(this.src.live, 'live'); push(this.src.movies, 'movie'); push(this.src.series, 'series');
+    return out;
+  }
+  // Xtream: فهرسة كل الفئات مرة واحدة (كاش قرص دائم) ثم البحث في الذاكرة
+  await this._gsIndex();
+  push(this._gsIdx && this._gsIdx.items, 'live');
+  return out;
+},
+async _gsIndex() {
+  if (this._gsIdx && this._gsIdx.done) return;
+  const g = this._gs; const self = this;
+  if (this._gsIdx && this._gsIdx.loading) {
+    await new Promise(r => { const t = setInterval(() => { if (!self._gsIdx.loading) { clearInterval(t); r(); } }, 150); });
+    return;
+  }
+  this._gsIdx = { loading: true, done: false, items: [] };
+  const types = [['live', 'live'], ['movie', 'movie'], ['series', 'series']];
+  const kindMap = { live: 'live', movie: 'movie', series: 'series' };
+  for (const [t] of types) {
+    try {
+      const cats = LatchiAPI.orderCategories(this.src.categories[t] || []);
+      for (let i = 0; i < cats.length; i++) {
+        try {
+          const items = await LatchiAPI.getCategoryItems(kindMap[t], cats[i].id, cats[i].name);
+          this._gsIdx.items.push(...(items || []).map(x => Object.assign({ type: t === 'movie' ? 'movie' : t }, x)));
+        } catch (e) {}
+        if (g && this.gsearchOpen()) {
+          g.body.innerHTML = '<div class="gsearch-prog">جارٍ فهرسة المحتوى… ' + (i + 1) + '/' + cats.length + '</div>';
+        }
+      }
+    } catch (e) {}
+  }
+  this._gsIdx.loading = false;
+  this._gsIdx.done = true;
+},
+_gsRender(res, q) {
+  const g = this._gs; if (!g) return;
+  const body = g.body;
+  if (!res || !res.length) {
+    body.innerHTML = '<div class="gsearch-hint">لا توجد نتائج مطابقة لـ «' + esc(q) + '»</div>';
+    return;
+  }
+  const groups = { live: [], movie: [], series: [] };
+  res.forEach(r => { if (groups[r.type]) groups[r.type].push(r); });
+  const LBL = { live: 'بث مباشر', movie: 'أفلام', series: 'مسلسلات' };
+  const ICN = { live: 'live', movie: 'movie', series: 'series' };
+  let html = '';
+  const self = this;
+  for (const t of ['live', 'movie', 'series']) {
+    if (!groups[t].length) continue;
+    html += '<div class="gsearch-sec">' + ic(ICN[t], 15) + ' ' + LBL[t] + ' <span style="color:#8A90B8;font-weight:normal">(' + groups[t].length + ')</span></div>';
+    for (const r of groups[t]) {
+      html += '<div class="pitem" data-gs="' + esc(JSON.stringify(r)) + '"><img loading="lazy" decoding="async" src="' + esc(r.logo || '') + '" onerror="this.style.visibility=\'hidden\'">' +
+        '<div class="pi-t"><div class="pi-n">' + esc(r.name || '') + '</div><div class="pi-g">' + (r.group ? esc(r.group) : '') + '</div></div>' +
+        (t === 'live' ? '<span class="rec-dot"></span>' : '<span class="pi-play">' + ic('play', 13) + '</span>') + '</div>';
+    }
+  }
+  body.innerHTML = html;
+  body.querySelectorAll('.pitem').forEach(el => {
+    el.onclick = () => {
+      let it = null;
+      try { it = JSON.parse(el.dataset.gs); } catch (e) { return; }
+      self.gsearchClose();
+      self.gsPlay(it);
+    };
+  });
+},
+// تشغيل نتيجة بحث (من الواجهة أو من الريموت): مباشر/فيلم = ملء الشاشة فوراً | مسلسل = شاشة المواسم والحلقات
+gsPlay(it) {
+  if (!it) return;
+  if (it.type === 'series') { this.openDetails(it); return; }
+  this.startPlay(it);
+},
+// ج51: واجهة الريموت — البحث في محتوى هذا الحاسوب والنتائج قابلة للتشغيل عن بعد
+async remoteSearch(q) {
+  try {
+    const res = await this.globalSearch(q);
+    return { ok: true, results: (res || []).slice(0, 60).map(r => ({ id: r.id, name: r.name, type: r.type, group: r.group, logo: r.logo })) };
+  } catch (e) { return { ok: false, results: [] }; }
+},
+// ▶ ج51: الريموت يضغط نتيجة → تبديل ما يشغَّل فوراً على الحاسوب
+remotePlay(item) {
+  try {
+    if (!item || !item.type) return { ok: false };
+    const full = this._findItem(item) || item;
+    this.gsearchClose();
+    if (full.type === 'series') { this.show('home', true); this.openDetails(full); return { ok: true, opened: 'details' }; }
+    this.startPlay(full);
+    return { ok: true, opened: 'player' };
+  } catch (e) { return { ok: false }; }
+},
+_findItem(ref) {
+  const byId = (arr) => (arr || []).find(x => String(x.id) === String(ref.id) || (x.url && ref.url && x.url === ref.url));
+  if (this.src && this.src.type === 'm3u') {
+    return byId(this.src.live) || byId(this.src.movies) || byId(this.src.series) || ref;
+  }
+  if (this._gsIdx && this._gsIdx.items) {
+    const hit = byId(this._gsIdx.items);
+    if (hit) return hit;
+  }
+  // xtream بلا فهرسة: ابحث بالفهرس السريع (قد يكون فارغاً — نستعمل المرجع كما هو)
+  return ref;
+},
+
+// ═══ ج50: دليل القنوات والفئات داخل المشغل (زر OK/Enter) — كيما واجهة القائمة تماماً ═══
   // ثلاثة أعمدة: الفئات (يمين) | القنوات/الأفلام/المسلسلات (وسط) | التفاصيل والحلقات (يسار — مكان المشغل المصغر)
   // الحلقة تُفتح مباشرة بملء الشاشة، والقناة تُبدَّل فوراً — والبث يبقى ظاهراً خلف الدليل.
   guideOpen() { return !!(this._guide && this._guide.root && this._guide.root.classList.contains('on')); },
@@ -940,7 +1200,7 @@ const App = {
     const title = mk('g-title', head, 'دليل القنوات');
     const kinds = mk('g-kinds', head);
     const close = document.createElement('button');
-    close.className = 'g-close'; close.textContent = '✕ إغلاق';
+    close.className = 'g-close ic-btn'; close.innerHTML = ic('x', 12) + ' إغلاق';
     head.appendChild(close);
     const body = mk('guide-body', panel);
     const cats = mk('g-cats', body);
@@ -950,12 +1210,12 @@ const App = {
     root.onclick = (e) => { if (e && e.target === root) this.guideClose(); };
     close.onclick = () => this.guideClose();
     const self = this;
-    const KINDS = [['live', '● بث مباشر'], ['movies', '🎞 أفلام'], ['series', '🎬 مسلسلات']];
+    const KINDS = [['live', ic('live', 13) + ' بث مباشر'], ['movies', ic('movie', 13) + ' أفلام'], ['series', ic('series', 13) + ' مسلسلات']];
     const kindBtns = {};
     KINDS.forEach(([k, label]) => {
       const b = document.createElement('button');
       b.className = 'g-kind';
-      b.textContent = label;
+      b.innerHTML = label;   // ج51: التسميات تحمل أيقونات SVG
       b.onclick = () => self._guideLoadKind(k);
       kinds.appendChild(b);
       kindBtns[k] = b;
@@ -986,7 +1246,7 @@ const App = {
       const arr = this.src[kind] || [];
       const groups = [...new Set(arr.map(i => i.group || 'عام'))];
       const ranked = LatchiAPI.orderCategories(groups.map(x => ({ id: x, name: x }))).map(c => c.name);
-      mkCat('🏷 الكل', 'الكل', () => this._guideM3uFilter('الكل'));
+      mkCat(ic('tag', 12) + ' الكل', 'الكل', () => this._guideM3uFilter('الكل'));
       ranked.forEach(x => mkCat(x, x, () => this._guideM3uFilter(x)));
       // فئة المحتوى الجاري تلقائياً
       const cur = Player.current;
@@ -1008,7 +1268,7 @@ const App = {
     if (!cat) { this._guideRenderItems([]); return; }
     g.cat = cat.name; g.catId = cat.id;
     [...g.cats.children].forEach(c => c.classList.toggle('active', c.textContent === cat.name));
-    g.items.innerHTML = '<div class="load-hint">⏳ جارٍ فتح الفئة...</div>';
+    g.items.innerHTML = '<div class="load-hint">جارٍ فتح الفئة...</div>';
     try {
       const items = await LatchiAPI.getCategoryItems(g.kind === 'movies' ? 'movie' : g.kind, cat.id, cat.name);
       if (this.guideOpen() && g.kind && g.catId === cat.id) this._guideRenderItems(items);
@@ -1057,7 +1317,7 @@ const App = {
   async _guideSeries(it) {
     const g = this._guide; if (!g) return;
     const body = g.detail;
-    body.innerHTML = '<div class="load-hint">⏳ تحميل المواسم والحلقات...</div>';
+    body.innerHTML = '<div class="load-hint">تحميل المواسم والحلقات...</div>';
     let seasons = [];
     if (it.seriesId && this.src && this.src.type === 'xtream') {
       try {
@@ -1079,12 +1339,12 @@ const App = {
     body.innerHTML = `
       <div class="gd-head">${it.logo ? `<img class="gd-poster" src="${esc(it.logo)}" onerror="this.style.display='none'">` : ''}
         <div><div class="gd-name">${esc(it.name || '')}</div>
-        <div class="gd-sub">🎬 مسلسل ${it.group ? ' · ' + esc(it.group) : ''}</div></div>
+        <div class="gd-sub">${ic('series', 12)} مسلسل ${it.group ? ' · ' + esc(it.group) : ''}</div></div>
       </div>
       <div class="gd-desc">${esc((it.plot || '').slice(0, 400) || '')}</div>
       ${eps.length ? '' : '<button class="gold-btn" id="gdPlay" style="width:100%;margin:6px 0 10px">▶ شاهد الآن بملء الشاشة</button>'}
       ${seasons.map(s => `
-        <div class="gd-season">🎬 الموسم ${esc(String(s.num))} <span style="color:#8A90B8;font-size:12px">(${s.episodes.length})</span></div>
+        <div class="gd-season">${ic('series', 13)} الموسم ${esc(String(s.num))} <span style="color:#8A90B8;font-size:12px">(${s.episodes.length})</span></div>
         ${s.episodes.map(e => `<div class="gd-ep" data-url="${esc(e.url)}" data-name="${esc(e.name)}">
           <span class="n">▶ ${esc(String(e.episodeNum || ''))}</span><span class="t">${esc(e.name)}</span><span class="d">${esc(e.dur || '')}</span>
         </div>`).join('')}`).join('')}`;
@@ -1095,7 +1355,7 @@ const App = {
       el.onclick = () => {
         const epIt = { id: it.id + '_' + name, name: name, url: url, type: 'movie', logo: it.logo, group: it.name };
         this.guideClose();
-        this.startPlay(epIt);                 // 🎬 الحلقة تفتح مباشرة بملء الشاشة
+        this.startPlay(epIt);                 // الحلقة تفتح مباشرة بملء الشاشة
       };
     });
   },
@@ -1104,14 +1364,14 @@ const App = {
     const g = this._guide; if (!g) return;
     const body = g.detail;
     if (!it) {
-      body.innerHTML = '<div class="mini-empty">👋 اختر من القائمة: القناة تُبدَّل فوراً • المسلسل يفتح مواسمه وحلقاته هنا</div>';
+      body.innerHTML = '<div class="mini-empty">اختر من القائمة: القناة تُبدَّل فوراً • المسلسل يفتح مواسمه وحلقاته هنا</div>';
       return;
     }
     const live = it.type === 'live';
     body.innerHTML = `
       <div class="gd-head">${it.logo ? `<img class="gd-poster" src="${esc(it.logo)}" onerror="this.style.display='none'">` : ''}
         <div><div class="gd-name">${esc(it.name || '')}</div>
-        <div class="gd-sub">${live ? '● بث مباشر' : it.type === 'series' ? '🎬 مسلسل' : '🎞 فيلم'} ${it.group ? ' · ' + esc(it.group) : ''}</div></div>
+        <div class="gd-sub">${live ? '● بث مباشر' : it.type === 'series' ? ic('series', 12) + ' مسلسل' : ic('movie', 12) + ' فيلم'} ${it.group ? ' · ' + esc(it.group) : ''}</div></div>
       </div>
       <div class="gd-epg hidden" id="gdEpg"></div>
       <div class="gd-desc" id="gdDesc">${live || it.type === 'series' ? '' : '<span class="mini-desc-wait">…</span>'}</div>
@@ -1119,7 +1379,7 @@ const App = {
     if (live && this.src && this.src.type === 'xtream') {
       LatchiAPI.shortEpg(it.id).then(epg => {
         const e2 = document.getElementById('gdEpg');
-        if (e2 && epg && epg.title) { e2.textContent = '📺 ' + epg.title + (epg.time ? ' · ' + epg.time : ''); e2.classList.remove('hidden'); }
+        if (e2 && epg && epg.title) { e2.innerHTML = ic('tv', 12) + ' ' + esc(epg.title) + (epg.time ? ' · ' + esc(epg.time) : ''); e2.classList.remove('hidden'); }
       }).catch(() => {});
     }
     if (it.type === 'movie' && this.src && this.src.type === 'xtream') {
@@ -1175,12 +1435,12 @@ const App = {
   // ═══ التشغيل ═══
   startPlay(it) {
     const resume = it._resume || (parseInt((localStorage.getItem('cw_' + it.id) || '{"at":0}').match(/"at":(\d+)/) || [0, 0])[1]);
-    if (this.screen !== 'player') this.push('player');   // 🛠 v1.1.2: لا دفع مزدوج عند التنقل بين القنوات
-    Player.hideCb = () => App.back();    // 🛠 v1.1.1: يُعاد تسليحه في كل تشغيل (لنهاية الحلقة/الخروج)
+    if (this.screen !== 'player') this.push('player');   // v1.1.2: لا دفع مزدوج عند التنقل بين القنوات
+    Player.hideCb = () => App.back();    // v1.1.1: يُعاد تسليحه في كل تشغيل (لنهاية الحلقة/الخروج)
     Player.play(it, { resumeAt: (resume && resume > 15) ? resume : 0 });
   },
 
-  // 📺 v1.1.2: تنقل بالريموت — قناة تالية/سابقة من نفس القائمة المعروضة (فوري، من الذاكرة، بلا أي إعادة تحميل)
+  // v1.1.2: تنقل بالريموت — قناة تالية/سابقة من نفس القائمة المعروضة (فوري، من الذاكرة، بلا أي إعادة تحميل)
   zap(dir) {
     const list = this._zapList;
     if (!Array.isArray(list) || !list.length || !Player.current) return false;
@@ -1208,46 +1468,46 @@ const App = {
     const conns = acc.active_connections != null ? `${acc.active_connections} / ${acc.max_connections}` : '—';
     const unitTxt = s.unit || '';
     document.getElementById('settingsBody').innerHTML = `
-      <div class="set-card"><h3>👤 الحساب</h3>
+      <div class="set-card"><h3>${ic('user', 14)} الحساب</h3>
         <div class="row"><span>الاسم</span><b>${esc(this.user?.name || '—')}</b></div>
         <div class="row"><span>الكود</span><b>${esc(this.user?.code || 'M3U مباشر')}</b></div>
         <div class="row"><span>ينتهي في</span><b>${esc(String(exp))}</b></div>
         <div class="row"><span>الاتصالات</span><b>${esc(conns)}</b></div>
-        <div class="row"><span>الحسابات المحفوظة</span><button class="p-btn" id="openAccounts">👤 مركز الحسابات</button></div>
+        <div class="row"><span>الحسابات المحفوظة</span><button class="p-btn ic-btn" id="openAccounts">${ic('user', 13)} مركز الحسابات</button></div>
       </div>
-      <div class="set-card"><h3>📊 المحتوى</h3>
+      <div class="set-card"><h3>${ic('folder', 14)} المحتوى</h3>
         <div class="row"><span>فئات القنوات</span><b>${s.live} ${unitTxt}</b></div>
         <div class="row"><span>فئات الأفلام</span><b>${s.movies} ${unitTxt}</b></div>
         <div class="row"><span>فئات المسلسلات</span><b>${s.series} ${unitTxt}</b></div>
         <div class="row"><span>المصدر</span><b>${this.src?.type === 'xtream' ? 'Xtream Codes' : 'M3U'}</b></div>
         <div class="row"><span>التحميل</span><b style="color:#7CE38B">كسوي + تخزين محلي دائم</b></div>
       </div>
-      <div class="set-card"><h3>🔄 التحديث</h3>
+      <div class="set-card"><h3>${ic('refresh', 14)} التحديث</h3>
         <div class="row" style="display:block"><span style="display:block;margin-bottom:8px;color:#8A90B8;font-size:13px">يجلب أحدث الفئات والقنوات من الخادم (يمسح النسخ المحفوظة)</span>
-        <button class="p-btn" id="refreshList">🔄 تحديث القائمة الآن</button></div>
+        <button class="p-btn ic-btn" id="refreshList">${ic('refresh', 13)} تحديث القائمة الآن</button></div>
       </div>
-      <div class="set-card"><h3>🧹 البيانات</h3>
+      <div class="set-card"><h3>${ic('save', 14)} البيانات</h3>
         <div class="row"><span>تفريغ متابعة المشاهدة</span><button class="p-btn" id="clearCw">تفريغ</button></div>
         <div class="row"><span>تفريغ المفضلة</span><button class="p-btn" id="clearFav">تفريغ</button></div>
       </div>
-      <div class="set-card"><h3>🎮 ريموت الهاتف</h3>
-        <div class="row"><span>خادم التحكم (واي فاي المنزل)</span><button class="p-btn" id="remoteToggle">${localStorage.getItem('remote_on') === '1' ? '⏹ إيقاف' : '▶ تشغيل'}</button></div>
+      <div class="set-card"><h3>${ic('phone', 14)} ريموت الهاتف</h3>
+        <div class="row"><span>خادم التحكم (واي فاي المنزل)</span><button class="p-btn" id="remoteToggle">${localStorage.getItem('remote_on') === '1' ? ic('x', 12) + ' إيقاف' : ic('play', 12) + ' تشغيل'}</button></div>
         <div class="row"><span>الحالة</span><b style="color:${localStorage.getItem('remote_on') === '1' ? '#7CE38B' : '#8A90B8'}">${localStorage.getItem('remote_on') === '1' ? 'يعمل الآن' : 'متوقف'}</b></div>
-        <div class="row"><span>الاتصال</span><b style="color:#7CE38B">✓ تلقائي — بلا أي رمز</b></div>
+        <div class="row"><span>الاتصال</span><b style="color:#7CE38B">تلقائي — بلا أي رمز</b></div>
         <div class="row"><span>الشبكة</span><b style="font-size:12px">${esc((this._remoteInfo && this._remoteInfo.ips || []).join(' ، ') || '—')}${(this._remoteInfo && this._remoteInfo.port) ? ':' + this._remoteInfo.port : ''}</b></div>
         <div class="row" style="display:block"><span style="display:block;margin-bottom:8px;color:#8A90B8;font-size:13px">ثبّت تطبيق «LATCHI Remote» على الهاتف واجعله على نفس الواي فاي — سيظهر هذا الحاسوب في قائمة الهاتف، انقر عليه للتحكم مباشرة.</span></div>
       </div>
-      <div class="set-card"><h3>🚪 الخروج</h3>
+      <div class="set-card"><h3>${ic('power', 14)} الخروج</h3>
         <button class="gold-btn danger-btn" id="logout" style="width:100%">تسجيل الخروج والعودة للتحقق</button>
       </div>`;
     document.getElementById('refreshList').onclick = async () => {
-      document.getElementById('refreshList').textContent = '⏳ جارٍ التحديث...';
+      document.getElementById('refreshList').textContent = 'جارٍ التحديث...';
       try { await window.latchi.cacheClear(); } catch (e) {}
       const saved = localStorage.getItem('source_url');
       if (saved) {
         try { await this.loadSource(saved, true); this.show('home', true); return; } catch (e) {}
       }
-      document.getElementById('refreshList').textContent = '✗ تعذر التحديث — تحقق من الاتصال';
+      document.getElementById('refreshList').textContent = 'تعذر التحديث — تحقق من الاتصال';
     };
     document.getElementById('clearCw').onclick = () => {
       Object.keys(localStorage).filter(k => k.startsWith('cw_')).forEach(k => localStorage.removeItem(k));
@@ -1266,7 +1526,7 @@ const App = {
     document.getElementById('openAccounts').onclick = () => this.push('accounts');
   },
 
-  // ═══ 👤 مركز الحسابات (مثل الهاتف: كود أو M3U مباشر + تبديل بين المحفوظات) ═══
+  // ═══ مركز الحسابات (مثل الهاتف: كود أو M3U مباشر + تبديل بين المحفوظات) ═══
   getAccounts() {
     try { return JSON.parse(localStorage.getItem('saved_accounts') || '[]'); } catch (e) { return []; }
   },
@@ -1283,65 +1543,65 @@ const App = {
     const isX = this.src && this.src.type === 'xtream';
     const curUrl = localStorage.getItem('source_url') || '';
     const list = this.getAccounts();
-    // 📅 v1.0.3: صلاحية M3U اليدوية (من الحقل) تُحسب كالحقيقية
+    // v1.0.3: صلاحية M3U اليدوية (من الحقل) تُحسب كالحقيقية
     const savedAcc = list.find(x => x.value === curUrl);
     const m3uExp = (!isX && savedAcc && savedAcc.exp) ? new Date(savedAcc.exp + 'T23:59:59').getTime() : null;
     const expTs = isX ? (acc.exp_date ? +acc.exp_date * 1000 : null) : m3uExp;
     const exp = expTs ? new Date(expTs).toLocaleDateString('ar-DZ') : (this.user?.expires || '—');
-    // 🎨 شارة الصلاحية الملونة (أخضر/برتقالي/أحمر/رمادي) — كود أو M3U يدوي
+    // شارة الصلاحية الملونة (أخضر/برتقالي/أحمر/رمادي) — كود أو M3U يدوي
     let badge;
     if (expTs) {
       const days = Math.ceil((+acc.exp_date * 1000 - Date.now()) / 86400000);
-      if (days < 0) badge = '<span class="badge-exp red">⛔ منتهي الصلاحية</span>';
-      else if (days <= 7) badge = `<span class="badge-exp orange">⏳ ${days} يوم متبقٍ</span>`;
-      else badge = `<span class="badge-exp green">✓ ${days} يوم متبقٍ</span>`;
+      if (days < 0) badge = '<span class="badge-exp red">منتهي الصلاحية</span>';
+      else if (days <= 7) badge = `<span class="badge-exp orange">${days} يوم متبقٍ</span>`;
+      else badge = `<span class="badge-exp green">${days} يوم متبقٍ</span>`;
     } else badge = '<span class="badge-exp gray">غير محدد</span>';
     const created = acc.created_at ? new Date(+acc.created_at * 1000).toLocaleDateString('ar-DZ') : '';
-    // 🎨 v1.0: بطاقات الحسابات — كل الحسابات ظاهرة دفعة واحدة؛
+    // v1.0: بطاقات الحسابات — كل الحسابات ظاهرة دفعة واحدة؛
     // النقر/OK على البطاقة يفتح الحساب مباشرة، والأسهم تتنقل بينها بسلاسة.
     const rows = list.length ? `<div class="acc-cards">${list.map(a => {
       const active = a.value === curUrl;
       return `
       <div class="acc-card${active ? ' acc-active' : ''}" data-acc-id="${a.id}"${active ? ' data-acc-home="1"' : ` data-acc-go="${a.id}"`} tabindex="0">
-        ${active ? '<span class="acc-now">✓ نشط الآن</span>' : ''}
-        <button class="acc-del" data-acc-del="${a.id}" title="حذف هذا الحساب">🗑</button>
-        <div class="acc-ico">${a.kind === 'code' ? '🎫' : '🔗'}</div>
+        ${active ? '<span class="acc-now">نشط الآن</span>' : ''}
+        <button class="acc-del" data-acc-del="${a.id}" title="حذف هذا الحساب">${ic('trash', 13)}</button>
+        <div class="acc-ico">${a.kind === 'code' ? ic('key', 19) : ic('link', 19)}</div>
         <b class="acc-lbl">${esc(a.label)}</b>
-        <span class="acc-sub">${a.kind === 'code' ? 'كود تفعيل' : 'M3U مباشر'}${a.exp ? ' · 📅 ينتهي ' + esc(a.exp) : ''}</span>
+        <span class="acc-sub">${a.kind === 'code' ? 'كود تفعيل' : 'M3U مباشر'}${a.exp ? ' · ينتهي ' + esc(a.exp) : ''}</span>
         <span class="acc-open">${active ? 'اضغط للعودة للرئيسية' : 'اضغط للفتح مباشرة ←'}</span>
       </div>`;
-    }).join('')}</div>` : '<div class="acc-empty">لا توجد حسابات محفوظة بعد — أضف واحداً بالأسفل 👇</div>';
+    }).join('')}</div>` : '<div class="acc-empty">لا توجد حسابات محفوظة بعد — أضف واحداً بالأسفل</div>';
     document.getElementById('accountsBody').innerHTML = `
-      <div class="set-card"><h3>🗂 حساباتك (${list.length}/20) — انقر حساباً لفتحه مباشرة</h3>${rows}
-        <div class="hint-sub" style="margin-top:8px">الأسهم تتنقل بين البطاقات وOK تفتح المحددة — 🗑 بالزاوية تحذف حساباً واحداً</div>
+      <div class="set-card"><h3>${ic('folder', 14)} حساباتك (${list.length}/20) — انقر حساباً لفتحه مباشرة</h3>${rows}
+        <div class="hint-sub" style="margin-top:8px">الأسهم تتنقل بين البطاقات وOK تفتح المحددة — زر الحذف بالزاوية يحذف حساباً واحداً</div>
       </div>
-      <div class="set-card"><h3>👤 الحساب الحالي</h3>
+      <div class="set-card"><h3>${ic('user', 14)} الحساب الحالي</h3>
         <div class="row"><span>الاسم</span><b>${esc(this.user?.name || '—')}</b></div>
         ${acc.username ? `<div class="row"><span>مستخدم الخادم</span><b>${esc(acc.username)}</b></div>` : ''}
         <div class="row"><span>النوع</span><b>${isX ? 'Xtream Codes' : (this.src ? 'M3U مباشر' : '—')}</b></div>
-        ${acc.status ? `<div class="row"><span>الحالة</span><b class="${acc.status === 'Active' ? 'ok-txt' : 'bad-txt'}">${acc.status === 'Active' ? '✓ نشط' : esc(acc.status)}</b></div>` : ''}
+        ${acc.status ? `<div class="row"><span>الحالة</span><b class="${acc.status === 'Active' ? 'ok-txt' : 'bad-txt'}">${acc.status === 'Active' ? 'نشط' : esc(acc.status)}</b></div>` : ''}
         ${created ? `<div class="row"><span>تاريخ الإنشاء</span><b>${created}</b></div>` : ''}
         <div class="row"><span>ينتهي في</span><b>${esc(String(exp))} ${badge}</b></div>
         ${acc.max_connections ? `<div class="row"><span>حد الأجهزة</span><b>${esc(String(acc.max_connections))} جهاز</b></div>` : ''}
         ${acc.active_connections != null ? `<div class="row"><span>متصل الآن</span><b>${esc(String(acc.active_connections))} / ${esc(String(acc.max_connections != null ? acc.max_connections : '—'))}</b></div>` : ''}
       </div>
-      <div class="set-card"><h3>➕ إضافة بكود التفعيل</h3>
+      <div class="set-card"><h3>${ic('add', 14)} إضافة بكود التفعيل</h3>
         <div class="input-row" style="margin-bottom:10px">
           <input id="accCodeInput" class="tv-input" placeholder="أدخل كود التفعيل هنا..." style="width:100%">
           <button class="paste-btn" data-paste="accCodeInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
         </div>
-        <button class="gold-btn" id="accCodeBtn" style="width:100%">🎫 تفعيل ودخول</button>
+        <button class="gold-btn ic-btn" id="accCodeBtn" style="width:100%">${ic('key', 14)} تفعيل ودخول</button>
       </div>
-      <div class="set-card"><h3>🔗 إضافة رابط M3U مباشر</h3>
+      <div class="set-card"><h3>${ic('link', 14)} إضافة رابط M3U مباشر</h3>
         <div class="input-row" style="margin-bottom:10px">
           <input id="accM3uInput" class="tv-input" placeholder="http://... (رابط get.php أو .m3u)" style="width:100%">
           <input id="accExpInput" class="tv-input" type="date" title="تاريخ انتهاء صلاحية الرابط (اختياري — يظهر تحت الساعة)" style="width:100%;margin-top:8px">
           <button class="paste-btn" data-paste="accM3uInput" title="لصق من الحافظة"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></button>
         </div>
-        <button class="gold-btn" id="accM3uBtn" style="width:100%">🔗 إضافة ودخول</button>
+        <button class="gold-btn ic-btn" id="accM3uBtn" style="width:100%">${ic('link', 14)} إضافة ودخول</button>
       </div>
-      <div class="set-card"><h3>⚠️ منطقة الخطر</h3>
-        <button class="danger-btn" id="accWipeBtn">🗑 حذف جميع الحسابات</button>
+      <div class="set-card"><h3>${ic('warn', 14)} منطقة الخطر</h3>
+        <button class="danger-btn ic-btn" id="accWipeBtn">${ic('trash', 14)} حذف جميع الحسابات</button>
         <div class="hint-sub" style="margin-top:8px">يمسح الحسابات وكل ما يخصها فقط (المفضلة وسجل المشاهدة والكاش) ويعود لشاشة إدخال الحساب — التطبيق نفسه لا يُغلق ولا يُعاد ضبطه</div>
       </div>
       <div class="set-card"><div id="accMsg" class="verify-msg"></div></div>`;
@@ -1350,20 +1610,20 @@ const App = {
     document.getElementById('accM3uBtn').onclick = () => this.applyM3u(document.getElementById('accM3uInput').value.trim(), document.getElementById('accMsg'), document.getElementById('accExpInput').value);
     document.getElementById('accCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('accCodeBtn').click(); });
     document.getElementById('accM3uInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('accM3uBtn').click(); });
-    // 🎨 v1.0: البطاقة كاملة قابلة للنقر — فتح مباشر أو عودة للرئيسية إن كانت نشطة
+    // v1.0: البطاقة كاملة قابلة للنقر — فتح مباشر أو عودة للرئيسية إن كانت نشطة
     document.querySelectorAll('.acc-card').forEach(card => card.onclick = async () => {
       if (card.dataset.accHome) { this.show('home', true); return; }   // الحساب النشط: الرئيسية
       const a = list.find(x => x.id === card.dataset.accGo);
       if (!a) return;
       const msg = document.getElementById('accMsg');
-      msg.className = 'verify-msg'; msg.textContent = '⏳ جارٍ الدخول إلى ' + a.label + '...';
-      this.showChecking();                    // ⏳ v1.0.1
+      msg.className = 'verify-msg'; msg.textContent = 'جارٍ الدخول إلى ' + a.label + '...';
+      this.showChecking();                    // v1.0.1
       try { await this.loadSource(a.value, false, a.value, { welcome: true }); }
-      catch (e) { msg.textContent = '✗ تعذر الدخول — قد يكون الحساب منتهياً: ' + e.message; msg.classList.add('err'); }
+      catch (e) { msg.textContent = 'تعذر الدخول — قد يكون الحساب منتهياً: ' + e.message; msg.classList.add('err'); }
       finally { this.hideChecking(); }
     });
     document.querySelectorAll('[data-acc-del]').forEach(b => b.onclick = (ev) => {
-      ev.stopPropagation();                   // 🗑 الحذف لا يفتح البطاقة
+      ev.stopPropagation();                   // الحذف لا يفتح البطاقة
       this.saveAccounts(this.getAccounts().filter(x => x.id !== b.dataset.accDel));
       this.buildAccounts(); this.focusFirst('accounts');
     });
@@ -1371,8 +1631,8 @@ const App = {
 };
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-// ═══ ⌨️ التنقل المكاني (فلسفة الريموت: أسهم + OK + رجوع) ═══
-// 🎯 v1.0.5: تنقل شبكة البوسترات بالفهرس الرياضي — لا هندسة ولا أخطاء:
+// ═══ التنقل المكاني (فلسفة الريموت: أسهم + OK + رجوع) ═══
+// v1.0.5: تنقل شبكة البوسترات بالفهرس الرياضي — لا هندسة ولا أخطاء:
 // ↑↓ = صف كامل (بثلاثة دائماً)، ←→ = عنصر عنصر باحترام RTL مع التفاف داخل الصف (لا طريق مسدود أبداً)
 function gridNav(dx, dy) {
   const active = document.querySelector('.screen.active');
@@ -1413,7 +1673,7 @@ function spatialMove(dx, dy) {
   const root = document.querySelector('.screen.active');
   if (!root) return;
   const cur = root.querySelector('.focused');
-  const focusables = [...root.querySelectorAll('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .acc-card, .back-btn, .tv-input, .p-btn, .mini-wrap, .set-card .p-btn')].filter(el => el.offsetParent);
+  const focusables = [...root.querySelectorAll('.tcard, .vtab, .gold-btn, .pcat, .pitem, .cat-chip, .chan, .pcard, .ep, .acc-card, .back-btn, .tv-input, .p-btn, .mini-wrap, .set-card .p-btn, .gsearch-chip')].filter(el => el.offsetParent);
   if (!focusables.length) return;
   if (!cur) { focusables[0].classList.add('focused'); return; }
   const cr = cur.getBoundingClientRect();
@@ -1444,7 +1704,7 @@ document.addEventListener('keydown', (e) => {
     if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return;
     return; // الكتابة حرة داخل الحقل
   }
-  // ⏻ v1.0.2: نافذة الخروج مفتوحة → الأسهم تنقل بين نعم/إلغاء وEnter يؤكد
+  // v1.0.2: نافذة الخروج مفتوحة → الأسهم تنقل بين نعم/إلغاء وEnter يؤكد
   if (App.exitDlgOpen()) {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') App.moveExitFocus();
     else if (e.key === 'Enter') App.confirmExitDlg();
@@ -1453,7 +1713,7 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (App.screen === 'player') {
-    // 📺 ج50: دليل القنوات مفتوح داخل المشغل → الأسهم وEnter وEsc تخدم الدليل
+    // ج50: دليل القنوات مفتوح داخل المشغل → الأسهم وEnter وEsc تخدم الدليل
     if (App.guideOpen()) {
       if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'BrowserBack') { App.guideClose(); e.preventDefault(); return; }
       if (e.key === 'Home' || e.key === 'BrowserHome') { App.guideClose(); App.show('home', true); e.preventDefault(); return; }
@@ -1478,25 +1738,25 @@ document.addEventListener('keydown', (e) => {
     case 'ArrowLeft': if (!gridNav(-1, 0)) spatialMove(-1, 0); e.preventDefault(); break;
     case 'ArrowRight': if (!gridNav(1, 0)) spatialMove(1, 0); e.preventDefault(); break;
     case 'Enter': if (cur) { cur.click(); if (cur.classList.contains('tv-input')) cur.focus(); } e.preventDefault(); break;
-    case 'Escape': case 'Backspace': case 'BrowserBack':    // 🎮 v1.0.3: ريموت البلوتوث يرسل BrowserBack لزر الرجوع
-      if (App.screen === 'home') App.showExitDlg();          // ⏻ v1.0.2: زر الرجوع في الرئيسية = تأكيد الخروج كيما التلفاز
+    case 'Escape': case 'Backspace': case 'BrowserBack':    // v1.0.3: ريموت البلوتوث يرسل BrowserBack لزر الرجوع
+      if (App.screen === 'home') App.showExitDlg();          // v1.0.2: زر الرجوع في الرئيسية = تأكيد الخروج كيما التلفاز
       else if (App.screen !== 'verify') App.back();
       e.preventDefault(); break;
-    case 'Home': case 'BrowserHome':                          // 🏠 v1.0.3: زر Home بالريموت = الرئيسية
+    case 'Home': case 'BrowserHome':                          // v1.0.3: زر Home بالريموت = الرئيسية
       App.show('home', true); e.preventDefault(); break;
-    case 'PageUp': case 'PageDown': {                         // 📄 v1.0.3: تمرير القوائم الطويلة كيما التلفاز
+    case 'PageUp': case 'PageDown': {                         // v1.0.3: تمرير القوائم الطويلة كيما التلفاز
       const sc = document.querySelector('.screen.active .list-body') || document.querySelector('.screen.active #accountsBody');
       if (sc) sc.scrollBy({ top: (e.key === 'PageUp' ? -1 : 1) * sc.clientHeight * 0.8, behavior: 'smooth' });
       e.preventDefault(); break;
     }
   }
 });
-// 🖱 v1.0.2: المؤشر يختفي بعد 2.5ث بلا حركة داخل المشغل (كيما التلفاز)
+// v1.0.2: المؤشر يختفي بعد 2.5ث بلا حركة داخل المشغل (كيما التلفاز)
 let _curTimer = null;
 document.addEventListener('mousemove', () => {
   const b = document.body;
   if (b) b.classList.remove('no-cursor');
-  if (App.screen === 'player' && typeof Player !== 'undefined') { try { Player.flashUi(); } catch (e) {} }   // 📺 v1.0.6
+  if (App.screen === 'player' && typeof Player !== 'undefined') { try { Player.flashUi(); } catch (e) {} }   // v1.0.6
   clearTimeout(_curTimer);
   _curTimer = setTimeout(() => {
     if (App.screen === 'player' && b) b.classList.add('no-cursor');
@@ -1522,6 +1782,24 @@ document.querySelectorAll('.vtab').forEach(t => t.onclick = () => {
 document.querySelectorAll('.nav-back').forEach(b => b.onclick = () => App.back());
 document.getElementById('miniWrap').onclick = () => App.miniFull();
 document.getElementById('exitBtn').onclick = () => App.showExitDlg();
+// ج51: أيقونات الشريط العلوي المتجهة + زر البحث الشامل
+try {
+  const gsBtn = document.getElementById('globalSearchBtn');
+  if (gsBtn) { gsBtn.innerHTML = ic('search', 18); gsBtn.classList.add('ic-btn'); gsBtn.onclick = () => App.gsearchToggle(); }
+  const uc0 = document.getElementById('userChip'); if (uc0 && !String(uc0.textContent || '').trim() && !uc0.innerHTML.trim()) uc0.innerHTML = ic('user', 15);
+  const eb0 = document.getElementById('exitBtn'); if (eb0 && !eb0.innerHTML.trim()) eb0.innerHTML = ic('power', 15);
+  const pr0 = document.getElementById('prayerIc'); if (pr0) pr0.innerHTML = ic('mosque', 14);
+  // عناصر الواجهة الثابتة (كانت إيموجي في HTML — الآن أيقونات متجهة)
+  const vc0 = document.getElementById('vtab-code'); if (vc0) vc0.innerHTML = ic('key', 13) + ' كود التفعيل';
+  const vm0 = document.getElementById('vtab-m3u'); if (vm0) vm0.innerHTML = ic('link', 13) + ' رابط M3U';
+  const cb0 = document.getElementById('codeBtn'); if (cb0) cb0.innerHTML = ic('check', 14) + ' تحقق الآن';
+  const mb0 = document.getElementById('m3uBtn'); if (mb0) mb0.innerHTML = ic('down', 14) + ' حمّل القائمة';
+  const ml0 = document.getElementById('miniLoad'); if (ml0) ml0.innerHTML = '<svg class="ic spinner" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9" /></svg>';
+  const mf0 = document.querySelector('.mini-fs'); if (mf0) mf0.innerHTML = ic('full', 13) + ' ملء الشاشة';
+  const ei0 = document.getElementById('exitIc'); if (ei0) ei0.innerHTML = ic('power', 30);
+  const eo0 = document.getElementById('exitOk'); if (eo0) eo0.innerHTML = ic('check', 13) + ' نعم، خروج';
+  const ec0 = document.getElementById('exitCancel'); if (ec0) ec0.innerHTML = ic('x', 13) + ' إلغاء';
+} catch (e) {}
 document.getElementById('exitOk').onclick = () => App.doQuit();
 document.getElementById('exitCancel').onclick = () => App.hideExitDlg();
 document.getElementById('exitDlg').onclick = (e) => { if (e.target === e.currentTarget) App.hideExitDlg(); };
