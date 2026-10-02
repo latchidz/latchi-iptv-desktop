@@ -108,29 +108,39 @@ const App = {
     try {
       let sig;
       try { sig = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(4500) : undefined; } catch (e) {}
-      // ج54: الموقع الحقيقي بأربع طبقات — موقع الجهاز (الأدق) ← ipapi ← ipwho.is ← المنطقة الزمنية
-      let lat = null, lon = null, region = '';
-      const geo = await this._geoLocate(6500);                     // 1) GPS/واي فاي الجهاز
-      if (geo) { lat = geo.lat; lon = geo.lon; region = geo.region; }
-      if (lat === null) {                                          // 2) ipapi.co
-        const l2 = await this._ipLocate('https://ipapi.co/json/', sig);
-        if (l2) { lat = l2.lat; lon = l2.lon; region = l2.region; }
+      // ج54 (طلب العميل): الموقع الحقيقي — ولاية العميل المحفوظة أولاً (اختيار يدوي دقيق).
+      // وإن لم تختر بعد: تحديد تلقائي بالـIP (قد يخطئ المدينة — انقر شريحة الصلاة لاختيار ولايتك)
+      let lat = 36.7538, lon = 3.0588, region = 'الجزائر';       // احتياط: العاصمة (نفس أندرويد)
+      let city = null;
+      try { city = JSON.parse(localStorage.getItem('prayer_city') || 'null'); } catch (e) { city = null; }
+      let source = 'manual';
+      if (city && typeof city.lat === 'number' && typeof city.lon === 'number') {
+        lat = city.lat; lon = city.lon; region = city.name || 'ولايتي';
+      } else {
+        // ج54: تحديد تلقائي بأربع طبقات — موقع الجهاز ← ipapi ← ipwho.is ← المنطقة الزمنية
+        lat = null; lon = null; region = '';
+        const geo = await this._geoLocate(6500);
+        if (geo) { lat = geo.lat; lon = geo.lon; region = geo.region; source = 'device'; }
+        if (lat === null) {
+          const l2 = await this._ipLocate('https://ipapi.co/json/', sig);
+          if (l2) { lat = l2.lat; lon = l2.lon; region = l2.region; source = 'ip'; }
+        }
+        if (lat === null) {
+          const l3 = await this._ipLocate('https://ipwho.is/', sig);
+          if (l3) { lat = l3.lat; lon = l3.lon; region = l3.region; source = 'ip'; }
+        }
+        if (lat === null) {
+          const tz = (Intl.DateTimeFormat && Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+          if (tz.includes('Algiers')) { lat = 36.7538; lon = 3.0588; region = 'الجزائر'; source = 'tz'; }
+        }
+        if (lat === null) { lat = 36.7538; lon = 3.0588; region = 'الجزائر'; source = 'fallback'; }
       }
-      if (lat === null) {                                          // 3) ipwho.is (بديل مفتوح بلا حدود)
-        const l3 = await this._ipLocate('https://ipwho.is/', sig);
-        if (l3) { lat = l3.lat; lon = l3.lon; region = l3.region; }
-      }
-      if (lat === null) {                                          // 4) المنطقة الزمنية → الجزائر
-        const tz = (Intl.DateTimeFormat && Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
-        if (tz.includes('Algiers')) { lat = 36.7538; lon = 3.0588; region = 'الجزائر'; }
-      }
-      if (lat === null) { lat = 36.7538; lon = 3.0588; region = 'الجزائر'; }   // احتياط أخير
       const ts = Math.floor(Date.now() / 1000);
       const r2 = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lon}&method=3`, sig ? { signal: sig } : {});
       const j2 = await r2.json();
       const t = j2 && j2.data && j2.data.timings;
       if (t) localStorage.setItem('prayer_cache', JSON.stringify({
-        date: today, region, source: geo ? 'device' : 'ip',
+        date: today, region, source,
         timings: { Fajr: t.Fajr, Dhuhr: t.Dhuhr, Asr: t.Asr, Maghrib: t.Maghrib, Isha: t.Isha }
       }));
     } catch (e) { /* فشل صامت — لا يؤثر على الواجهة */ }
@@ -182,15 +192,71 @@ const App = {
       if (mins > cur && mins - cur < best) { best = mins - cur; next = { name: names[k], time: (c.timings[k] || '').slice(0, 5) }; }
     }
     if (!next) next = { name: 'الفجر', time: (c.timings.Fajr || '').slice(0, 5) };   // بعد العشاء → فجر الغد
-    txt.textContent = next.name + ' ' + next.time;
-    // ج54: التحويم/النقر يعرض كل المواقيت الخمسة + مصدر الموقع
+    txt.textContent = (c.region ? c.region + ' · ' : '') + next.name + ' ' + next.time;
+    // ج54: التحويم يعرض كل المواقيت الخمسة + المدينة + مصدر الموقع — والنقر يفتح اختيار الولاية
+    const SRC = { manual: 'ولايتك المختارة', device: 'موقع جهازك الحقيقي', ip: 'تحديد تلقائي بالشبكة', tz: 'المنطقة الزمنية', fallback: '' };
     chip.title = 'مواقيت الصلاة — ' + (c.region || '') +
       '\nالفجر ' + (c.timings.Fajr || '').slice(0, 5) + ' · الظهر ' + (c.timings.Dhuhr || '').slice(0, 5) +
       ' · العصر ' + (c.timings.Asr || '').slice(0, 5) + ' · المغرب ' + (c.timings.Maghrib || '').slice(0, 5) +
       ' · العشاء ' + (c.timings.Isha || '').slice(0, 5) +
       (best < Infinity ? '\nالصلاة القادمة بعد ' + best + ' دقيقة' : '') +
-      (c.source === 'device' ? '\n(من موقع جهازك الحقيقي)' : '');
+      (SRC[c.source] ? '\n(' + SRC[c.source] + ')' : '') + '\nانقر لاختيار ولايتك (موقع دقيق)';
     chip.classList.remove('hidden');
+  },
+
+  // ═══ ج54: حوار اختيار الولاية — مواقيت الصلاة بالموقع الحقيقي (58 ولاية) ═══
+  prayerCityToggle() {
+    const dlg = document.getElementById('prayerDlg');
+    if (!dlg) { this._prayerCityBuild(); return this.prayerCityToggle(); }
+    if (dlg.classList.contains('on')) { dlg.classList.remove('on'); return; }
+    dlg.classList.add('on');
+    try { const f = dlg.querySelector('.pcat'); if (f) f.focus(); } catch (e) {}
+  },
+  _prayerCityBuild() {
+    const CITIES = [['أدرار',27.87,-0.29],['الشلف',36.17,1.33],['الأغواط',33.80,2.86],['أم البواقي',35.87,7.11],['باتنة',35.55,6.17],['بجاية',36.75,5.08],['بسكرة',34.85,5.73],['بشار',31.62,-2.22],['البليدة',36.47,2.83],['البويرة',36.37,3.90],['تمنراست',22.79,5.53],['تبسة',35.40,8.12],['تلمسان',34.88,-1.32],['تيارت',35.37,1.32],['تيزي وزو',36.72,4.05],['الجزائر العاصمة',36.75,3.06],['الجلفة',34.67,3.25],['جيجل',36.82,5.77],['سطيف',36.19,5.41],['سعيدة',34.83,0.15],['سكيكدة',36.88,6.91],['سيدي بلعباس',35.19,-0.63],['عنابة',36.90,7.77],['قالمة',36.46,7.43],['قسنطينة',36.37,6.61],['المدية',36.26,2.75],['مستغانم',35.93,0.09],['المسيلة',35.70,4.54],['معسكر',35.40,0.14],['ورقلة',31.95,5.33],['وهران',35.70,-0.63],['البيض',33.68,1.02],['إليزي',26.50,8.47],['برج بوعريريج',36.07,4.76],['بومرداس',36.76,3.47],['الطارف',36.77,8.31],['تندوف',27.67,-8.15],['تيسمسيلت',35.61,1.81],['الوادي',33.37,6.86],['خنشلة',35.44,7.14],['سوق أهراس',36.29,7.95],['تيبازة',36.59,2.45],['ميلة',36.45,6.26],['عين الدفلى',36.26,1.97],['النعامة',33.27,-0.31],['عين تموشنت',35.30,-1.14],['غرداية',32.49,3.67],['غليزان',35.74,0.56],['تيميمون',29.26,0.24],['أولاد جلال',34.43,4.96],['بني عباس',30.13,-2.17],['عين صالح',27.20,2.47],['تقرت',33.10,6.06],['جانت',24.55,9.48],['المغير',33.95,5.92],['المنيعة',30.58,2.88],['برج باجي مختار',21.33,0.95],['عين قزام',19.57,5.77]];
+    const self = this;
+    const cur = (() => { try { return JSON.parse(localStorage.getItem('prayer_city') || 'null'); } catch (e) { return null; } })();
+    const dlg = document.createElement('div');
+    dlg.id = 'prayerDlg';
+    dlg.className = 'city-dlg';
+    dlg.innerHTML = `<div class="city-panel">
+      <div class="city-head"><div class="city-title">${'${'}ic('mosque', 15)${'}'} ولايتك — مواقيت صلاة دقيقة بموقعك الحقيقي</div>
+      <button class="p-btn" id="cityClose">${'${'}ic('x', 13)${'}'} إغلاق</button></div>
+      <div class="city-sub">التوقيت التلقائي بالـIP قد يعطي مدينة خاطئة — اختر ولايتك مرة واحدة وتبقى محفوظة</div>
+      <div class="city-list"></div>
+    </div>`;
+    document.body.appendChild(dlg);
+    const list = dlg.querySelector('.city-list');
+    const mk = (label, active, fn) => {
+      const d = document.createElement('div');
+      d.className = 'pcat' + (active ? ' active' : '');
+      d.tabIndex = 0;
+      d.textContent = label;
+      d.onclick = fn;
+      list.appendChild(d);
+      return d;
+    };
+    mk('تلقائي (تحديد بالإنترنت)' + (cur ? '' : ' — الحالي'), !cur, () => {
+      localStorage.removeItem('prayer_city');
+      localStorage.removeItem('prayer_cache');
+      self.prayerCityToggle();
+      self.initPrayer();
+      setTimeout(() => self.updatePrayerChip(), 2500);
+    });
+    CITIES.forEach(([name, la, lo]) => {
+      const isCur = !!(cur && cur.name === name);
+      mk((isCur ? '✓ ' : '') + name, isCur, () => {
+        localStorage.setItem('prayer_city', JSON.stringify({ name: name, lat: la, lon: lo }));
+        localStorage.removeItem('prayer_cache');          // أعد الحساب فوراً بالموقع الجديد
+        self.prayerCityToggle();
+        self.initPrayer();
+        setTimeout(() => self.updatePrayerChip(), 2500);
+      });
+    });
+    dlg.onclick = (e) => { if (e.target === dlg) self.prayerCityToggle(); };
+    const cb = dlg.querySelector('#cityClose');
+    if (cb) cb.onclick = () => self.prayerCityToggle();
+    try { dlg.querySelector('.pcat').classList.add('focused'); } catch (e) {}
   },
 
   // v1.0.3: سطر تاريخ انتهاء الصلاحية تحت الساعة — الحقيقي من الكود، أو المُدخل يدوياً مع رابط M3U
@@ -1886,6 +1952,26 @@ document.addEventListener('keydown', (e) => {
     else Player.onKey(e);
     return;
   }
+  const cityDlgOpen = !!(document.getElementById('prayerDlg') && document.getElementById('prayerDlg').classList.contains('on'));
+  if (cityDlgOpen) {
+    const rows = [...document.querySelectorAll('#prayerDlg .pcat')];
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      let i = rows.findIndex(r => r.classList.contains('focused'));
+      if (i >= 0) rows[i].classList.remove('focused');
+      i = (i + (e.key === 'ArrowDown' || e.key === 'ArrowLeft' ? 1 : -1) + rows.length) % rows.length;
+      if (i < 0) i = 0;
+      rows[i].classList.add('focused');
+      try { rows[i].scrollIntoView({ block: 'nearest' }); } catch (e2) {}
+      e.preventDefault(); return;
+    }
+    if (e.key === 'Enter') {
+      const f = rows.find(r => r.classList.contains('focused'));
+      if (f) { f.click(); e.preventDefault(); return; }
+    }
+    if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'BrowserBack') {
+      App.prayerCityToggle(); e.preventDefault(); return;
+    }
+  }
   const cur = document.querySelector('.screen.active .focused');
   switch (e.key) {
     case 'ArrowUp': if (!gridNav(0, -1)) spatialMove(0, -1); e.preventDefault(); break;
@@ -1944,6 +2030,7 @@ try {
   const uc0 = document.getElementById('userChip'); if (uc0 && !String(uc0.textContent || '').trim() && !uc0.innerHTML.trim()) uc0.innerHTML = ic('user', 15);
   const eb0 = document.getElementById('exitBtn'); if (eb0 && !eb0.innerHTML.trim()) eb0.innerHTML = ic('power', 15);
   const pr0 = document.getElementById('prayerIc'); if (pr0) pr0.innerHTML = ic('mosque', 14);
+  const pc0 = document.getElementById('prayerChip'); if (pc0) { pc0.classList.add('ic-btn'); pc0.onclick = () => App.prayerCityToggle(); }
   // عناصر الواجهة الثابتة (كانت إيموجي في HTML — الآن أيقونات متجهة)
 // ج53 إصلاح ج51: الأيقونة تُضاف لزر التبويب نفسه — ليس لحاوية الحقول (كانت تمسح codeInput/codeBtn
 // وتوقف سكربت app.js كلياً عند الربط بالأسفل → التطبيق لا يقلع أبداً)
