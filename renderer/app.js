@@ -108,25 +108,62 @@ const App = {
     try {
       let sig;
       try { sig = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(4500) : undefined; } catch (e) {}
-      let lat = 36.7538, lon = 3.0588, region = 'الجزائر';       // احتياط: العاصمة (نفس أندرويد)
-      try {
-        const r = await fetch('https://ipapi.co/json/', sig ? { signal: sig } : {});
-        const j = await r.json();
-        if (j && typeof j.latitude === 'number' && typeof j.longitude === 'number') {
-          lat = j.latitude; lon = j.longitude;
-          region = j.city || j.region || 'الجزائر';
-        }
-      } catch (e) {}
+      // ج54: الموقع الحقيقي بأربع طبقات — موقع الجهاز (الأدق) ← ipapi ← ipwho.is ← المنطقة الزمنية
+      let lat = null, lon = null, region = '';
+      const geo = await this._geoLocate(6500);                     // 1) GPS/واي فاي الجهاز
+      if (geo) { lat = geo.lat; lon = geo.lon; region = geo.region; }
+      if (lat === null) {                                          // 2) ipapi.co
+        const l2 = await this._ipLocate('https://ipapi.co/json/', sig);
+        if (l2) { lat = l2.lat; lon = l2.lon; region = l2.region; }
+      }
+      if (lat === null) {                                          // 3) ipwho.is (بديل مفتوح بلا حدود)
+        const l3 = await this._ipLocate('https://ipwho.is/', sig);
+        if (l3) { lat = l3.lat; lon = l3.lon; region = l3.region; }
+      }
+      if (lat === null) {                                          // 4) المنطقة الزمنية → الجزائر
+        const tz = (Intl.DateTimeFormat && Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+        if (tz.includes('Algiers')) { lat = 36.7538; lon = 3.0588; region = 'الجزائر'; }
+      }
+      if (lat === null) { lat = 36.7538; lon = 3.0588; region = 'الجزائر'; }   // احتياط أخير
       const ts = Math.floor(Date.now() / 1000);
       const r2 = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lon}&method=3`, sig ? { signal: sig } : {});
       const j2 = await r2.json();
       const t = j2 && j2.data && j2.data.timings;
       if (t) localStorage.setItem('prayer_cache', JSON.stringify({
-        date: today, region,
+        date: today, region, source: geo ? 'device' : 'ip',
         timings: { Fajr: t.Fajr, Dhuhr: t.Dhuhr, Asr: t.Asr, Maghrib: t.Maghrib, Isha: t.Isha }
       }));
     } catch (e) { /* فشل صامت — لا يؤثر على الواجهة */ }
     finally { this._prayerBusy = false; }
+  },
+  // ج54: موقع الجهاز الحقيقي (GPS/واي فاي) — أدق من IP إن توفر
+  _geoLocate(ms) {
+    return new Promise((resolve) => {
+      try {
+        if (!navigator.geolocation || !navigator.geolocation.getCurrentPosition) return resolve(null);
+        const done = setTimeout(() => resolve(null), ms);
+        navigator.geolocation.getCurrentPosition(
+          (p) => {
+            clearTimeout(done);
+            try { resolve({ lat: p.coords.latitude, lon: p.coords.longitude, region: 'موقعك الحقيقي' }); }
+            catch (e) { resolve(null); }
+          },
+          () => { clearTimeout(done); resolve(null); },
+          { timeout: ms - 500, maximumAge: 600000, enableHighAccuracy: false }
+        );
+      } catch (e) { resolve(null); }
+    });
+  },
+  // ج54: موقع IP من خدمتين (ipapi.co ثم ipwho.is)
+  async _ipLocate(url, sig) {
+    try {
+      const r = await fetch(url, sig ? { signal: sig } : {});
+      const j = await r.json();
+      if (j && typeof j.latitude === 'number' && typeof j.longitude === 'number') {
+        return { lat: j.latitude, lon: j.longitude, region: j.city || j.region || j.country || '' };
+      }
+    } catch (e) {}
+    return null;
   },
   _prayerCache() { try { return JSON.parse(localStorage.getItem('prayer_cache') || 'null'); } catch (e) { return null; } },
   updatePrayerChip() {
@@ -146,7 +183,13 @@ const App = {
     }
     if (!next) next = { name: 'الفجر', time: (c.timings.Fajr || '').slice(0, 5) };   // بعد العشاء → فجر الغد
     txt.textContent = next.name + ' ' + next.time;
-    chip.title = 'مواقيت الصلاة — ' + (c.region || '') + (best < Infinity ? ' · الصلاة القادمة بعد ' + best + ' دقيقة' : '');
+    // ج54: التحويم/النقر يعرض كل المواقيت الخمسة + مصدر الموقع
+    chip.title = 'مواقيت الصلاة — ' + (c.region || '') +
+      '\nالفجر ' + (c.timings.Fajr || '').slice(0, 5) + ' · الظهر ' + (c.timings.Dhuhr || '').slice(0, 5) +
+      ' · العصر ' + (c.timings.Asr || '').slice(0, 5) + ' · المغرب ' + (c.timings.Maghrib || '').slice(0, 5) +
+      ' · العشاء ' + (c.timings.Isha || '').slice(0, 5) +
+      (best < Infinity ? '\nالصلاة القادمة بعد ' + best + ' دقيقة' : '') +
+      (c.source === 'device' ? '\n(من موقع جهازك الحقيقي)' : '');
     chip.classList.remove('hidden');
   },
 
