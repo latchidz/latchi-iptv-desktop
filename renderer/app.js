@@ -73,19 +73,40 @@ const App = {
       if (localStorage.getItem('remote_on') !== '0') this.remoteServerStart(true);
       setInterval(() => this.remotePush(), 2000);
     } catch (e) {}
+    // v1.1.5: عرض النسخة الحقيقية دائماً (كانت «V1.0» ثابتة مهما كانت النسخة)
+    try {
+      const info = await window.latchi.appInfo();
+      const vt = 'V' + ((info && info.version) || '');
+      document.querySelectorAll('.splash-ver, .ver-chip').forEach(el => { el.textContent = vt; });
+    } catch (e) {}
+
     await new Promise(r => setTimeout(r, 1400)); // سبلاش قصير (سرعة الإقلاع أهم)
-    const saved = localStorage.getItem('source_url');
-    if (saved) {
-      this.show('verify', true);
-      document.getElementById('verifyMsg').textContent = 'استئناف الحساب المحفوظ...';
-      this.showChecking();                    // v1.0.1: فن «جاري التحقق» أثناء الاستئناف
-      try {
-        await this.loadSource(saved, true, null, { welcome: true });
-        this.hideChecking();
-        return;
-      } catch (e) { this.hideChecking(); /* نكمل لشاشة التحقق */ }
-    }
+    // v1.1.5 (طلب العميل «حبس شاشة التفعيل»): استئناف ذكي —
+    //   1) المصدر المحفوظ (محاولتان — الخطأ الشبكي العابر لا يُسقطك في شاشة الكود)
+    //   2) ثم كل الحسابات المحفوظة في «مركز الحسابات» بالترتيب تلقائياً
+    //   3) شاشة الكود فقط إذا فشل الجميع — ودون مسح أي بيانات محفوظة
     this.show('verify', true);
+    document.getElementById('verifyMsg').textContent = 'استئناف الحساب المحفوظ...';
+    this.showChecking();                      // v1.0.1: فن «جاري التحقق» أثناء الاستئناف
+    const tries = [];
+    const saved = localStorage.getItem('source_url');
+    if (saved) { tries.push(saved, saved); }  // محاولتان لنفس المصدر (شبكة عابرة)
+    try {
+      for (const a of this.getAccounts()) {
+        if (a && a.value && !tries.includes(a.value)) tries.push(a.value);
+      }
+    } catch (e) {}
+    for (const url of tries) {
+      const ok = await this.loadSource(url, true, url, { welcome: true });
+      if (ok) { this.hideChecking(); return; }
+    }
+    this.hideChecking();
+    this.show('verify', true);
+    const vmsg = document.getElementById('verifyMsg');
+    if (vmsg) {
+      vmsg.className = 'verify-msg';
+      vmsg.textContent = 'تعذّر استئناف الحسابات المحفوظة — تحقق من اتصال الإنترنت ثم أعد فتح التطبيق، أو أدخل الكود';
+    }
   },
 
   clockTick() {
@@ -637,10 +658,13 @@ const App = {
       setTimeout(() => { try { this._gsIndex(); } catch (e) {} }, 2500);
       // v1.0.1: «مرحبا بك في عائلة لاتشي» بعد الدخول — ثم الرئيسية
       if (opts.welcome) this.showWelcome(); else this.show('home', true);
+      return true;
     } catch (e) {
+      // v1.1.5: ⛔ لا نمسح source_url عند الفشل أبداً — كان أي خطأ عابر (شبكة/خادم)
+      // يمسح الحساب المحفوظ ويرجعك لشاشة التفعيل. الجلسة تبقى محفوظة دائماً،
+      // وشاشة التحقق تظهر فقط إذا فشل المصدر وكل حسابات المركز (انظر boot).
       if (!silent) throw e;
-      localStorage.removeItem('source_url');
-      this.show('verify', true);
+      return false;
     }
   },
 
