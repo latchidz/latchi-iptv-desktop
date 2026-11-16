@@ -44,7 +44,7 @@ const RemoteServer = {
       let ip = req.socket.remoteAddress || '';
       if (ip) self.clients = Math.max(self.clients, 0) + 0;   // (عدّاد تقريبي — يُحدَّث بالأوامر)
       if (req.method === 'GET' && req.url.startsWith('/ping')) {
-        return send(200, { ok: true, app: 'LATCHI_REMOTE', name: 'LATCHI PC', type: 'pc', host: os.hostname(), pin: !!self.pin, ver: '1.0.9', appVer: self.appVer || '' });
+        return send(200, { ok: true, app: 'LATCHI_REMOTE', name: 'LATCHI PC', type: 'pc', host: os.hostname(), pin: !!self.pin, ver: '1.2.0', appVer: self.appVer || '', api: ['accounts'] });
       }
       // ما تبقى يتطلب PIN إن كان مفعّلاً
       if (self.pin) {
@@ -76,6 +76,26 @@ const RemoteServer = {
               try { return send(200, JSON.parse(r || '{\"ok\":false}')); } catch (e) { return send(200, { ok: false }); }
             }).catch(() => send(200, { ok: false }));
           } catch (e) { send(400, { ok: false, error: 'bad_json' }); }
+        });
+        return;
+      }
+      // ═══ v1.2.0: إدارة الحسابات من LATCHI Remote (كشف/إضافة/حذف/دخول فوري) ═══
+      if (req.method === 'GET' && req.url.startsWith('/api/accounts')) {
+        Promise.resolve(self.exec('(async()=>{try{return JSON.stringify(App.remoteAccountsList())}catch(e){return JSON.stringify({ok:false,error:String(e.message||e)})}})()'))
+          .then(r => { try { send(200, JSON.parse(r || '{"ok":false}')); } catch (e) { send(200, { ok: false }); } })
+          .catch(() => send(200, { ok: false }));
+        return;
+      }
+      if (req.method === 'POST' && req.url.startsWith('/api/accounts')) {
+        let b = '';
+        req.on('data', c => { b += c; if (b.length > 16384) req.destroy(); });
+        req.on('end', () => {
+          let op = null;
+          try { op = JSON.parse(b || '{}'); } catch (e) { return send(400, { ok: false, error: 'bad_json' }); }
+          const fn = op.op === 'add' ? 'remoteAccountsAdd' : op.op === 'remove' ? 'remoteAccountsRemove' : op.op === 'activate' ? 'remoteAccountsActivate' : null;
+          if (!fn) return send(400, { ok: false, error: 'bad_op' });
+          const code = '(async()=>{try{return JSON.stringify(await App.' + fn + '(' + JSON.stringify(op.payload || {}) + '))}catch(e){return JSON.stringify({ok:false,error:String(e.message||e)})}})()';
+          Promise.resolve(self.exec(code)).then(r => { try { send(200, JSON.parse(r || '{"ok":false}')); } catch (e) { send(200, { ok: false }); } }).catch(() => send(200, { ok: false }));
         });
         return;
       }

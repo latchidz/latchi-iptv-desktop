@@ -1776,6 +1776,49 @@ _findItem(ref) {
     try { return JSON.parse(localStorage.getItem('saved_accounts') || '[]'); } catch (e) { return []; }
   },
   saveAccounts(l) { localStorage.setItem('saved_accounts', JSON.stringify(l)); },
+
+  // ═══ v1.2.0: جسر LATCHI Remote — إدارة الحسابات من الهاتف (كشف/إضافة/حذف/دخول فوري) ═══
+  remoteAccountsList() {
+    const cur = localStorage.getItem('source_url') || '';
+    return { ok: true, accounts: this.getAccounts().map(a => ({ id: a.id, kind: a.kind, label: a.label, exp: a.exp || '', active: a.value === cur })) };
+  },
+  async remoteAccountsAdd(p) {
+    try {
+      if (!p || !p.value) return { ok: false, error: 'no_value' };
+      if (p.kind === 'code') {
+        const deviceId = await window.latchi.deviceId();
+        const res = await LatchiAPI.verifyCode(p.value, deviceId);
+        if (!res.ok) return { ok: false, error: res.message || 'verify_failed' };
+        if (!res.url) return { ok: false, error: 'no_playlist' };
+        this.user = { name: res.name, expires: res.expires, code: p.value };
+        this.rememberAccount('code', (p.label || res.name) + ' (' + p.value + ')', res.url, '');
+        if (p.activate !== false) { await this.loadSource(res.url, false, res.url, { welcome: true }); try { this.show('home', true); } catch (e) {} }
+        return { ok: true, switched: p.activate !== false };
+      }
+      // m3u / رابط اكستريم الكامل (get.php / m3u_plus) يُعامل كقائمة مباشرة
+      let host = ''; try { host = new URL(p.value).hostname; } catch (e) { return { ok: false, error: 'bad_url' }; }
+      this.rememberAccount('m3u', p.label || ('M3U — ' + host), p.value, p.exp || '');
+      if (p.activate !== false) { await this.loadSource(p.value, false, p.value, { welcome: true }); try { this.show('home', true); } catch (e) {} }
+      return { ok: true, switched: p.activate !== false };
+    } catch (e) { return { ok: false, error: String(e.message || e) }; }
+  },
+  remoteAccountsRemove(id) {
+    try {
+      const l = this.getAccounts().filter(a => String(a.id) !== String(id));
+      this.saveAccounts(l);
+      try { if (!document.getElementById('accounts').classList.contains('hidden')) this.buildAccounts(); } catch (e) {}
+      return { ok: true };
+    } catch (e) { return { ok: false, error: String(e.message || e) }; }
+  },
+  async remoteAccountsActivate(id) {
+    try {
+      const a = this.getAccounts().find(x => String(x.id) === String(id));
+      if (!a) return { ok: false, error: 'not_found' };
+      await this.loadSource(a.value, false, a.value, { welcome: false });   // تبديل فوري حتى أثناء مشاهدة قناة
+      try { this.show('home', true); } catch (e) {}
+      return { ok: true };
+    } catch (e) { return { ok: false, error: String(e.message || e) }; }
+  },
   rememberAccount(kind, label, value, exp) {
     if (!value) return;
     const list = this.getAccounts().filter(a => a.value !== value);
